@@ -17,6 +17,7 @@ import CVUpload from './pages/CVUpload';
 import Assessment from './pages/Assessment';
 import FeedbackReport from './pages/FeedbackReport';
 import AdminAuth from './pages/AdminAuth';
+import AdminDashboard from './pages/AdminDashboard';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
       <Route path="/assessment" element={<Assessment />} />
       <Route path="/feedback-report" element={<FeedbackReport />} />
       <Route path="/admin-auth" element={<AdminAuth />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
