@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ const JOBS = [
 const TABS = ["All Jobs", "Active", "Inactive"];
 
 export default function RecruiterDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("All Jobs");
   const [search, setSearch] = useState("");
 
@@ -68,7 +69,7 @@ export default function RecruiterDashboard() {
             <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
             <p className="text-muted-foreground mt-1">Here's what's happening with your recruitment today.</p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-5 self-start">
+          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-5 self-start" onClick={() => navigate("/post-job")}>
             <Plus className="w-4 h-4" />
             Post New Job
           </Button>
