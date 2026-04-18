@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Search, LogOut, Sparkles } from "lucide-react";
+import { Plus, Search, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatsCard from "../components/recruiter/StatsCard";
@@ -8,10 +8,10 @@ import ActionItemCard from "../components/recruiter/ActionItemCard";
 import JobPostingCard from "../components/recruiter/JobPostingCard";
 
 const STATS = [
-  { label: "Total Applicants", value: "248", change: "+24", positive: true },
-  { label: "Avg. Match Score", value: "87%", change: "+3%", positive: true },
-  { label: "AI Interviews Completed", value: "156", change: "+18", positive: true },
-  { label: "Pending Reviews", value: "18", change: "+5", positive: true },
+  { label: "Total Applicants", value: "248", change: "+11%", subtext: "+24 from last week" },
+  { label: "Avg. Match Score", value: "87%", change: "+3%", subtext: "+3% from last week" },
+  { label: "AI Interviews Completed", value: "156", change: "+13%", subtext: "+18 from last week" },
+  { label: "Pending Reviews", value: "18", change: "+38%", subtext: "+5 from last week" },
 ];
 
 const ACTION_ITEMS = [
@@ -44,13 +44,13 @@ export default function RecruiterDashboard() {
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Navbar */}
-      <nav className="bg-white border-b border-border px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <span className="font-bold text-xl text-foreground">QuantaHire</span>
+      <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div>
+          <span className="font-bold text-lg text-primary">QuantaHire</span>
+          <p className="text-xs text-muted-foreground">Recruiter Portal</p>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground hidden sm:block">recruiter@quantahire.com</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">recruiter@quantahire.com</span>
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/">
               <LogOut className="w-4 h-4" />
@@ -77,24 +77,25 @@ export default function RecruiterDashboard() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {STATS.map((s) => (
-            <StatsCard key={s.label} {...s} />
+            <StatsCard key={s.label} label={s.label} value={s.value} change={s.change} subtext={s.subtext} />
           ))}
         </div>
 
         {/* Action Items */}
-        <div className="bg-white border border-border rounded-2xl p-6">
-          <div className="mb-4">
-            <h2 className="font-semibold text-foreground text-lg">Action Items</h2>
-            <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
-          </div>
-          {ACTION_ITEMS.map((item) => (
-            <ActionItemCard key={item.title} {...item} onReview={() => {}} />
-          ))}
-          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3 text-sm text-muted-foreground">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary" />
+        <div className="bg-white border border-border border-l-4 border-l-orange-400 rounded-2xl p-6">
+          <div className="mb-5 flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full border-2 border-orange-400 flex items-center justify-center">
+              <span className="text-orange-400 text-xs font-bold">!</span>
             </div>
-            <span>Welcome back, Recruiter!</span>
+            <div>
+              <h2 className="font-semibold text-foreground text-lg leading-none">Action Items</h2>
+              <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {ACTION_ITEMS.map((item, i) => (
+              <ActionItemCard key={item.title} {...item} index={i} onReview={() => {}} />
+            ))}
           </div>
         </div>
 
