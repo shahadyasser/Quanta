@@ -34,7 +34,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">
-            Transform your hiring process with intelligent candidate matching, AI-powered interviews, and unbiased screening.
+            Transform your hiring process with intelligent candidate matching and unbiased screening.
           </p>
 
           {/* Feature cards */}
