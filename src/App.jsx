@@ -21,6 +21,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import RecruiterManagement from './pages/RecruiterManagement';
 import SystemReports from './pages/SystemReports';
 import RecruiterApproval from './pages/RecruiterApproval';
+import BrowseJobs from './pages/BrowseJobs';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
       <Route path="/recruiter-management" element={<RecruiterManagement />} />
       <Route path="/system-reports" element={<SystemReports />} />
       <Route path="/recruiter-approval" element={<RecruiterApproval />} />
+      <Route path="/browse-jobs" element={<BrowseJobs />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

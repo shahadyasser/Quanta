@@ -1,0 +1,320 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Search, MapPin, Clock, DollarSign, Star, Sparkles, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+const JOBS = [
+  {
+    id: 1,
+    title: "Senior Frontend Developer",
+    company: "TechCorp Inc.",
+    location: "San Francisco, CA",
+    remote: true,
+    postedAgo: "2 days ago",
+    match: 95,
+    recommended: true,
+    type: "Full-time",
+    level: "Senior",
+    salary: "$120k - $160k",
+    description: "We're looking for an experienced frontend developer to join our innovative team building next-gen web applications.",
+    skills: ["React", "TypeScript", "Tailwind CSS", "AI"],
+  },
+  {
+    id: 2,
+    title: "AI/ML Engineer",
+    company: "DataSystems Ltd",
+    location: "Remote",
+    remote: true,
+    postedAgo: "3 days ago",
+    match: 92,
+    recommended: true,
+    type: "Full-time",
+    level: "Mid-level",
+    salary: "$110k - $150k",
+    description: "Join our AI team to develop cutting-edge machine learning models for enterprise solutions.",
+    skills: ["Python", "TensorFlow", "ML", "Data Science"],
+  },
+  {
+    id: 3,
+    title: "Full Stack Engineer",
+    company: "CloudVentures",
+    location: "New York, NY",
+    remote: false,
+    postedAgo: "5 days ago",
+    match: 88,
+    recommended: true,
+    type: "Full-time",
+    level: "Mid-level",
+    salary: "$100k - $140k",
+    description: "Build scalable cloud-native applications using modern tech stack. Hybrid work environment available.",
+    skills: ["Node.js", "React", "AWS", "Docker"],
+  },
+  {
+    id: 4,
+    title: "UX/UI Designer",
+    company: "DesignHub",
+    location: "Austin, TX",
+    remote: true,
+    postedAgo: "1 week ago",
+    match: 82,
+    recommended: false,
+    type: "Full-time",
+    level: "Mid-level",
+    salary: "$90k - $120k",
+    description: "Create beautiful, user-centered designs for our portfolio of SaaS products.",
+    skills: ["Figma", "UI/UX", "Design Systems", "Prototyping"],
+  },
+  {
+    id: 5,
+    title: "DevOps Engineer",
+    company: "Innovation Labs",
+    location: "Seattle, WA",
+    remote: true,
+    postedAgo: "1 week ago",
+    match: 79,
+    recommended: false,
+    type: "Contract",
+    level: "Senior",
+    salary: "$115k - $145k",
+    description: "Manage and optimize our cloud infrastructure, CI/CD pipelines, and deployment processes.",
+    skills: ["Kubernetes", "AWS", "CI/CD", "Terraform"],
+  },
+  {
+    id: 6,
+    title: "Product Manager",
+    company: "StartupXYZ",
+    location: "Boston, MA",
+    remote: false,
+    postedAgo: "2 weeks ago",
+    match: 75,
+    recommended: false,
+    type: "Full-time",
+    level: "Senior",
+    salary: "$130k - $170k",
+    description: "Lead product strategy and execution for our flagship AI-powered analytics platform.",
+    skills: ["Product Strategy", "Agile", "Analytics", "Leadership"],
+  },
+  {
+    id: 7,
+    title: "Backend Developer",
+    company: "FinTech Solutions",
+    location: "Chicago, IL",
+    remote: true,
+    postedAgo: "4 days ago",
+    match: 84,
+    recommended: false,
+    type: "Full-time",
+    level: "Mid-level",
+    salary: "$95k - $130k",
+    description: "Build robust, scalable backend services for financial applications with high performance requirements.",
+    skills: ["Java", "Spring Boot", "Microservices", "PostgreSQL"],
+  },
+  {
+    id: 8,
+    title: "Data Engineer",
+    company: "Analytics Pro",
+    location: "Remote",
+    remote: true,
+    postedAgo: "6 days ago",
+    match: 81,
+    recommended: false,
+    type: "Full-time",
+    level: "Mid-level",
+    salary: "$105k - $135k",
+    description: "Design and maintain data pipelines and warehouses for large-scale data processing.",
+    skills: ["Python", "SQL", "ETL", "Big Data"],
+  },
+];
+
+const JOB_TYPES = ["Full-time", "Part-time", "Contract"];
+const LEVELS = ["Entry-level", "Mid-level", "Senior", "Lead"];
+
+export default function BrowseJobs() {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [selectedTypes, setSelectedTypes] = useState([]);
+  const [selectedLevels, setSelectedLevels] = useState([]);
+  const [remoteOnly, setRemoteOnly] = useState(false);
+
+  const toggleItem = (list, setList, item) => {
+    setList((prev) => prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]);
+  };
+
+  const filtered = JOBS.filter((job) => {
+    const q = search.toLowerCase();
+    const matchesSearch = !q || job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q) || job.skills.some(s => s.toLowerCase().includes(q));
+    const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.type);
+    const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes(job.level);
+    const matchesRemote = !remoteOnly || job.remote;
+    return matchesSearch && matchesType && matchesLevel && matchesRemote;
+  });
+
+  return (
+    <div className="min-h-screen bg-[#F4F3FF]">
+      {/* Top bar */}
+      <div className="bg-white border-b border-border px-6 md:px-10 py-3 sticky top-0 z-10">
+        <button
+          onClick={() => navigate("/candidate-dashboard")}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-5">
+        {/* Header */}
+        <div>
+          <h1 className="text-xl font-bold text-primary">Browse Jobs</h1>
+          <p className="text-sm text-muted-foreground">AI-matched opportunities for you</p>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search roles, companies, or skills..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-11 h-12 rounded-xl bg-white border-border text-sm"
+          />
+        </div>
+
+        <div className="flex gap-6 items-start">
+          {/* Sidebar Filters */}
+          <aside className="hidden md:block w-56 bg-white border border-border rounded-2xl p-5 space-y-5 shrink-0">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-foreground text-sm">Filters</span>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Job Type</p>
+              {JOB_TYPES.map((type) => (
+                <label key={type} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="rounded border-border"
+                    checked={selectedTypes.includes(type)}
+                    onChange={() => toggleItem(selectedTypes, setSelectedTypes, type)}
+                  />
+                  <span className="text-sm text-foreground">{type}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Experience Level</p>
+              {LEVELS.map((level) => (
+                <label key={level} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="rounded border-border"
+                    checked={selectedLevels.includes(level)}
+                    onChange={() => toggleItem(selectedLevels, setSelectedLevels, level)}
+                  />
+                  <span className="text-sm text-foreground">{level}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="rounded border-border"
+                  checked={remoteOnly}
+                  onChange={() => setRemoteOnly(!remoteOnly)}
+                />
+                <span className="text-sm text-foreground">Remote only</span>
+              </label>
+            </div>
+          </aside>
+
+          {/* Job List */}
+          <div className="flex-1 space-y-4">
+            <p className="text-sm text-muted-foreground">{filtered.length} jobs found</p>
+            {filtered.map((job) => (
+              <div key={job.id} className="bg-white border border-border rounded-2xl p-5 border-l-4 border-l-primary">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
+                    {/* Icon */}
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                      <Building2 className="w-5 h-5 text-primary" />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-foreground text-base">{job.title}</h3>
+                        {job.recommended && (
+                          <span className="inline-flex items-center gap-1 bg-primary text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            <Sparkles className="w-3 h-3" />
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 mt-1">
+                        <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">{job.company}</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {job.location}
+                        </span>
+                        {job.remote && (
+                          <span className="bg-muted text-foreground px-2 py-0.5 rounded-md font-medium">Remote</span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {job.postedAgo}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{job.description}</p>
+
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {job.skills.map((skill) => (
+                          <span key={skill} className="bg-muted text-foreground text-xs px-2.5 py-1 rounded-md border border-border">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3 mt-3">
+                        <span className="flex items-center gap-1 text-sm font-medium text-foreground">
+                          <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />
+                          {job.salary}
+                        </span>
+                        <span className="bg-muted text-foreground text-xs px-2.5 py-1 rounded-md border border-border font-medium">
+                          {job.level}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right actions */}
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className="inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                      <Star className="w-3 h-3 fill-white" />
+                      {job.match}% Match
+                    </span>
+                    <Button size="sm" className="bg-foreground hover:bg-foreground/80 text-white rounded-xl text-xs h-8 px-4 w-28">
+                      View Details
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl text-xs h-8 px-4 w-28">
+                      Quick Apply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
