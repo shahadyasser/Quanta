@@ -18,6 +18,7 @@ import Assessment from './pages/Assessment';
 import FeedbackReport from './pages/FeedbackReport';
 import AdminAuth from './pages/AdminAuth';
 import AdminDashboard from './pages/AdminDashboard';
+import RecruiterManagement from './pages/RecruiterManagement';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
       <Route path="/feedback-report" element={<FeedbackReport />} />
       <Route path="/admin-auth" element={<AdminAuth />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/recruiter-management" element={<RecruiterManagement />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

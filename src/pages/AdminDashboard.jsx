@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { LogOut, BarChart2, Clock, Briefcase, Users, UserCheck, AlertCircle } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -79,9 +80,11 @@ export default function AdminDashboard() {
             <div>
               <h2 className="font-semibold text-foreground text-lg">Recruiter Management</h2>
             </div>
-            <Button variant="outline" className="rounded-xl gap-2 text-sm self-start">
-              <BarChart2 className="w-4 h-4" />
-              View Reports
+            <Button variant="outline" className="rounded-xl gap-2 text-sm self-start" asChild>
+              <Link to="/recruiter-management">
+                <Users className="w-4 h-4" />
+                Recruiter Management
+              </Link>
             </Button>
           </div>
 
