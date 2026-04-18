@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, CheckCircle, XCircle, Building2, User, Clock } from "lucide-react";
+import {
+  ArrowLeft, CheckCircle, XCircle, Building2, User, Clock,
+  FileText, Globe, Mail, MapPin, Hash, Phone, Shield, Calendar
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 
 const RECRUITER = {
   company: "TechCorp Solutions",
@@ -18,6 +20,29 @@ const RECRUITER = {
   type: "Self-registration",
   date: "12/15/2024, 10:30:00 AM",
 };
+
+function FieldBox({ icon: Icon, label, value, isLink, isDate }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+        <Icon className="w-3.5 h-3.5" />
+        {label}
+      </div>
+      <div className="border border-border rounded-xl px-3 py-2.5 bg-white text-sm text-foreground min-h-[42px] flex items-center">
+        {isLink ? (
+          <a href={value} target="_blank" rel="noreferrer" className="text-primary hover:underline">{value}</a>
+        ) : isDate ? (
+          <span>
+            {value.split(",")[0]},{" "}
+            <span className="text-orange-500">{value.split(",")[1]}</span>
+          </span>
+        ) : (
+          value
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function RecruiterApproval() {
   const navigate = useNavigate();
@@ -42,56 +67,40 @@ export default function RecruiterApproval() {
         </Link>
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Recruiter Approval</h1>
-            <p className="text-muted-foreground mt-1">Review and approve recruiter registration</p>
-          </div>
-          <Badge className="bg-orange-50 text-orange-500 border border-orange-200 text-sm px-3 py-1">Pending</Badge>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Recruiter Approval</h1>
+          <p className="text-muted-foreground mt-1">Review and approve recruiter registration</p>
         </div>
 
         {/* Company Information */}
         <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Building2 className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Company Information</h2>
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                <h2 className="font-semibold text-foreground">Company Information</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5 ml-7">Verify company details and business credentials</p>
+            </div>
+            <Badge className="bg-muted text-foreground border border-border font-semibold text-sm px-3 py-1">Pending</Badge>
           </div>
-          <p className="text-sm text-muted-foreground -mt-3">Verify company details and business credentials</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Company Name</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.company}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Business Registration / License Number</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.regNumber}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Company Location</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.location}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Company Address</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.address}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Company Website</Label>
-              <a href={RECRUITER.website} target="_blank" rel="noreferrer" className="mt-1 text-sm text-primary hover:underline block">{RECRUITER.website}</a>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Company Email</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.email}</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FieldBox icon={Building2} label="Company Name" value={RECRUITER.company} />
+            <FieldBox icon={Hash} label="Business Registration / License Number" value={RECRUITER.regNumber} />
+            <FieldBox icon={MapPin} label="Company Location" value={RECRUITER.location} />
+            <FieldBox icon={MapPin} label="Company Address" value={RECRUITER.address} />
+            <FieldBox icon={Globe} label="Company Website" value={RECRUITER.website} isLink />
+            <FieldBox icon={Mail} label="Company Email" value={RECRUITER.email} />
           </div>
 
           {/* Documents */}
-          <div>
-            <Label className="text-xs text-muted-foreground font-medium">Submitted Documents</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">Submitted Documents</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {RECRUITER.documents.map((doc) => (
-                <div key={doc} className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-lg text-sm text-foreground">
-                  <FileText className="w-3.5 h-3.5 text-primary" />
+                <div key={doc} className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                   {doc}
                 </div>
               ))}
@@ -101,59 +110,48 @@ export default function RecruiterApproval() {
 
         {/* Recruiter Information */}
         <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div className="flex items-center gap-2 mb-1">
-            <User className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">Recruiter Information</h2>
+          <div>
+            <div className="flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-foreground">Recruiter Information</h2>
+            </div>
+            <p className="text-sm text-muted-foreground mt-0.5 ml-7">Primary contact person details</p>
           </div>
-          <p className="text-sm text-muted-foreground -mt-3">Primary contact person details</p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Recruiter Name</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.name}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Recruiter Phone Number</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.phone}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Registration Type</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.type}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground font-medium">Registration Date</Label>
-              <p className="mt-1 text-sm font-medium text-foreground">{RECRUITER.date}</p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FieldBox icon={User} label="Recruiter Name" value={RECRUITER.name} />
+            <FieldBox icon={Phone} label="Recruiter Phone Number" value={RECRUITER.phone} />
+            <FieldBox icon={Shield} label="Registration Type" value={RECRUITER.type} />
+            <FieldBox icon={Calendar} label="Registration Date" value={RECRUITER.date} isDate />
           </div>
         </div>
 
         {/* Review Decision */}
         <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Clock className="w-5 h-5 text-primary" />
+          <div>
             <h2 className="font-semibold text-foreground">Review Decision</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">Approve or reject this recruiter registration</p>
           </div>
-          <p className="text-sm text-muted-foreground -mt-3">Approve or reject this recruiter registration</p>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">Approval Note <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+            <p className="text-sm font-medium text-foreground">Approval Note <span className="text-muted-foreground font-normal">(Optional)</span></p>
             <textarea
               value={approvalNote}
               onChange={(e) => setApprovalNote(e.target.value)}
               placeholder="Add any internal notes or special conditions for this approval..."
-              className="w-full h-24 rounded-xl border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              className="w-full h-24 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-foreground">
+            <p className="text-sm font-medium text-foreground">
               Rejection Reason <span className="text-destructive">*</span>
-            </Label>
+            </p>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="If rejecting, please provide a clear reason that will be sent to the applicant..."
-              className="w-full h-24 rounded-xl border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              className="w-full h-24 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
             />
           </div>
 
