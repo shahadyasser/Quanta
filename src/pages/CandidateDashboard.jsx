@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+
 import { LogOut, Upload, ClipboardList, Briefcase, MessageSquare, PlayCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ const STATS = [
 ];
 
 const QUICK_ACTIONS = [
-  { icon: Upload, label: "Upload CV", description: "Update your profile with your latest CV" },
+  { icon: Upload, label: "Upload CV", description: "Update your profile with your latest CV", href: "/cv-upload" },
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test" },
   { icon: Briefcase, label: "Browse Jobs", description: "Find new opportunities" },
 ];
@@ -94,9 +95,10 @@ export default function CandidateDashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {QUICK_ACTIONS.map(({ icon: Icon, label, description }) => (
+          {QUICK_ACTIONS.map(({ icon: Icon, label, description, href }) => (
             <div
               key={label}
+              onClick={() => href && navigate(href)}
               className="bg-white border border-border rounded-2xl p-5 flex flex-col items-center text-center gap-3 cursor-pointer hover:border-primary/40 hover:shadow-sm transition-all"
             >
               <div className="w-12 h-12 rounded-xl bg-accent flex items-center justify-center">
