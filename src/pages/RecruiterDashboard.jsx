@@ -15,9 +15,9 @@ const STATS = [
 ];
 
 const ACTION_ITEMS = [
-  { title: "AI Interviews Ready for Review", subtitle: "Senior Developer", count: 12 },
-  { title: "High Match Candidates (>90%)", subtitle: "UX Designer", count: 8 },
+  { title: "High Match Candidates (>90%)", subtitle: "Senior Developer", count: 8 },
   { title: "New Applications Today", subtitle: "Product Manager", count: 15 },
+  { title: "Applications Requiring Review", subtitle: "UX Designer", count: 12 },
 ];
 
 const JOBS = [
