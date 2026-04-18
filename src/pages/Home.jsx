@@ -1,12 +1,16 @@
 import React from "react";
-import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Briefcase, Users, Shield } from "lucide-react";
 import FeatureCard from "../components/home/FeatureCard";
 import RoleCard from "../components/home/RoleCard";
 
 export default function Home() {
-  const handleSelectRole = () => {
-    base44.auth.redirectToLogin();
+  const navigate = useNavigate();
+
+  const handleSelectRole = (role) => {
+    if (role === "recruiter") navigate("/recruiter-auth");
+    else if (role === "candidate") navigate("/candidate-auth");
+    else if (role === "admin") navigate("/admin-auth");
   };
 
   return (
@@ -66,19 +70,19 @@ export default function Home() {
               icon={Briefcase}
               title="I'm a Recruiter"
               description="Post jobs and find top talent"
-              onClick={handleSelectRole}
+              onClick={() => handleSelectRole("recruiter")}
             />
             <RoleCard
               icon={Users}
               title="I'm a Candidate"
               description="Find jobs and apply with ease"
-              onClick={handleSelectRole}
+              onClick={() => handleSelectRole("candidate")}
             />
             <RoleCard
               icon={Shield}
               title="I'm an Admin"
               description="Manage platform and users"
-              onClick={handleSelectRole}
+              onClick={() => handleSelectRole("admin")}
             />
           </div>
         </div>
