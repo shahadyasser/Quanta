@@ -64,6 +64,7 @@ export default function RecruiterAuth() {
           <div className="w-full max-w-md">
             {/* Header */}
             <div className="mb-8">
+              <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-2">Recruiter Portal</p>
               <h2 className="text-3xl font-semibold text-foreground tracking-tight">
                 {tab === "login" ? "Welcome" : "Create Account"}
               </h2>
