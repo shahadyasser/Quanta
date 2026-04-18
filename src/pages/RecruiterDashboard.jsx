@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Plus, Search, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatsCard from "../components/recruiter/StatsCard";
@@ -95,7 +96,7 @@ export default function RecruiterDashboard() {
           </div>
           <div className="space-y-3">
             {ACTION_ITEMS.map((item, i) => (
-              <ActionItemCard key={item.title} {...item} index={i} onReview={() => {}} />
+              <ActionItemCard key={item.title} {...item} index={i} onReview={() => navigate("/view-candidates")} />
             ))}
           </div>
         </div>
