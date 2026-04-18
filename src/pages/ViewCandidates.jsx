@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ const STATUS_STYLES = {
 
 export default function ViewCandidates() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
   const filtered = CANDIDATES.filter((c) => {
     const q = search.toLowerCase();
@@ -134,7 +135,7 @@ export default function ViewCandidates() {
                     <p className="text-xs text-muted-foreground">{c.scoreLabel}</p>
                     <p className="text-3xl font-bold text-foreground">{c.score}</p>
                   </div>
-                  <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent">
+                  <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => navigate("/candidate-profile")}>
                     View Profile
                   </Button>
                 </div>
