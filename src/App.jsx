@@ -12,6 +12,7 @@ import PostJob from './pages/PostJob';
 import ViewCandidates from './pages/ViewCandidates';
 import CandidateProfile from './pages/CandidateProfile';
 import CandidateAuth from './pages/CandidateAuth';
+import CandidateDashboard from './pages/CandidateDashboard';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
       <Route path="/view-candidates" element={<ViewCandidates />} />
       <Route path="/candidate-profile" element={<CandidateProfile />} />
       <Route path="/candidate-auth" element={<CandidateAuth />} />
+      <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
