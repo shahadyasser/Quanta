@@ -383,9 +383,7 @@ export default function BrowseJobs() {
                     <Button size="sm" className="bg-foreground hover:bg-foreground/80 text-white rounded-xl text-xs h-8 px-4 w-28" onClick={() => setSelectedJob(job)}>
                       View Details
                     </Button>
-                    <Button size="sm" variant="outline" className="rounded-xl text-xs h-8 px-4 w-28">
-                      Quick Apply
-                    </Button>
+
                   </div>
                 </div>
               </div>
