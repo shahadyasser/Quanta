@@ -179,8 +179,8 @@ export default function AdminDashboard() {
                       <span className="text-foreground font-medium">{r.type}</span>
                     </td>
                     <td className="py-4">
-                      <Button size="sm" className="rounded-lg bg-foreground hover:bg-foreground/80 text-white text-xs h-8 px-4">
-                        Review
+                      <Button size="sm" className="rounded-lg bg-foreground hover:bg-foreground/80 text-white text-xs h-8 px-4" asChild>
+                        <Link to="/recruiter-approval">Review</Link>
                       </Button>
                     </td>
                   </tr>
