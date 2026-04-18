@@ -1,9 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function JobPostingCard({ title, status, applications, avgMatch, postedDate }) {
   const isActive = status === "Active";
+  const navigate = useNavigate();
   return (
     <div className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div className="flex items-start gap-4">
@@ -26,6 +28,7 @@ export default function JobPostingCard({ title, status, applications, avgMatch, 
         variant="outline"
         size="sm"
         className="rounded-lg border-primary text-primary hover:bg-accent shrink-0"
+        onClick={() => navigate("/view-candidates")}
       >
         View Candidates
       </Button>

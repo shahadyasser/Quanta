@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import RecruiterAuth from './pages/RecruiterAuth';
 import RecruiterDashboard from './pages/RecruiterDashboard';
 import PostJob from './pages/PostJob';
+import ViewCandidates from './pages/ViewCandidates';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
       <Route path="/recruiter-auth" element={<RecruiterAuth />} />
       <Route path="/recruiter-dashboard" element={<RecruiterDashboard />} />
       <Route path="/post-job" element={<PostJob />} />
+      <Route path="/view-candidates" element={<ViewCandidates />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
