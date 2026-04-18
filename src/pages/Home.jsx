@@ -28,14 +28,10 @@ export default function Home() {
             <span className="text-sm font-medium text-foreground">AI-Powered Recruitment Platform</span>
           </div>
 
-          {/* Logo */}
-          <div className="mt-6">
-            <img
-              src="https://media.base44.com/images/public/69e37c1ef6734d47b8621a83/7dec144ea_5990079317825752112_121.jpg"
-              alt="QuantaHire"
-              className="h-24 w-auto object-contain"
-            />
-          </div>
+          {/* Heading */}
+          <h1 className="mt-6 text-6xl md:text-7xl font-bold text-primary tracking-tight">
+            QuantaHire
+          </h1>
 
           <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">
             Transform your hiring process with intelligent candidate matching, AI-powered interviews, and unbiased screening.
