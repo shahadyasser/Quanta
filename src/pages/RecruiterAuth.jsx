@@ -37,7 +37,7 @@ export default function RecruiterAuth() {
           <div className="w-16 h-16 rounded-2xl bg-white/80 backdrop-blur-sm border border-white shadow-md flex items-center justify-center mb-8">
             <Briefcase className="w-8 h-8 text-primary" strokeWidth={1.75} />
           </div>
-          <h1 className="text-5xl font-bold text-primary tracking-tight mb-4">QuantaHire</h1>
+          <img src="https://media.base44.com/images/public/69e37c1ef6734d47b8621a83/dfe6c51ae_5990079317825752112_121.jpg" alt="QuantaHire" className="h-12 w-auto mb-4" />
           <p className="text-lg text-muted-foreground leading-relaxed max-w-sm">
             Transform your hiring process with intelligent candidate matching, AI-powered interviews, and unbiased screening.
           </p>

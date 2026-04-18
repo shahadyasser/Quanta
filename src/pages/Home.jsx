@@ -29,9 +29,7 @@ export default function Home() {
           </div>
 
           {/* Heading */}
-          <h1 className="mt-6 text-6xl md:text-7xl font-bold text-primary tracking-tight">
-            QuantaHire
-          </h1>
+          <img src="https://media.base44.com/images/public/69e37c1ef6734d47b8621a83/dfe6c51ae_5990079317825752112_121.jpg" alt="QuantaHire" className="mt-6 h-16 w-auto" />
 
           <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">
             Transform your hiring process with intelligent candidate matching, AI-powered interviews, and unbiased screening.
