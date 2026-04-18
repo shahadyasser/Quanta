@@ -46,8 +46,8 @@ export default function RecruiterDashboard() {
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Navbar */}
       <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-2">
-          <img src="https://media.base44.com/images/public/69e37c1ef6734d47b8621a83/dfe6c51ae_5990079317825752112_121.jpg" alt="QuantaHire" className="h-8 w-auto" />
+        <div>
+          <span className="font-bold text-lg text-primary">QuantaHire</span>
           <p className="text-xs text-muted-foreground">Recruiter Portal</p>
         </div>
         <div className="flex items-center gap-3">
