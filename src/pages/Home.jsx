@@ -42,7 +42,7 @@ export default function Home() {
             <FeatureCard
               icon={Briefcase}
               title="For Recruiters"
-              description="Smart candidate screening & AI interviews"
+              description="Smart candidate screening & AI matching"
             />
             <FeatureCard
               icon={Users}
