@@ -4,6 +4,14 @@ import { ArrowLeft, Search, Users, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const INITIAL_RECRUITERS = [
   { company: "Microsoft Corporation", email: "hr@microsoft.com", name: "Alice Johnson", approvalDate: "11/15/2024", jobsPosted: 23, activeJobs: 8, status: "Active" },
@@ -16,6 +24,7 @@ const INITIAL_RECRUITERS = [
 export default function RecruiterManagement() {
   const [recruiters, setRecruiters] = useState(INITIAL_RECRUITERS);
   const [search, setSearch] = useState("");
+  const [confirmDialog, setConfirmDialog] = useState(null); // { email, action: 'suspend'|'activate' }
 
   const total = recruiters.length;
   const active = recruiters.filter((r) => r.status === "Active").length;
@@ -27,14 +36,20 @@ export default function RecruiterManagement() {
       r.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleStatus = (email) => {
+  const confirmToggle = (email) => {
+    const recruiter = recruiters.find((r) => r.email === email);
+    setConfirmDialog({ email, action: recruiter.status === "Active" ? "suspend" : "activate" });
+  };
+
+  const handleConfirm = () => {
     setRecruiters((prev) =>
       prev.map((r) =>
-        r.email === email
+        r.email === confirmDialog.email
           ? { ...r, status: r.status === "Active" ? "Suspended" : "Active" }
           : r
       )
     );
+    setConfirmDialog(null);
   };
 
   const deleteRecruiter = (email) => {
@@ -137,7 +152,7 @@ export default function RecruiterManagement() {
                               ? "border-orange-300 text-orange-500 hover:bg-orange-50"
                               : "border-green-300 text-green-600 hover:bg-green-50"
                           }`}
-                          onClick={() => toggleStatus(r.email)}
+                          onClick={() => confirmToggle(r.email)}
                         >
                           {r.status === "Active" ? "Suspend" : "Activate"}
                         </Button>
@@ -158,6 +173,36 @@ export default function RecruiterManagement() {
           </div>
         </div>
       </div>
+      {/* Confirmation Dialog */}
+      {confirmDialog && (() => {
+        const r = recruiters.find((rec) => rec.email === confirmDialog.email);
+        const isActivate = confirmDialog.action === "activate";
+        return (
+          <Dialog open={true} onOpenChange={() => setConfirmDialog(null)}>
+            <DialogContent className="sm:max-w-md rounded-2xl">
+              <DialogHeader>
+                <DialogTitle>{isActivate ? "Activate Recruiter Account?" : "Suspend Recruiter Account?"}</DialogTitle>
+                <DialogDescription className="pt-1">
+                  {isActivate
+                    ? `Are you sure you want to reactivate ${r?.company}? This will restore their full access to the platform.`
+                    : `Are you sure you want to suspend ${r?.company}? They will lose access to the platform.`}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex gap-2 sm:gap-2 pt-2">
+                <Button variant="outline" className="rounded-xl flex-1" onClick={() => setConfirmDialog(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  className={`rounded-xl flex-1 ${isActivate ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"} text-white`}
+                  onClick={handleConfirm}
+                >
+                  {isActivate ? "Activate Account" : "Suspend Account"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }
