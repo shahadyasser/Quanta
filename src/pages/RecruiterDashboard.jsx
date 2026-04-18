@@ -1,0 +1,149 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Plus, Search, LogOut, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import StatsCard from "../components/recruiter/StatsCard";
+import ActionItemCard from "../components/recruiter/ActionItemCard";
+import JobPostingCard from "../components/recruiter/JobPostingCard";
+
+const STATS = [
+  { label: "Total Applicants", value: "248", change: "+24", positive: true },
+  { label: "Avg. Match Score", value: "87%", change: "+3%", positive: true },
+  { label: "AI Interviews Completed", value: "156", change: "+18", positive: true },
+  { label: "Pending Reviews", value: "18", change: "+5", positive: true },
+];
+
+const ACTION_ITEMS = [
+  { title: "AI Interviews Ready for Review", subtitle: "Senior Developer", count: 12 },
+  { title: "High Match Candidates (>90%)", subtitle: "UX Designer", count: 8 },
+  { title: "New Applications Today", subtitle: "Product Manager", count: 15 },
+];
+
+const JOBS = [
+  { title: "Senior Developer", status: "Active", applications: 45, avgMatch: "89%", postedDate: "Nov 8, 2025" },
+  { title: "UX Designer", status: "Active", applications: 32, avgMatch: "85%", postedDate: "Nov 7, 2025" },
+  { title: "Product Manager", status: "Active", applications: 28, avgMatch: "91%", postedDate: "Nov 6, 2025" },
+  { title: "Data Analyst", status: "Inactive", applications: 14, avgMatch: "78%", postedDate: "Oct 20, 2025" },
+];
+
+const TABS = ["All Jobs", "Active", "Inactive"];
+
+export default function RecruiterDashboard() {
+  const [activeTab, setActiveTab] = useState("All Jobs");
+  const [search, setSearch] = useState("");
+
+  const filteredJobs = JOBS.filter((job) => {
+    const matchesTab =
+      activeTab === "All Jobs" ||
+      job.status === activeTab;
+    const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
+
+  return (
+    <div className="min-h-screen bg-[#F8F7FF]">
+      {/* Navbar */}
+      <nav className="bg-white border-b border-border px-6 md:px-10 py-4 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
+          <span className="font-bold text-xl text-foreground">QuantaHire</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-muted-foreground hidden sm:block">recruiter@quantahire.com</span>
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
+            <Link to="/">
+              <LogOut className="w-4 h-4" />
+              Logout
+            </Link>
+          </Button>
+        </div>
+      </nav>
+
+      <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-8">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Recruiter Portal</p>
+            <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
+            <p className="text-muted-foreground mt-1">Here's what's happening with your recruitment today.</p>
+          </div>
+          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-5 self-start">
+            <Plus className="w-4 h-4" />
+            Post New Job
+          </Button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {STATS.map((s) => (
+            <StatsCard key={s.label} {...s} />
+          ))}
+        </div>
+
+        {/* Action Items */}
+        <div className="bg-white border border-border rounded-2xl p-6">
+          <div className="mb-4">
+            <h2 className="font-semibold text-foreground text-lg">Action Items</h2>
+            <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
+          </div>
+          {ACTION_ITEMS.map((item) => (
+            <ActionItemCard key={item.title} {...item} onReview={() => {}} />
+          ))}
+          <div className="mt-4 pt-4 border-t border-border flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <span>Welcome back, Recruiter!</span>
+          </div>
+        </div>
+
+        {/* Job Postings */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-semibold text-foreground text-lg">Job Postings</h2>
+              <p className="text-sm text-muted-foreground">Manage your job postings and view candidate applications</p>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search jobs by title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-10 rounded-xl w-full sm:w-64"
+              />
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mb-4">
+            {TABS.map((tab) => {
+              const count = tab === "All Jobs" ? JOBS.length : JOBS.filter(j => j.status === tab).length;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === tab
+                      ? "bg-primary text-white"
+                      : "bg-white border border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Job cards */}
+          <div className="space-y-3">
+            {filteredJobs.map((job) => (
+              <JobPostingCard key={job.title} {...job} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
