@@ -15,6 +15,7 @@ import CandidateAuth from './pages/CandidateAuth';
 import CandidateDashboard from './pages/CandidateDashboard';
 import CVUpload from './pages/CVUpload';
 import Assessment from './pages/Assessment';
+import FeedbackReport from './pages/FeedbackReport';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
       <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
       <Route path="/cv-upload" element={<CVUpload />} />
       <Route path="/assessment" element={<Assessment />} />
+      <Route path="/feedback-report" element={<FeedbackReport />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

@@ -44,6 +44,7 @@ const APPLICATIONS = [
     date: "Nov 1, 2025",
     status: "Feedback Available",
     action: "View Feedback",
+    href: "/feedback-report",
   },
 ];
 
@@ -141,6 +142,7 @@ export default function CandidateDashboard() {
                 {app.action && (
                   <Button
                     size="sm"
+                    onClick={() => app.href && navigate(app.href)}
                     className={`rounded-xl shrink-0 gap-2 ${
                       app.action === "Start Interview"
                         ? "bg-primary hover:bg-primary/90 text-white"
