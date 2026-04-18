@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 
 const STATS = [
   { label: "Applications", value: "8" },
-  { label: "Interviews", value: "2" },
   { label: "New Messages", value: "3" },
 ];
 
@@ -21,8 +20,8 @@ const APPLICATIONS = [
     company: "TechCorp Inc.",
     role: "Senior Software Engineer",
     date: "Nov 8, 2025",
-    status: "Interview Scheduled",
-    action: "Start Interview",
+    status: "Under Review",
+    action: null,
   },
   {
     company: "DesignHub",
@@ -80,11 +79,11 @@ export default function CandidateDashboard() {
         <div>
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Candidate Portal</p>
           <h1 className="text-3xl font-bold text-foreground">Welcome back, John Candidate!</h1>
-          <p className="text-muted-foreground mt-1">Track your job applications and upcoming interviews.</p>
+          <p className="text-muted-foreground mt-1">Track your job applications and status updates.</p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 max-w-xs">
           {STATS.map((s) => (
             <div key={s.label} className="bg-white border border-border rounded-2xl p-5 text-center">
               <p className="text-3xl font-bold text-foreground">{s.value}</p>
