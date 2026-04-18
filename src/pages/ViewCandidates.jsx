@@ -44,6 +44,9 @@ const STATUS_STYLES = {
 export default function ViewCandidates() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const urlParams = new URLSearchParams(window.location.search);
+  const jobTitle = urlParams.get("job") || "Senior Developer";
+  const jobStatus = urlParams.get("status") || "Active";
 
   const filtered = CANDIDATES.filter((c) => {
     const q = search.toLowerCase();
@@ -66,12 +69,12 @@ export default function ViewCandidates() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm text-muted-foreground">Job Status:</span>
-              <Badge className="bg-green-50 text-green-600 border-green-200">Active</Badge>
+              <Badge className="bg-green-50 text-green-600 border-green-200">{jobStatus}</Badge>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">Senior Developer</h1>
+            <h1 className="text-2xl font-bold text-foreground">{jobTitle}</h1>
             <p className="text-sm text-muted-foreground">Candidate shortlist ranked by AI scoring</p>
           </div>
-          <Badge className="bg-green-50 text-green-600 border-green-200 self-start sm:self-auto">Active</Badge>
+          <Badge className="bg-green-50 text-green-600 border-green-200 self-start sm:self-auto">{jobStatus}</Badge>
         </div>
       </div>
 

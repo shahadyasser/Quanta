@@ -28,7 +28,7 @@ export default function JobPostingCard({ title, status, applications, avgMatch, 
         variant="outline"
         size="sm"
         className="rounded-lg border-primary text-primary hover:bg-accent shrink-0"
-        onClick={() => navigate("/view-candidates")}
+        onClick={() => navigate(`/view-candidates?job=${encodeURIComponent(title)}&status=${encodeURIComponent(status)}`)}
       >
         View Candidates
       </Button>
