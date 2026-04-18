@@ -12,7 +12,7 @@ const STATS = [
 
 const QUICK_ACTIONS = [
   { icon: Upload, label: "Upload CV", description: "Update your profile with your latest CV", href: "/cv-upload" },
-  { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test" },
+  { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
   { icon: Briefcase, label: "Browse Jobs", description: "Find new opportunities" },
 ];
 
