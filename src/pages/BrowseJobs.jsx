@@ -22,7 +22,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Senior",
-    salary: "450,000 - 600,000 SAR",
+    salary: "12,000 - 15,000 SAR",
     description: "We're looking for an experienced frontend developer to join our innovative team building next-gen web applications.",
     skills: ["React", "TypeScript", "Tailwind CSS", "AI"],
     responsibilities: [
@@ -53,7 +53,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Mid-level",
-    salary: "410,000 - 560,000 SAR",
+    salary: "10,000 - 14,000 SAR",
     description: "Join our AI team to develop cutting-edge machine learning models for enterprise solutions.",
     skills: ["Python", "TensorFlow", "ML", "Data Science"],
     responsibilities: [
@@ -84,7 +84,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Mid-level",
-    salary: "375,000 - 525,000 SAR",
+    salary: "9,000 - 13,000 SAR",
     description: "Build scalable cloud-native applications using modern tech stack. Hybrid work environment available.",
     skills: ["Node.js", "React", "AWS", "Docker"],
     responsibilities: [
@@ -115,7 +115,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "337,000 - 450,000 SAR",
+    salary: "8,000 - 11,000 SAR",
     description: "Create beautiful, user-centered designs for our portfolio of SaaS products.",
     skills: ["Figma", "UI/UX", "Design Systems", "Prototyping"],
     responsibilities: [
@@ -146,7 +146,7 @@ const JOBS = [
     recommended: false,
     type: "Contract",
     level: "Senior",
-    salary: "431,000 - 543,000 SAR",
+    salary: "11,000 - 15,000 SAR",
     description: "Manage and optimize our cloud infrastructure, CI/CD pipelines, and deployment processes.",
     skills: ["Kubernetes", "AWS", "CI/CD", "Terraform"],
     responsibilities: [
@@ -176,7 +176,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Senior",
-    salary: "487,000 - 637,000 SAR",
+    salary: "13,000 - 15,000 SAR",
     description: "Lead product strategy and execution for our flagship AI-powered analytics platform.",
     skills: ["Product Strategy", "Agile", "Analytics", "Leadership"],
     responsibilities: [
@@ -206,7 +206,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "356,000 - 487,000 SAR",
+    salary: "8,500 - 12,000 SAR",
     description: "Build robust, scalable backend services for financial applications with high performance requirements.",
     skills: ["Java", "Spring Boot", "Microservices", "PostgreSQL"],
     responsibilities: [
@@ -236,7 +236,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "393,000 - 506,000 SAR",
+    salary: "9,500 - 13,500 SAR",
     description: "Design and maintain data pipelines and warehouses for large-scale data processing.",
     skills: ["Python", "SQL", "ETL", "Big Data"],
     responsibilities: [
