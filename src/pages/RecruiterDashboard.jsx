@@ -76,7 +76,7 @@ export default function RecruiterDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {STATS.map((s) => (
             <StatsCard key={s.label} label={s.label} value={s.value} change={s.change} subtext={s.subtext} />
           ))}
