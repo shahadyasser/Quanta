@@ -288,32 +288,10 @@ export default function PostJob() {
               {niceToHave.length === 0 && <p className="text-xs text-muted-foreground italic">No nice-to-have skills added</p>}
             </div>
           </div>
-          <div className="bg-accent rounded-xl p-4 space-y-1.5">
-            <p className="text-sm font-medium text-foreground">AI will use these criteria to:</p>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Weight must-have skills more heavily in scoring</li>
-              <li>• Provide bonus points for nice-to-have skills</li>
-              <li>• Generate targeted interview questions</li>
-              <li>• Structured requirement profile for AI scoring</li>
-              <li>• Bias-free evaluation process</li>
-            </ul>
-          </div>
+
         </SectionCard>
 
-        {/* AI-Powered Features */}
-        <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold text-foreground">AI-Powered Features</h2>
-          </div>
-          <ul className="text-sm text-muted-foreground space-y-1.5">
-            <li>• NLP parsing to extract key requirements from job description</li>
-            <li>• Automatic generation of tailored interview questions</li>
-            <li>• Intelligent candidate matching based on must-have vs. nice-to-have</li>
-            <li>• Structured requirement profile for AI scoring</li>
-            <li>• Bias-free evaluation process</li>
-          </ul>
-        </div>
+
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 pb-8">
