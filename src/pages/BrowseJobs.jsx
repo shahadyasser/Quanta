@@ -406,7 +406,7 @@ export default function BrowseJobs() {
 
                       <div className="flex items-center gap-3 mt-3">
                         <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-                          <span className="text-muted-foreground font-medium">﷼</span>{job.salary}
+                          {job.salary}
                         </span>
                         <span className="bg-muted text-foreground text-xs px-2.5 py-1 rounded-md border border-border font-medium">{job.level}</span>
                       </div>
