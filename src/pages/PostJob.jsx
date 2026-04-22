@@ -180,7 +180,7 @@ export default function PostJob() {
           </div>
           <div className="space-y-1.5">
             <Label>Location *</Label>
-            <Input placeholder="e.g., San Francisco, CA or New York, NY" className="h-11 rounded-xl" />
+            <Input placeholder="e.g., Riyadh, Jeddah, or Dammam" className="h-11 rounded-xl" />
           </div>
           <div className="space-y-1.5">
             <Label>Work Schedule</Label>
