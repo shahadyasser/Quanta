@@ -80,7 +80,7 @@ export default function CandidateDashboard() {
         {/* Header */}
         <div>
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Candidate Portal</p>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, John Candidate!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, محمد العمري!</h1>
           <p className="text-muted-foreground mt-1">Track your job applications and status updates.</p>
         </div>
 
