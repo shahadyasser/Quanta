@@ -230,6 +230,7 @@ export default function PostJob() {
                     <SelectItem value="USD">USD</SelectItem>
                     <SelectItem value="EUR">EUR</SelectItem>
                     <SelectItem value="GBP">GBP</SelectItem>
+                    <SelectItem value="SAR">SAR</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
