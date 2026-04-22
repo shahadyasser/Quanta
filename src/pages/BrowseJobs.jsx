@@ -22,7 +22,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Senior",
-    salary: "$120k - $160k",
+    salary: "450k - 600k SAR",
     description: "We're looking for an experienced frontend developer to join our innovative team building next-gen web applications.",
     skills: ["React", "TypeScript", "Tailwind CSS", "AI"],
     responsibilities: [
@@ -53,7 +53,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Mid-level",
-    salary: "$110k - $150k",
+    salary: "410k - 560k SAR",
     description: "Join our AI team to develop cutting-edge machine learning models for enterprise solutions.",
     skills: ["Python", "TensorFlow", "ML", "Data Science"],
     responsibilities: [
@@ -84,7 +84,7 @@ const JOBS = [
     recommended: true,
     type: "Full-time",
     level: "Mid-level",
-    salary: "$100k - $140k",
+    salary: "375k - 525k SAR",
     description: "Build scalable cloud-native applications using modern tech stack. Hybrid work environment available.",
     skills: ["Node.js", "React", "AWS", "Docker"],
     responsibilities: [
@@ -115,7 +115,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "$90k - $120k",
+    salary: "337k - 450k SAR",
     description: "Create beautiful, user-centered designs for our portfolio of SaaS products.",
     skills: ["Figma", "UI/UX", "Design Systems", "Prototyping"],
     responsibilities: [
@@ -146,7 +146,7 @@ const JOBS = [
     recommended: false,
     type: "Contract",
     level: "Senior",
-    salary: "$115k - $145k",
+    salary: "431k - 543k SAR",
     description: "Manage and optimize our cloud infrastructure, CI/CD pipelines, and deployment processes.",
     skills: ["Kubernetes", "AWS", "CI/CD", "Terraform"],
     responsibilities: [
@@ -176,7 +176,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Senior",
-    salary: "$130k - $170k",
+    salary: "487k - 637k SAR",
     description: "Lead product strategy and execution for our flagship AI-powered analytics platform.",
     skills: ["Product Strategy", "Agile", "Analytics", "Leadership"],
     responsibilities: [
@@ -206,7 +206,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "$95k - $130k",
+    salary: "356k - 487k SAR",
     description: "Build robust, scalable backend services for financial applications with high performance requirements.",
     skills: ["Java", "Spring Boot", "Microservices", "PostgreSQL"],
     responsibilities: [
@@ -236,7 +236,7 @@ const JOBS = [
     recommended: false,
     type: "Full-time",
     level: "Mid-level",
-    salary: "$105k - $135k",
+    salary: "393k - 506k SAR",
     description: "Design and maintain data pipelines and warehouses for large-scale data processing.",
     skills: ["Python", "SQL", "ETL", "Big Data"],
     responsibilities: [
@@ -406,7 +406,7 @@ export default function BrowseJobs() {
 
                       <div className="flex items-center gap-3 mt-3">
                         <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-                          <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />{job.salary}
+                          <span className="text-muted-foreground font-medium">﷼</span>{job.salary}
                         </span>
                         <span className="bg-muted text-foreground text-xs px-2.5 py-1 rounded-md border border-border font-medium">{job.level}</span>
                       </div>
