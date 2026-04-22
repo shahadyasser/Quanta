@@ -4,6 +4,10 @@ import { ArrowLeft, Search, MapPin, Clock, DollarSign, Star, Sparkles, Building2
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const ARRANGEMENTS = ["On-site", "Remote", "Hybrid"];
+const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Freelance", "Internship"];
+const LOCATIONS = ["Riyadh", "Jeddah", "Dammam", "Remote"];
+
 const JOBS = [
   {
     id: 1,
@@ -11,6 +15,8 @@ const JOBS = [
     company: "TechCorp Inc.",
     location: "San Francisco, CA",
     remote: true,
+    arrangement: "Remote",
+    locationCity: "Remote",
     postedAgo: "2 days ago",
     match: 95,
     recommended: true,
@@ -40,6 +46,8 @@ const JOBS = [
     company: "DataSystems Ltd",
     location: "Remote",
     remote: true,
+    arrangement: "Remote",
+    locationCity: "Remote",
     postedAgo: "3 days ago",
     match: 92,
     recommended: true,
@@ -69,6 +77,8 @@ const JOBS = [
     company: "CloudVentures",
     location: "New York, NY",
     remote: false,
+    arrangement: "On-site",
+    locationCity: "Riyadh",
     postedAgo: "5 days ago",
     match: 88,
     recommended: true,
@@ -98,6 +108,8 @@ const JOBS = [
     company: "DesignHub",
     location: "Austin, TX",
     remote: true,
+    arrangement: "Hybrid",
+    locationCity: "Jeddah",
     postedAgo: "1 week ago",
     match: 82,
     recommended: false,
@@ -127,6 +139,8 @@ const JOBS = [
     company: "Innovation Labs",
     location: "Seattle, WA",
     remote: true,
+    arrangement: "Remote",
+    locationCity: "Remote",
     postedAgo: "1 week ago",
     match: 79,
     recommended: false,
@@ -155,6 +169,8 @@ const JOBS = [
     company: "StartupXYZ",
     location: "Boston, MA",
     remote: false,
+    arrangement: "On-site",
+    locationCity: "Dammam",
     postedAgo: "2 weeks ago",
     match: 75,
     recommended: false,
@@ -183,6 +199,8 @@ const JOBS = [
     company: "FinTech Solutions",
     location: "Chicago, IL",
     remote: true,
+    arrangement: "Hybrid",
+    locationCity: "Jeddah",
     postedAgo: "4 days ago",
     match: 84,
     recommended: false,
@@ -211,6 +229,8 @@ const JOBS = [
     company: "Analytics Pro",
     location: "Remote",
     remote: true,
+    arrangement: "Remote",
+    locationCity: "Remote",
     postedAgo: "6 days ago",
     match: 81,
     recommended: false,
@@ -235,7 +255,7 @@ const JOBS = [
   },
 ];
 
-const JOB_TYPES = ["Full-time", "Part-time", "Contract"];
+
 const LEVELS = ["Entry-level", "Mid-level", "Senior", "Lead"];
 
 export default function BrowseJobs() {
@@ -243,6 +263,8 @@ export default function BrowseJobs() {
   const [search, setSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedLevels, setSelectedLevels] = useState([]);
+  const [selectedArrangements, setSelectedArrangements] = useState([]);
+  const [selectedLocations, setSelectedLocations] = useState([]);
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
 
@@ -255,8 +277,10 @@ export default function BrowseJobs() {
     const matchesSearch = !q || job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q) || job.skills.some(s => s.toLowerCase().includes(q));
     const matchesType = selectedTypes.length === 0 || selectedTypes.includes(job.type);
     const matchesLevel = selectedLevels.length === 0 || selectedLevels.includes(job.level);
+    const matchesArrangement = selectedArrangements.length === 0 || selectedArrangements.includes(job.arrangement);
+    const matchesLocation = selectedLocations.length === 0 || selectedLocations.includes(job.locationCity);
     const matchesRemote = !remoteOnly || job.remote;
-    return matchesSearch && matchesType && matchesLevel && matchesRemote;
+    return matchesSearch && matchesType && matchesLevel && matchesArrangement && matchesLocation && matchesRemote;
   });
 
   return (
@@ -299,8 +323,8 @@ export default function BrowseJobs() {
             </div>
 
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Job Type</p>
-              {JOB_TYPES.map((type) => (
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Employment Type</p>
+              {EMPLOYMENT_TYPES.map((type) => (
                 <label key={type} className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="rounded border-border" checked={selectedTypes.includes(type)} onChange={() => toggleItem(selectedTypes, setSelectedTypes, type)} />
                   <span className="text-sm text-foreground">{type}</span>
@@ -318,11 +342,24 @@ export default function BrowseJobs() {
               ))}
             </div>
 
-            <div className="border-t border-border pt-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-border" checked={remoteOnly} onChange={() => setRemoteOnly(!remoteOnly)} />
-                <span className="text-sm text-foreground">Remote only</span>
-              </label>
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Work Arrangement</p>
+              {ARRANGEMENTS.map((arr) => (
+                <label key={arr} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="rounded border-border" checked={selectedArrangements.includes(arr)} onChange={() => toggleItem(selectedArrangements, setSelectedArrangements, arr)} />
+                  <span className="text-sm text-foreground">{arr}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Location</p>
+              {LOCATIONS.map((loc) => (
+                <label key={loc} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="rounded border-border" checked={selectedLocations.includes(loc)} onChange={() => toggleItem(selectedLocations, setSelectedLocations, loc)} />
+                  <span className="text-sm text-foreground">{loc}</span>
+                </label>
+              ))}
             </div>
           </aside>
 
