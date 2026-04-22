@@ -82,67 +82,70 @@ export default function RecruiterDashboard() {
           ))}
         </div>
 
-        {/* Action Items */}
-        <div className="bg-white border border-border border-l-4 border-l-orange-400 rounded-2xl p-6">
-          <div className="mb-5 flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full border-2 border-orange-400 flex items-center justify-center">
-              <span className="text-orange-400 text-xs font-bold">!</span>
+        {/* Action Items + Job Postings side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Action Items */}
+          <div className="bg-white border border-border border-l-4 border-l-orange-400 rounded-2xl p-6">
+            <div className="mb-5 flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full border-2 border-orange-400 flex items-center justify-center">
+                <span className="text-orange-400 text-xs font-bold">!</span>
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground text-lg leading-none">Action Items</h2>
+                <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-semibold text-foreground text-lg leading-none">Action Items</h2>
-              <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
-            </div>
-          </div>
-          <div className="space-y-3">
-            {ACTION_ITEMS.map((item, i) => (
-              <ActionItemCard key={item.title} {...item} index={i} onReview={() => navigate("/view-candidates")} />
-            ))}
-          </div>
-        </div>
-
-        {/* Job Postings */}
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-            <div>
-              <h2 className="font-semibold text-foreground text-lg">Job Postings</h2>
-              <p className="text-sm text-muted-foreground">Manage your job postings and view candidate applications</p>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search jobs by title..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10 rounded-xl w-full sm:w-64"
-              />
+            <div className="space-y-3">
+              {ACTION_ITEMS.map((item, i) => (
+                <ActionItemCard key={item.title} {...item} index={i} onReview={() => navigate("/view-candidates")} />
+              ))}
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-4">
-            {TABS.map((tab) => {
-              const count = tab === "All Jobs" ? JOBS.length : JOBS.filter(j => j.status === tab).length;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === tab
-                      ? "bg-primary text-white"
-                      : "bg-white border border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab} ({count})
-                </button>
-              );
-            })}
-          </div>
+          {/* Job Postings */}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="font-semibold text-foreground text-lg">Job Postings</h2>
+                <p className="text-sm text-muted-foreground">Manage your job postings and view candidate applications</p>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search jobs by title..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-10 rounded-xl w-full sm:w-64"
+                />
+              </div>
+            </div>
 
-          {/* Job cards */}
-          <div className="space-y-3">
-            {filteredJobs.map((job) => (
-              <JobPostingCard key={job.title} {...job} />
-            ))}
+            {/* Tabs */}
+            <div className="flex gap-2 mb-4">
+              {TABS.map((tab) => {
+                const count = tab === "All Jobs" ? JOBS.length : JOBS.filter(j => j.status === tab).length;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      activeTab === tab
+                        ? "bg-primary text-white"
+                        : "bg-white border border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Job cards */}
+            <div className="space-y-3">
+              {filteredJobs.map((job) => (
+                <JobPostingCard key={job.title} {...job} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
