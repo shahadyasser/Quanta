@@ -10,7 +10,7 @@ import JobPostingCard from "../components/recruiter/JobPostingCard";
 const STATS = [
   { label: "Total Applicants", value: "248", change: "+11%", subtext: "+24 from last week" },
   { label: "Avg. Match Score", value: "87%", change: "+3%", subtext: "+3% from last week" },
-  { label: "AI Interviews Completed", value: "156", change: "+13%", subtext: "+18 from last week" },
+
   { label: "Pending Reviews", value: "18", change: "+38%", subtext: "+5 from last week" },
 ];
 
