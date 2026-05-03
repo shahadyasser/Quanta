@@ -1,0 +1,26 @@
+{
+  "name": "AdminProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Full name of the admin"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Linked user ID"
+    },
+    "role": {
+      "type": "string",
+      "default": "admin",
+      "description": "User role"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}
