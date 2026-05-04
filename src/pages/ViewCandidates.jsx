@@ -18,8 +18,8 @@ export default function ViewCandidates() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
-  const [rejectModal, setRejectModal] = useState(null); // { app }
-  const [rejectMessage, setRejectMessage] = useState("");
+  const [emailModal, setEmailModal] = useState(null); // { app, type: 'accept' | 'reject' }
+  const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
   const navigate = useNavigate();
 
@@ -77,18 +77,36 @@ export default function ViewCandidates() {
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
   };
 
-  const openRejectModal = async (app) => {
-    setRejectModal(app);
-    setRejectMessage("");
+  const openEmailModal = async (app, type) => {
+    setEmailModal({ app, type });
+    setEmailMessage("");
     setSendingEmail(false);
-    // AI generates the email
+
+    const isAccept = type === "accept";
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Write a formal, kind, and professional rejection email for a job applicant. The email must clearly but gently explain WHY the candidate was not selected, based on the data below. Be specific — reference their skills and experience level in the explanation. Do not be vague.
+        prompt: isAccept
+          ? `Write a formal, warm, and professional acceptance email for a job applicant. Clearly explain WHY they were selected, referencing their specific strengths and skills.
 
 Candidate Name: ${app.candidate_name || "Candidate"}
 Job Title: ${jobTitle}
-Required Skills for the Role: ${jobTitle}
+Candidate's Skills: ${(app.skills || []).join(", ") || "Not specified"}
+Years of Experience: ${app.years_of_experience || "Not specified"}
+Match Score: ${app.match_score || "N/A"}/100
+Strengths: ${(app.strengths || []).join(", ") || "N/A"}
+
+Instructions:
+- Start with "Dear ${app.candidate_name || "Candidate"},"
+- Congratulate them warmly and clearly state they have been accepted
+- Highlight the specific strengths and skills that made them stand out
+- Mention next steps (e.g. we will be in touch with further details)
+- End with "Best regards,\nThe Hiring Team"
+- Do NOT include a subject line
+- Tone: formal, enthusiastic, and encouraging`
+          : `Write a formal, kind, and professional rejection email for a job applicant. Clearly but gently explain WHY the candidate was not selected, referencing their skill gaps and experience.
+
+Candidate Name: ${app.candidate_name || "Candidate"}
+Job Title: ${jobTitle}
 Candidate's Skills: ${(app.skills || []).join(", ") || "Not specified"}
 Years of Experience: ${app.years_of_experience || "Not specified"}
 Match Score: ${app.match_score || "N/A"}/100
@@ -98,32 +116,34 @@ Areas Lacking: ${(app.improvements || []).join(", ") || "N/A"}
 Instructions:
 - Start with "Dear ${app.candidate_name || "Candidate"},"
 - Thank them sincerely for their time and interest
-- Clearly but kindly explain the specific reasons for rejection (e.g. skill gaps, experience level, stronger candidates)
+- Clearly but kindly explain the specific reasons for rejection
 - Acknowledge their strengths genuinely
 - Encourage them to apply for future roles if appropriate
 - End with "Best regards,\nThe Hiring Team"
 - Do NOT include a subject line
 - Tone: formal, warm, and respectful`,
       });
-      setRejectMessage(result);
+      setEmailMessage(result);
     } catch {
-      setRejectMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your interest and wish you the best in your job search.\n\nBest regards,\nThe Hiring Team`);
+      setEmailMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position.\n\nBest regards,\nThe Hiring Team`);
     }
   };
 
-  const handleReject = async () => {
-    if (!rejectModal) return;
+  const handleSendEmail = async () => {
+    if (!emailModal) return;
+    const { app, type } = emailModal;
+    const isAccept = type === "accept";
     setSendingEmail(true);
     await Promise.all([
       base44.integrations.Core.SendEmail({
-        to: rejectModal.candidate_email,
-        subject: `Application Update – ${jobTitle}`,
-        body: rejectMessage
+        to: app.candidate_email,
+        subject: isAccept ? `Congratulations – ${jobTitle} Offer` : `Application Update – ${jobTitle}`,
+        body: emailMessage
       }),
-      updateStatus(rejectModal.id, "rejected")
+      updateStatus(app.id, isAccept ? "shortlisted" : "rejected")
     ]);
     setSendingEmail(false);
-    setRejectModal(null);
+    setEmailModal(null);
   };
 
   return (
@@ -246,18 +266,13 @@ Instructions:
                             </Button>
                           )}
                           {a.status !== "shortlisted" && a.status !== "rejected" && (
-                            <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => updateStatus(a.id, "shortlisted")}>
-                              Shortlist
+                            <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => openEmailModal(a, "accept")}>
+                              Accept
                             </Button>
                           )}
                           {a.status !== "rejected" && a.status !== "shortlisted" && (
-                            <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openRejectModal(a)}>
+                            <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openEmailModal(a, "reject")}>
                               Reject
-                            </Button>
-                          )}
-                          {(a.status === "shortlisted" || a.status === "rejected") && (
-                            <Button size="sm" variant="outline" className="rounded-xl text-muted-foreground" onClick={() => updateStatus(a.id, "processed")}>
-                              Reset
                             </Button>
                           )}
                         </div>
@@ -320,20 +335,22 @@ Instructions:
           )}
         </div>
       </div>
-      {/* Reject + Email Modal */}
-      {rejectModal && (
+      {/* Accept / Reject Email Modal */}
+      {emailModal && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !sendingEmail && setRejectModal(null)} />
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !sendingEmail && setEmailModal(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="font-bold text-foreground text-lg">Reject & Notify Candidate</h2>
-                  <p className="text-sm text-muted-foreground">An email will be sent to <strong>{rejectModal.candidate_email}</strong></p>
+                  <h2 className="font-bold text-foreground text-lg">
+                    {emailModal.type === "accept" ? "Accept & Notify Candidate" : "Reject & Notify Candidate"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">An email will be sent to <strong>{emailModal.app.candidate_email}</strong></p>
                 </div>
-                <button onClick={() => !sendingEmail && setRejectModal(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+                <button onClick={() => !sendingEmail && setEmailModal(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
               </div>
-              {rejectMessage === "" ? (
+              {emailMessage === "" ? (
                 <div className="w-full border border-border rounded-xl p-4 h-48 flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/30">
                   <Loader2 className="w-4 h-4 animate-spin text-primary" />
                   AI is writing the email...
@@ -341,16 +358,20 @@ Instructions:
               ) : (
                 <textarea
                   className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={rejectMessage}
-                  onChange={(e) => setRejectMessage(e.target.value)}
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
                   disabled={sendingEmail}
                 />
               )}
               <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setRejectModal(null)} disabled={sendingEmail}>Cancel</Button>
-                <Button className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white gap-2" onClick={handleReject} disabled={sendingEmail || rejectMessage === ""}>
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setEmailModal(null)} disabled={sendingEmail}>Cancel</Button>
+                <Button
+                  className={`flex-1 rounded-xl gap-2 text-white ${emailModal.type === "accept" ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"}`}
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail || emailMessage === ""}
+                >
                   {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
-                  {sendingEmail ? "Sending..." : "Send & Reject"}
+                  {sendingEmail ? "Sending..." : emailModal.type === "accept" ? "Send & Accept" : "Send & Reject"}
                 </Button>
               </div>
             </div>
