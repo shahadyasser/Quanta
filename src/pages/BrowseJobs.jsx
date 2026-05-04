@@ -26,19 +26,20 @@ export default function BrowseJobs() {
   const [applyDone, setApplyDone] = useState(false);
   const [applyError, setApplyError] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [currentUser, setCurrentUser] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    base44.entities.Job.filter({ status: "Active" }).then((data) => {
-      setJobs(data);
-      setLoading(false);
-    });
-    // Load already-applied jobs for this user
     base44.auth.me().then((user) => {
-      if (!user) return;
-      base44.entities.Application.filter({ candidate_email: user.email }).then((apps) => {
-        setAppliedJobIds(new Set(apps.map((a) => a.job_id)));
-      });
+      setCurrentUser(user);
+      return Promise.all([
+        base44.entities.Job.filter({ status: "Active" }),
+        user ? base44.entities.Application.filter({ candidate_email: user.email }) : Promise.resolve([])
+      ]);
+    }).then(([jobsData, apps]) => {
+      setJobs(jobsData);
+      setAppliedJobIds(new Set(apps.map((a) => a.job_id)));
+      setLoading(false);
     });
   }, []);
 
@@ -67,18 +68,16 @@ export default function BrowseJobs() {
     setApplyError(null);
     setApplyUploading(true);
 
-    const user = await base44.auth.me();
-
     // 1. Upload CV
     const { file_url } = await base44.integrations.Core.UploadFile({ file: applyFile });
 
-    // 2. Create Application record immediately
+    // 2. Create Application record
     const application = await base44.entities.Application.create({
       job_id: applyJob.id,
       job_title: applyJob.title,
       company: applyJob.company,
-      candidate_email: user?.email || "",
-      candidate_name: user?.full_name || "",
+      candidate_email: currentUser?.email || "",
+      candidate_name: currentUser?.full_name || "",
       cv_url: file_url,
       recruiter_email: applyJob.recruiter_email,
       status: "pending"
