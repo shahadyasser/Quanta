@@ -75,14 +75,26 @@ export default function ViewCandidates() {
     // AI generates the email
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Write a professional and empathetic rejection email for a job applicant. 
+        prompt: `Write a formal, kind, and professional rejection email for a job applicant. The email must clearly but gently explain WHY the candidate was not selected, based on the data below. Be specific — reference their skills and experience level in the explanation. Do not be vague.
+
 Candidate Name: ${app.candidate_name || "Candidate"}
 Job Title: ${jobTitle}
-Candidate Skills: ${(app.skills || []).join(", ") || "N/A"}
+Required Skills for the Role: ${jobTitle}
+Candidate's Skills: ${(app.skills || []).join(", ") || "Not specified"}
+Years of Experience: ${app.years_of_experience || "Not specified"}
 Match Score: ${app.match_score || "N/A"}/100
 Strengths: ${(app.strengths || []).join(", ") || "N/A"}
+Areas Lacking: ${(app.improvements || []).join(", ") || "N/A"}
 
-Write a warm, concise rejection email. Start with "Dear ${app.candidate_name || "Candidate"}," and end with "Best regards,\nThe Hiring Team". Do not include a subject line.`,
+Instructions:
+- Start with "Dear ${app.candidate_name || "Candidate"},"
+- Thank them sincerely for their time and interest
+- Clearly but kindly explain the specific reasons for rejection (e.g. skill gaps, experience level, stronger candidates)
+- Acknowledge their strengths genuinely
+- Encourage them to apply for future roles if appropriate
+- End with "Best regards,\nThe Hiring Team"
+- Do NOT include a subject line
+- Tone: formal, warm, and respectful`,
       });
       setRejectMessage(result);
     } catch {
