@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,9 @@ export default function ViewCandidates() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [rejectModal, setRejectModal] = useState(null); // { app }
+  const [rejectMessage, setRejectMessage] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -63,6 +66,26 @@ export default function ViewCandidates() {
   const updateStatus = async (appId, status) => {
     await base44.entities.Application.update(appId, { status });
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
+  };
+
+  const openRejectModal = (app) => {
+    setRejectModal(app);
+    setRejectMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your interest and wish you the best in your job search.\n\nBest regards,\nThe Hiring Team`);
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal) return;
+    setSendingEmail(true);
+    await Promise.all([
+      base44.integrations.Core.SendEmail({
+        to: rejectModal.candidate_email,
+        subject: `Application Update – ${jobTitle}`,
+        body: rejectMessage
+      }),
+      updateStatus(rejectModal.id, "rejected")
+    ]);
+    setSendingEmail(false);
+    setRejectModal(null);
   };
 
   return (
@@ -188,7 +211,7 @@ export default function ViewCandidates() {
                             </Button>
                           )}
                           {a.status !== "rejected" && a.status !== "shortlisted" && (
-                            <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => updateStatus(a.id, "rejected")}>
+                            <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openRejectModal(a)}>
                               Reject
                             </Button>
                           )}
@@ -257,6 +280,36 @@ export default function ViewCandidates() {
           )}
         </div>
       </div>
+      {/* Reject + Email Modal */}
+      {rejectModal && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !sendingEmail && setRejectModal(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="font-bold text-foreground text-lg">Reject & Notify Candidate</h2>
+                  <p className="text-sm text-muted-foreground">An email will be sent to <strong>{rejectModal.candidate_email}</strong></p>
+                </div>
+                <button onClick={() => !sendingEmail && setRejectModal(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+              </div>
+              <textarea
+                className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={rejectMessage}
+                onChange={(e) => setRejectMessage(e.target.value)}
+                disabled={sendingEmail}
+              />
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setRejectModal(null)} disabled={sendingEmail}>Cancel</Button>
+                <Button className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white gap-2" onClick={handleReject} disabled={sendingEmail}>
+                  {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  {sendingEmail ? "Sending..." : "Send & Reject"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
