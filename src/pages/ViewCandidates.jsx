@@ -49,14 +49,23 @@ export default function ViewCandidates() {
     return () => clearInterval(interval);
   }, [jobId]);
 
-  const filtered = applications.filter((a) => {
-    const q = search.toLowerCase();
-    return (
-      (a.candidate_name || "").toLowerCase().includes(q) ||
-      (a.candidate_email || "").toLowerCase().includes(q) ||
-      (a.skills || []).some((s) => s.toLowerCase().includes(q))
-    );
-  });
+  const filtered = applications
+    .filter((a) => {
+      const q = search.toLowerCase();
+      return (
+        !q ||
+        (a.candidate_name || "").toLowerCase().includes(q) ||
+        (a.candidate_email || "").toLowerCase().includes(q) ||
+        (a.skills || []).some((s) => s.toLowerCase().includes(q))
+      );
+    })
+    .sort((a, b) => {
+      // Processed/scored candidates ranked by match_score descending
+      // Pending (no score) go to the bottom
+      const scoreA = a.match_score ?? -1;
+      const scoreB = b.match_score ?? -1;
+      return scoreB - scoreA;
+    });
 
   const processed = applications.filter((a) => a.status === "processed" || a.match_score);
   const avgScore = processed.length
@@ -189,11 +198,13 @@ Instructions:
               {filtered.map((a, i) => {
                 const initials = (a.candidate_name || a.candidate_email || "?").split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
                 const isExpanded = expanded === a.id;
+                const rankColors = ["text-yellow-500", "text-slate-400", "text-amber-600"];
+                const rankColor = a.match_score && i < 3 ? rankColors[i] : "text-muted-foreground";
                 return (
-                  <div key={a.id} className="bg-white border border-border rounded-2xl p-5">
+                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${i === 0 && a.match_score ? "border-yellow-300 shadow-sm" : "border-border"}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-4 flex-1">
-                        <span className="text-sm font-bold text-muted-foreground w-6">#{i + 1}</span>
+                        <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>
                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">{initials}</span>
                         </div>
