@@ -31,7 +31,8 @@ export default function BrowseJobs() {
 
   useEffect(() => {
     const init = async () => {
-      const user = await base44.auth.me();
+      let user = null;
+      try { user = await base44.auth.me(); } catch (_) {}
       setCurrentUser(user);
       const [jobsData, apps] = await Promise.all([
         base44.entities.Job.filter({ status: "Active" }),
