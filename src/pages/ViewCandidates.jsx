@@ -159,6 +159,13 @@ export default function ViewCandidates() {
                           </p>
                         </div>
                         <div className="flex gap-2 flex-wrap justify-end">
+                          {a.cv_url && (
+                            <a href={a.cv_url} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+                                <FileText className="w-3.5 h-3.5" /> CV
+                              </Button>
+                            </a>
+                          )}
                           {a.status === "processed" && (
                             <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => setExpanded(isExpanded ? null : a.id)}>
                               {isExpanded ? "Hide" : "Details"}
