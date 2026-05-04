@@ -3,11 +3,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { cv_url, application_id, job_title, job_skills } = await req.json();
 
     // Step 1: Extract text content from the CV file (PDF/DOCX)
@@ -63,7 +58,7 @@ Return:
 
     // Step 3: Update the Application record
     const updateData = {
-      candidate_name: cvData.full_name || user.full_name,
+      candidate_name: cvData.full_name || "",
       skills: cvData.skills || [],
       years_of_experience: cvData.years_of_experience || 0,
       education_summary: cvData.education_summary || "",

@@ -33,6 +33,17 @@ export default function ViewCandidates() {
       setLoading(false);
     };
     fetchApplications();
+
+    // Auto-refresh every 5s while any application is still pending
+    const interval = setInterval(async () => {
+      const filter = jobId ? { job_id: jobId } : {};
+      const data = await base44.entities.Application.filter(filter, "-match_score");
+      setApplications(data);
+      const hasPending = data.some((a) => a.status === "pending");
+      if (!hasPending) clearInterval(interval);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [jobId]);
 
   const filtered = applications.filter((a) => {
