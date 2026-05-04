@@ -23,7 +23,6 @@ export default function BrowseJobs() {
   const [applyJob, setApplyJob] = useState(null);
   const [applyFile, setApplyFile] = useState(null);
   const [applyUploading, setApplyUploading] = useState(false);
-  const [applyProcessing, setApplyProcessing] = useState(false);
   const [applyDone, setApplyDone] = useState(false);
   const [applyError, setApplyError] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
@@ -61,7 +60,6 @@ export default function BrowseJobs() {
     setApplyDone(false);
     setApplyError(null);
     setApplyUploading(false);
-    setApplyProcessing(false);
   };
 
   const handleApplySubmit = async () => {
@@ -73,10 +71,8 @@ export default function BrowseJobs() {
 
     // 1. Upload CV
     const { file_url } = await base44.integrations.Core.UploadFile({ file: applyFile });
-    setApplyUploading(false);
-    setApplyProcessing(true);
 
-    // 2. Create Application record
+    // 2. Create Application record immediately
     const application = await base44.entities.Application.create({
       job_id: applyJob.id,
       job_title: applyJob.title,
@@ -88,21 +84,18 @@ export default function BrowseJobs() {
       status: "pending"
     });
 
-    // 3. Trigger AI RAG processing
-    const response = await base44.functions.invoke("processCV", {
+    // 3. Show success immediately — AI processing runs in the background
+    setApplyUploading(false);
+    setApplyDone(true);
+    setAppliedJobIds((prev) => new Set([...prev, applyJob.id]));
+
+    // Fire-and-forget AI processing (doesn't block the user)
+    base44.functions.invoke("processCV", {
       cv_url: file_url,
       application_id: application.id,
       job_title: applyJob.title,
       job_skills: applyJob.skills || []
     });
-
-    setApplyProcessing(false);
-    if (response.data?.success) {
-      setApplyDone(true);
-      setAppliedJobIds((prev) => new Set([...prev, applyJob.id]));
-    } else {
-      setApplyError("Processing failed. Please try again.");
-    }
   };
 
   return (
@@ -272,7 +265,7 @@ export default function BrowseJobs() {
       {/* Apply Modal */}
       {applyJob && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !applyUploading && !applyProcessing && setApplyJob(null)} />
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !applyUploading && setApplyJob(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
               {applyDone ? (
@@ -291,7 +284,7 @@ export default function BrowseJobs() {
                       <h2 className="font-bold text-foreground text-lg">Apply for {applyJob.title}</h2>
                       <p className="text-sm text-muted-foreground">{applyJob.company}</p>
                     </div>
-                    <button onClick={() => !applyUploading && !applyProcessing && setApplyJob(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+                    <button onClick={() => !applyUploading && setApplyJob(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
                   </div>
 
                   {/* File Drop Zone */}
@@ -318,16 +311,15 @@ export default function BrowseJobs() {
                   </div>
 
                   {applyUploading && <div className="flex items-center gap-2 text-sm text-primary"><Loader2 className="w-4 h-4 animate-spin" />Uploading CV...</div>}
-                  {applyProcessing && <div className="flex items-center gap-2 text-sm text-primary"><Loader2 className="w-4 h-4 animate-spin" />AI is analyzing your CV and computing match score...</div>}
                   {applyError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="w-4 h-4" />{applyError}</div>}
 
                   <Button
                     className="w-full h-11 rounded-xl gap-2 bg-primary hover:bg-primary/90"
-                    disabled={!applyFile || applyUploading || applyProcessing}
+                    disabled={!applyFile || applyUploading}
                     onClick={handleApplySubmit}
                   >
-                    {applyUploading || applyProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    {applyUploading ? "Uploading..." : applyProcessing ? "Analyzing..." : "Submit Application"}
+                    {applyUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {applyUploading ? "Uploading..." : "Submit Application"}
                   </Button>
                 </>
               )}
