@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { cv_url, candidate_id } = await req.json();
+    const { cv_url, application_id, job_title, job_skills } = await req.json();
 
     // Step 1: Extract text content from the CV file (PDF/DOCX)
     const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
@@ -33,9 +33,12 @@ Deno.serve(async (req) => {
 
     const cvData = extracted.output;
 
-    // Step 2: Run deeper AI analysis for match score, strengths, improvements
+    // Step 2: Run AI analysis with job context for targeted match score
     const analysis = await base44.integrations.Core.InvokeLLM({
-      prompt: `You are an expert HR AI. Based on this candidate's CV data, compute an overall employability match score and identify strengths and areas for improvement.
+      prompt: `You are an expert HR AI. Analyze this candidate's CV data and compute a match score specifically for the job role.
+
+Job Role: ${job_title || "General Position"}
+Required Skills: ${(job_skills || []).join(", ") || "Not specified"}
 
 Candidate CV Data:
 - Name: ${cvData.full_name || "Unknown"}
@@ -44,7 +47,10 @@ Candidate CV Data:
 - Education: ${cvData.education_summary || "Not provided"}
 - Work Experience: ${cvData.work_experience_summary || "Not provided"}
 
-Return a match score (0-100) based on how complete and strong this candidate profile is, plus 3 strengths and 3 areas for improvement.`,
+Return:
+1. match_score (0-100): How well this candidate matches the specific job role and required skills
+2. strengths: 3 specific strengths relevant to this role
+3. improvements: 3 areas where the candidate could improve for this role`,
       response_json_schema: {
         type: "object",
         properties: {
@@ -55,11 +61,9 @@ Return a match score (0-100) based on how complete and strong this candidate pro
       }
     });
 
-    // Step 3: Merge all results and save to CandidateProfile
-    const finalData = {
-      full_name: cvData.full_name || user.full_name,
-      email: cvData.email || user.email,
-      phone: cvData.phone || "",
+    // Step 3: Update the Application record
+    const updateData = {
+      candidate_name: cvData.full_name || user.full_name,
       skills: cvData.skills || [],
       years_of_experience: cvData.years_of_experience || 0,
       education_summary: cvData.education_summary || "",
@@ -68,15 +72,14 @@ Return a match score (0-100) based on how complete and strong this candidate pro
       strengths: analysis.strengths || [],
       improvements: analysis.improvements || [],
       cv_url: cv_url,
-      status: "processed",
-      rag_results: { ...cvData, ...analysis }
+      status: "processed"
     };
 
-    if (candidate_id) {
-      await base44.asServiceRole.entities.CandidateProfile.update(candidate_id, finalData);
+    if (application_id) {
+      await base44.asServiceRole.entities.Application.update(application_id, updateData);
     }
 
-    return Response.json({ success: true, result: finalData });
+    return Response.json({ success: true, result: updateData });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

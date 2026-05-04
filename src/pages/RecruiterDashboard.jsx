@@ -1,31 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, LogOut } from "lucide-react";
+import { Plus, Search, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
-import ActionItemCard from "../components/recruiter/ActionItemCard";
-import JobPostingCard from "../components/recruiter/JobPostingCard";
-
-const STATS = [
-  { label: "Total Applicants", value: "248", change: "+11%", subtext: "+24 from last week" },
-  { label: "Avg. Match Score", value: "87%", change: "+3%", subtext: "+3% from last week" },
-
-  { label: "Pending Reviews", value: "18", change: "+38%", subtext: "+5 from last week" },
-];
-
-const ACTION_ITEMS = [
-  { title: "High Match Candidates (>90%)", subtitle: "Senior Developer", count: 8 },
-  { title: "New Applications Today", subtitle: "Product Manager", count: 15 },
-  { title: "Applications Requiring Review", subtitle: "UX Designer", count: 12 },
-];
-
-const JOBS = [
-  { title: "Senior Developer", status: "Active", applications: 45, avgMatch: "89%", postedDate: "Nov 8, 2025" },
-  { title: "UX Designer", status: "Active", applications: 32, avgMatch: "85%", postedDate: "Nov 7, 2025" },
-  { title: "Product Manager", status: "Active", applications: 28, avgMatch: "91%", postedDate: "Nov 6, 2025" },
-  { title: "Data Analyst", status: "Inactive", applications: 14, avgMatch: "78%", postedDate: "Oct 20, 2025" },
-];
 
 const TABS = ["All Jobs", "Active", "Inactive"];
 
@@ -33,14 +12,44 @@ export default function RecruiterDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("All Jobs");
   const [search, setSearch] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredJobs = JOBS.filter((job) => {
-    const matchesTab =
-      activeTab === "All Jobs" ||
-      job.status === activeTab;
-    const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase());
+  useEffect(() => {
+    Promise.all([
+      base44.entities.Job.list("-created_date"),
+      base44.entities.Application.list("-created_date")
+    ]).then(([jobsData, appsData]) => {
+      setJobs(jobsData);
+      setApplications(appsData);
+      setLoading(false);
+    });
+  }, []);
+
+  const filteredJobs = jobs.filter((job) => {
+    const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
+    const matchesSearch = (job.title || "").toLowerCase().includes(search.toLowerCase());
     return matchesTab && matchesSearch;
   });
+
+  const getJobAppCount = (jobId) => applications.filter((a) => a.job_id === jobId).length;
+  const getJobAvgScore = (jobId) => {
+    const scored = applications.filter((a) => a.job_id === jobId && a.match_score);
+    if (!scored.length) return null;
+    return Math.round(scored.reduce((s, a) => s + a.match_score, 0) / scored.length);
+  };
+
+  const totalApplicants = applications.length;
+  const scoredApps = applications.filter((a) => a.match_score);
+  const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((s, a) => s + a.match_score, 0) / scoredApps.length) : 0;
+  const pendingReviews = applications.filter((a) => a.status === "pending" || a.status === "processed").length;
+
+  const STATS = [
+    { label: "Total Applicants", value: String(totalApplicants), change: "", subtext: "across all jobs" },
+    { label: "Avg. Match Score", value: avgScore ? `${avgScore}%` : "—", change: "", subtext: "AI computed" },
+    { label: "Pending Reviews", value: String(pendingReviews), change: "", subtext: "need action" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
@@ -53,10 +62,7 @@ export default function RecruiterDashboard() {
         <div className="flex items-center gap-3">
           <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">recruiter@quantahire.com</span>
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
-            <Link to="/">
-              <LogOut className="w-4 h-4" />
-              Logout
-            </Link>
+            <Link to="/"><LogOut className="w-4 h-4" />Logout</Link>
           </Button>
         </div>
       </nav>
@@ -82,71 +88,82 @@ export default function RecruiterDashboard() {
           ))}
         </div>
 
-        {/* Action Items + Job Postings side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-          {/* Action Items */}
-          <div className="bg-white border border-border border-l-4 border-l-orange-400 rounded-2xl p-6">
-            <div className="mb-5 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full border-2 border-orange-400 flex items-center justify-center">
-                <span className="text-orange-400 text-xs font-bold">!</span>
-              </div>
-              <div>
-                <h2 className="font-semibold text-foreground text-lg leading-none">Action Items</h2>
-                <p className="text-sm text-muted-foreground">AI-generated insights requiring your attention</p>
-              </div>
+        {/* Job Postings */}
+        <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="font-semibold text-foreground text-lg">Job Postings</h2>
+              <p className="text-sm text-muted-foreground">Click "View Candidates" to see ranked applicants</p>
             </div>
-            <div className="space-y-3">
-              {ACTION_ITEMS.map((item, i) => (
-                <ActionItemCard key={item.title} {...item} index={i} onReview={() => navigate("/view-candidates")} />
-              ))}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search jobs by title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-10 rounded-xl w-full sm:w-64"
+              />
             </div>
           </div>
 
-          {/* Job Postings */}
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="font-semibold text-foreground text-lg">Job Postings</h2>
-                <p className="text-sm text-muted-foreground">Manage your job postings and view candidate applications</p>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search jobs by title..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-10 rounded-xl w-full sm:w-64"
-                />
-              </div>
-            </div>
+          {/* Tabs */}
+          <div className="flex gap-2 mb-4">
+            {TABS.map((tab) => {
+              const count = tab === "All Jobs" ? jobs.length : jobs.filter((j) => j.status === tab).length;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? "bg-primary text-white" : "bg-white border border-border text-muted-foreground hover:text-foreground"}`}
+                >
+                  {tab} ({count})
+                </button>
+              );
+            })}
+          </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 mb-4">
-              {TABS.map((tab) => {
-                const count = tab === "All Jobs" ? JOBS.length : JOBS.filter(j => j.status === tab).length;
+          {loading ? (
+            <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+          ) : filteredJobs.length === 0 ? (
+            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">No jobs found. Post your first job!</div>
+          ) : (
+            <div className="space-y-3">
+              {filteredJobs.map((job) => {
+                const appCount = getJobAppCount(job.id);
+                const avgMatch = getJobAvgScore(job.id);
                 return (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                      activeTab === tab
-                        ? "bg-primary text-white"
-                        : "bg-white border border-border text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {tab} ({count})
-                  </button>
+                  <div key={job.id} className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                        <span className="text-primary font-bold text-sm">{(job.title || "J")[0]}</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="font-semibold text-foreground">{job.title}</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "Active" ? "bg-green-50 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                            {job.status}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{appCount} applicants</span>
+                          {avgMatch && <span>Avg match: <strong className="text-foreground">{avgMatch}%</strong></span>}
+                          <span>{job.location}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl border-primary text-primary hover:bg-accent shrink-0"
+                      onClick={() => navigate(`/view-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}&status=${job.status}`)}
+                    >
+                      View Candidates ({appCount})
+                    </Button>
+                  </div>
                 );
               })}
             </div>
-
-            {/* Job cards */}
-            <div className="space-y-3">
-              {filteredJobs.map((job) => (
-                <JobPostingCard key={job.title} {...job} />
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

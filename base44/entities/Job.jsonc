@@ -1,0 +1,93 @@
+{
+  "name": "Job",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Job title"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name"
+    },
+    "location": {
+      "type": "string",
+      "description": "Job location"
+    },
+    "arrangement": {
+      "type": "string",
+      "enum": [
+        "On-site",
+        "Remote",
+        "Hybrid"
+      ],
+      "description": "Work arrangement"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Full-time",
+        "Part-time",
+        "Contract",
+        "Freelance",
+        "Internship"
+      ],
+      "description": "Employment type"
+    },
+    "level": {
+      "type": "string",
+      "enum": [
+        "Entry-level",
+        "Mid-level",
+        "Senior",
+        "Lead"
+      ],
+      "description": "Experience level"
+    },
+    "salary": {
+      "type": "string",
+      "description": "Salary range"
+    },
+    "description": {
+      "type": "string",
+      "description": "Job description"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required skills"
+    },
+    "responsibilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Job responsibilities"
+    },
+    "benefits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Job benefits"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "Inactive"
+      ],
+      "default": "Active",
+      "description": "Job status"
+    },
+    "recruiter_email": {
+      "type": "string",
+      "description": "Recruiter who posted the job"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { LogOut, Upload, ClipboardList, Briefcase, MessageSquare, PlayCircle, Eye } from "lucide-react";
+import { LogOut, ClipboardList, Briefcase, PlayCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -11,9 +11,8 @@ const STATS = [
 ];
 
 const QUICK_ACTIONS = [
-  { icon: Upload, label: "Upload CV", description: "Update your profile with your latest CV", href: "/cv-upload" },
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
-  { icon: Briefcase, label: "Browse Jobs", description: "Find new opportunities", href: "/browse-jobs" },
+  { icon: Briefcase, label: "Browse Jobs", description: "Find jobs and apply with your CV", href: "/browse-jobs" },
 ];
 
 const APPLICATIONS = [

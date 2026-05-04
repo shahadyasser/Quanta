@@ -1,0 +1,86 @@
+{
+  "name": "Application",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to the Job entity"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "Job title (denormalized)"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name (denormalized)"
+    },
+    "candidate_email": {
+      "type": "string",
+      "description": "Candidate email"
+    },
+    "candidate_name": {
+      "type": "string",
+      "description": "Candidate full name"
+    },
+    "cv_url": {
+      "type": "string",
+      "description": "Uploaded CV file URL"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extracted skills"
+    },
+    "match_score": {
+      "type": "number",
+      "description": "AI match score out of 100"
+    },
+    "years_of_experience": {
+      "type": "number",
+      "description": "Years of experience"
+    },
+    "education_summary": {
+      "type": "string",
+      "description": "Education summary"
+    },
+    "work_experience_summary": {
+      "type": "string",
+      "description": "Work experience summary"
+    },
+    "strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Candidate strengths"
+    },
+    "improvements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Areas for improvement"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processed",
+        "shortlisted",
+        "rejected"
+      ],
+      "default": "pending",
+      "description": "Application status"
+    },
+    "recruiter_email": {
+      "type": "string",
+      "description": "Recruiter who owns this job"
+    }
+  },
+  "required": [
+    "job_id",
+    "candidate_email"
+  ]
+}
