@@ -59,6 +59,7 @@ Return:
     // Step 3: Update the Application record
     const updateData = {
       candidate_name: cvData.full_name || "",
+      candidate_email: cvData.email || "",
       skills: cvData.skills || [],
       years_of_experience: cvData.years_of_experience || 0,
       education_summary: cvData.education_summary || "",
