@@ -30,17 +30,18 @@ export default function BrowseJobs() {
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    base44.auth.me().then((user) => {
+    const init = async () => {
+      const user = await base44.auth.me();
       setCurrentUser(user);
-      return Promise.all([
+      const [jobsData, apps] = await Promise.all([
         base44.entities.Job.filter({ status: "Active" }),
         user ? base44.entities.Application.filter({ candidate_email: user.email }) : Promise.resolve([])
       ]);
-    }).then(([jobsData, apps]) => {
       setJobs(jobsData);
       setAppliedJobIds(new Set(apps.map((a) => a.job_id)));
       setLoading(false);
-    });
+    };
+    init();
   }, []);
 
   const toggleItem = (list, setList, item) =>
