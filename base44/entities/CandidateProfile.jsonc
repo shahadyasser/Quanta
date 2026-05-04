@@ -1,0 +1,84 @@
+{
+  "name": "CandidateProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Full name of the candidate"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Linked user ID"
+    },
+    "role": {
+      "type": "string",
+      "default": "candidate",
+      "description": "User role"
+    },
+    "cv_url": {
+      "type": "string",
+      "description": "Uploaded CV file URL"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extracted skills from CV"
+    },
+    "match_score": {
+      "type": "number",
+      "description": "AI match score out of 100"
+    },
+    "years_of_experience": {
+      "type": "number",
+      "description": "Years of experience extracted from CV"
+    },
+    "education_summary": {
+      "type": "string",
+      "description": "Education summary from CV"
+    },
+    "work_experience_summary": {
+      "type": "string",
+      "description": "Work experience summary from CV"
+    },
+    "strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Top strengths identified by AI"
+    },
+    "improvements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Areas for improvement identified by AI"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processed"
+      ],
+      "default": "pending",
+      "description": "CV processing status"
+    },
+    "rag_results": {
+      "type": "object",
+      "description": "Full RAG pipeline results"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}
