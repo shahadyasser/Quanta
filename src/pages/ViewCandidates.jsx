@@ -68,9 +68,26 @@ export default function ViewCandidates() {
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
   };
 
-  const openRejectModal = (app) => {
+  const openRejectModal = async (app) => {
     setRejectModal(app);
-    setRejectMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your interest and wish you the best in your job search.\n\nBest regards,\nThe Hiring Team`);
+    setRejectMessage("");
+    setSendingEmail(false);
+    // AI generates the email
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Write a professional and empathetic rejection email for a job applicant. 
+Candidate Name: ${app.candidate_name || "Candidate"}
+Job Title: ${jobTitle}
+Candidate Skills: ${(app.skills || []).join(", ") || "N/A"}
+Match Score: ${app.match_score || "N/A"}/100
+Strengths: ${(app.strengths || []).join(", ") || "N/A"}
+
+Write a warm, concise rejection email. Start with "Dear ${app.candidate_name || "Candidate"}," and end with "Best regards,\nThe Hiring Team". Do not include a subject line.`,
+      });
+      setRejectMessage(result);
+    } catch {
+      setRejectMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your interest and wish you the best in your job search.\n\nBest regards,\nThe Hiring Team`);
+    }
   };
 
   const handleReject = async () => {
@@ -293,15 +310,22 @@ export default function ViewCandidates() {
                 </div>
                 <button onClick={() => !sendingEmail && setRejectModal(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
               </div>
-              <textarea
-                className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                value={rejectMessage}
-                onChange={(e) => setRejectMessage(e.target.value)}
-                disabled={sendingEmail}
-              />
+              {rejectMessage === "" ? (
+                <div className="w-full border border-border rounded-xl p-4 h-48 flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/30">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  AI is writing the email...
+                </div>
+              ) : (
+                <textarea
+                  className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={rejectMessage}
+                  onChange={(e) => setRejectMessage(e.target.value)}
+                  disabled={sendingEmail}
+                />
+              )}
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setRejectModal(null)} disabled={sendingEmail}>Cancel</Button>
-                <Button className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white gap-2" onClick={handleReject} disabled={sendingEmail}>
+                <Button className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white gap-2" onClick={handleReject} disabled={sendingEmail || rejectMessage === ""}>
                   {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                   {sendingEmail ? "Sending..." : "Send & Reject"}
                 </Button>
