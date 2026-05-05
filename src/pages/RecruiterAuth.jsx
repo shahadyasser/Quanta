@@ -94,7 +94,39 @@ export default function RecruiterAuth() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-md">
 
-            {true && (
+            {/* Full-page success screen after registration */}
+            {warning === "registered" ? (
+              <div className="text-center space-y-6 py-8">
+                <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mx-auto">
+                  <Clock className="w-10 h-10 text-orange-500" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-bold text-foreground">Request Submitted!</h2>
+                  <p className="text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                    Your recruiter account request has been submitted. An admin will review your application and you will be notified by email once approved.
+                  </p>
+                </div>
+                <div className="bg-orange-50 border border-orange-200 rounded-2xl px-6 py-4 text-left space-y-2">
+                  <p className="text-sm font-semibold text-orange-700">What happens next?</p>
+                  <ul className="text-sm text-orange-600 space-y-1.5">
+                    <li>• Admin reviews your registration details</li>
+                    <li>• You receive an approval email</li>
+                    <li>• Log in with your email to access the platform</li>
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={() => { setWarning(null); setTab("login"); }}
+                    className="w-full h-12 rounded-xl text-base font-medium bg-primary hover:bg-primary/90"
+                  >
+                    Go to Login
+                  </Button>
+                  <Link to="/" className="inline-flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ArrowLeft className="w-4 h-4" /> Back to Home
+                  </Link>
+                </div>
+              </div>
+            ) : (
               <>
                 {/* Header */}
                 <div className="mb-8">
@@ -109,8 +141,8 @@ export default function RecruiterAuth() {
 
                 {/* Tabs */}
                 <div className="flex bg-muted rounded-xl p-1 mb-8">
-                  <button onClick={() => setTab("login")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "login" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Login</button>
-                  <button onClick={() => setTab("register")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "register" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Register</button>
+                  <button onClick={() => { setTab("login"); setWarning(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "login" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Login</button>
+                  <button onClick={() => { setTab("register"); setWarning(null); }} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "register" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Register</button>
                 </div>
 
                 {/* Form */}
@@ -155,29 +187,23 @@ export default function RecruiterAuth() {
                     </div>
                   )}
 
-                  {/* Inline warning/status messages */}
+                  {/* Inline warning/status messages (login tab only) */}
                   {warning === "no_access" && (
                     <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
                       <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
-                      <span>The email you entered does not have access to the recruiter portal. Please register first or contact your admin.</span>
+                      <span>No account found for this email. Please register first or contact your admin.</span>
                     </div>
                   )}
                   {warning === "pending" && (
                     <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
                       <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
-                      <span>Your account is pending admin approval. You will be notified by email once approved.</span>
+                      <span>Your account is still pending admin approval. You will be notified by email once approved.</span>
                     </div>
                   )}
                   {warning === "suspended" && (
                     <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">
                       <Briefcase className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
                       <span>Your account has been suspended. Please contact support for assistance.</span>
-                    </div>
-                  )}
-                  {warning === "registered" && (
-                    <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
-                      <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
-                      <span>Your access request has been submitted! An admin will review your account and notify you by email once approved.</span>
                     </div>
                   )}
 
@@ -187,9 +213,9 @@ export default function RecruiterAuth() {
 
                   <p className="text-center text-sm text-muted-foreground">
                     {tab === "login" ? (
-                      <>Don't have an account?{" "}<button type="button" onClick={() => setTab("register")} className="text-primary font-medium hover:underline">Register</button></>
+                      <>Don't have an account?{" "}<button type="button" onClick={() => { setTab("register"); setWarning(null); }} className="text-primary font-medium hover:underline">Register</button></>
                     ) : (
-                      <>Already have an account?{" "}<button type="button" onClick={() => setTab("login")} className="text-primary font-medium hover:underline">Login</button></>
+                      <>Already have an account?{" "}<button type="button" onClick={() => { setTab("login"); setWarning(null); }} className="text-primary font-medium hover:underline">Login</button></>
                     )}
                   </p>
                 </form>
