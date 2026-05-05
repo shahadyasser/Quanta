@@ -78,14 +78,21 @@ export default function ViewCandidates() {
   };
 
   const openEmailModal = async (app, type) => {
+    const isAccept = type === "accept";
+    // Show default template immediately so Send is not blocked
+    const defaultMsg = isAccept
+      ? `Dear ${app.candidate_name || "Candidate"},\n\nCongratulations! We are pleased to inform you that you have been selected for the ${jobTitle} position. Your skills and experience stood out to us, and we look forward to welcoming you to the team.\n\nWe will be in touch shortly with further details.\n\nBest regards,\nThe Hiring Team`
+      : `Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your time and encourage you to apply for future openings.\n\nBest regards,\nThe Hiring Team`;
+
     setEmailModal({ app, type });
-    setEmailMessage("");
+    setEmailMessage(defaultMsg);
     setSendingEmail(false);
 
-    const isAccept = type === "accept";
+    const isAcceptForAI = type === "accept";
+    // AI refines in background — replaces template when ready
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: isAccept
+        prompt: isAcceptForAI
           ? `Write a formal, warm, and professional acceptance email for a job applicant. Clearly explain WHY they were selected, referencing their specific strengths and skills.
 
 Candidate Name: ${app.candidate_name || "Candidate"}
@@ -125,7 +132,7 @@ Instructions:
       });
       setEmailMessage(result);
     } catch {
-      setEmailMessage(`Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position.\n\nBest regards,\nThe Hiring Team`);
+      // Keep the default template already shown
     }
   };
 
@@ -350,25 +357,18 @@ Instructions:
                 </div>
                 <button onClick={() => !sendingEmail && setEmailModal(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
               </div>
-              {emailMessage === "" ? (
-                <div className="w-full border border-border rounded-xl p-4 h-48 flex items-center justify-center gap-2 text-sm text-muted-foreground bg-muted/30">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                  AI is writing the email...
-                </div>
-              ) : (
-                <textarea
-                  className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={emailMessage}
-                  onChange={(e) => setEmailMessage(e.target.value)}
-                  disabled={sendingEmail}
-                />
-              )}
+              <textarea
+                className="w-full border border-border rounded-xl p-3 text-sm text-foreground h-48 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                value={emailMessage}
+                onChange={(e) => setEmailMessage(e.target.value)}
+                disabled={sendingEmail}
+              />
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setEmailModal(null)} disabled={sendingEmail}>Cancel</Button>
                 <Button
                   className={`flex-1 rounded-xl gap-2 text-white ${emailModal.type === "accept" ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600"}`}
                   onClick={handleSendEmail}
-                  disabled={sendingEmail || emailMessage === ""}
+                  disabled={sendingEmail}
                 >
                   {sendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
                   {sendingEmail ? "Sending..." : emailModal.type === "accept" ? "Send & Accept" : "Send & Reject"}
