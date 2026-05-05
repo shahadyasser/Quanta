@@ -156,28 +156,6 @@ export default function ViewCandidates() {
     setSelected((prev) => { const next = new Set(prev); next.delete(appId); return next; });
   };
 
-  const handleBulkAction = async (type) => {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-    setBulkProcessing(true);
-    const isAccept = type === "accept";
-    const status = isAccept ? "shortlisted" : "rejected";
-    const subject = isAccept ? `Congratulations – ${jobTitle} Offer` : `Application Update – ${jobTitle}`;
-    const selectedApps = filtered.filter((a) => ids.includes(a.id));
-    await Promise.all(selectedApps.map((app) => {
-      const body = isAccept
-        ? `Dear ${app.candidate_name || "Candidate"},\n\nCongratulations! You have been selected for the ${jobTitle} position. We look forward to welcoming you to the team.\n\nBest regards,\nThe Hiring Team`
-        : `Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we will not be moving forward with your application at this time.\n\nBest regards,\nThe Hiring Team`;
-      return Promise.all([
-        base44.integrations.Core.SendEmail({ to: app.candidate_email, subject, body }),
-        base44.entities.Application.update(app.id, { status })
-      ]);
-    }));
-    setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
-    setSelected(new Set());
-    setBulkProcessing(false);
-  };
-
   const handleBulkDelete = async () => {
     const ids = [...selected];
     if (ids.length === 0) return;
