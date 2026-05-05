@@ -37,22 +37,24 @@ export default function ViewCandidates() {
     };
     fetchApplications();
 
-    // Auto-refresh every 5s while any application is still pending
-    // Only updates applications that are still in "pending" status to avoid overwriting local removals
+    // Auto-refresh every 5s to pick up newly processed CVs
     const interval = setInterval(async () => {
       const filter = jobId ? { job_id: jobId } : {};
       const data = await base44.entities.Application.filter(filter, "-match_score");
       const hasPending = data.some((a) => a.status === "pending");
       if (!hasPending) { clearInterval(interval); return; }
-      // Only add/update pending ones — don't restore removed candidates
       setApplications((prev) => {
         const prevIds = new Set(prev.map((a) => a.id));
+        // Update existing candidates in-place (only update, never add back removed ones)
         const updated = prev.map((a) => {
           const fresh = data.find((d) => d.id === a.id);
+          // Only refresh if the candidate is still in prev (not removed) and was pending
           return fresh && a.status === "pending" ? fresh : a;
         });
-        // Add any brand new pending applications not yet in the list
-        data.forEach((d) => { if (!prevIds.has(d.id) && d.status === "pending") updated.push(d); });
+        // Add brand new pending applications not yet seen
+        data.forEach((d) => {
+          if (!prevIds.has(d.id) && d.status === "pending") updated.push(d);
+        });
         return updated;
       });
     }, 5000);
@@ -124,8 +126,9 @@ export default function ViewCandidates() {
         subject: isAccept ? `Congratulations – ${jobTitle} Offer` : `Application Update – ${jobTitle}`,
         body: emailMessage
       }),
-      updateStatus(app.id, isAccept ? "shortlisted" : "rejected")
+      base44.entities.Application.update(app.id, { status: isAccept ? "shortlisted" : "rejected" })
     ]);
+    // Remove the candidate from the list immediately
     setApplications((prev) => prev.filter((a) => a.id !== app.id));
     setSendingEmail(false);
     setEmailModal(null);
