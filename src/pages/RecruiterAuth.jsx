@@ -14,15 +14,14 @@ export default function RecruiterAuth() {
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [pendingScreen, setPendingScreen] = useState(false);
-  const [blockedScreen, setBlockedScreen] = useState(false);
+  const [warning, setWarning] = useState(null); // 'no_access' | 'pending' | 'suspended' | 'registered'
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setWarning(null);
     setLoading(true);
     if (tab === "register") {
-      // Create a pending recruiter profile
       await base44.entities.RecruiterProfile.create({
         full_name: fullName,
         company,
@@ -31,16 +30,17 @@ export default function RecruiterAuth() {
         status: "pending",
       });
       setLoading(false);
-      setPendingScreen(true);
+      setWarning("registered");
     } else {
-      // Login: check approval status
       const profiles = await base44.entities.RecruiterProfile.filter({ email });
       const profile = profiles[0];
       setLoading(false);
-      if (!profile || profile.status === "pending") {
-        setPendingScreen(true);
+      if (!profile) {
+        setWarning("no_access");
+      } else if (profile.status === "pending") {
+        setWarning("pending");
       } else if (profile.status === "suspended") {
-        setBlockedScreen(true);
+        setWarning("suspended");
       } else {
         navigate("/recruiter-dashboard");
       }
@@ -94,36 +94,7 @@ export default function RecruiterAuth() {
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-md">
 
-            {/* Pending approval screen */}
-            {pendingScreen ? (
-              <div className="text-center space-y-5 py-8">
-                <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto">
-                  <Clock className="w-8 h-8 text-orange-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Pending Approval</h2>
-                  <p className="text-muted-foreground mt-2 leading-relaxed">
-                    Your recruiter account is awaiting admin approval. You will be notified once approved and can then log in to access the platform.
-                  </p>
-                </div>
-                <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-                  <ArrowLeft className="w-4 h-4" /> Back to Home
-                </Link>
-              </div>
-            ) : blockedScreen ? (
-              <div className="text-center space-y-5 py-8">
-                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
-                  <Briefcase className="w-8 h-8 text-red-500" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">Account Suspended</h2>
-                  <p className="text-muted-foreground mt-2">Your account has been suspended. Please contact support.</p>
-                </div>
-                <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline">
-                  <ArrowLeft className="w-4 h-4" /> Back to Home
-                </Link>
-              </div>
-            ) : (
+            {true && (
               <>
                 {/* Header */}
                 <div className="mb-8">
@@ -184,11 +155,30 @@ export default function RecruiterAuth() {
                     </div>
                   )}
 
-                  {tab === "register" && (
-                    <p className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
-                      <Clock className="w-3.5 h-3.5 inline mr-1" />
-                      New accounts require admin approval before you can access the platform.
-                    </p>
+                  {/* Inline warning/status messages */}
+                  {warning === "no_access" && (
+                    <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
+                      <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
+                      <span>The email you entered does not have access to the recruiter portal. Please register first or contact your admin.</span>
+                    </div>
+                  )}
+                  {warning === "pending" && (
+                    <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
+                      <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
+                      <span>Your account is pending admin approval. You will be notified by email once approved.</span>
+                    </div>
+                  )}
+                  {warning === "suspended" && (
+                    <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">
+                      <Briefcase className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+                      <span>Your account has been suspended. Please contact support for assistance.</span>
+                    </div>
+                  )}
+                  {warning === "registered" && (
+                    <div className="flex items-start gap-2.5 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-xl px-4 py-3 text-sm">
+                      <Clock className="w-4 h-4 mt-0.5 shrink-0 text-yellow-600" />
+                      <span>Your access request has been submitted! An admin will review your account and notify you by email once approved.</span>
+                    </div>
                   )}
 
                   <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-medium bg-primary hover:bg-primary/90 mt-2">
