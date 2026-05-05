@@ -81,8 +81,8 @@ export default function ViewCandidates() {
     const isAccept = type === "accept";
     // Show default template immediately so Send is not blocked
     const defaultMsg = isAccept
-      ? `Dear ${app.candidate_name || "Candidate"},\n\nCongratulations! We are pleased to inform you that you have been selected for the ${jobTitle} position. Your skills and experience stood out to us, and we look forward to welcoming you to the team.\n\nWe will be in touch shortly with further details.\n\nBest regards,\nThe Hiring Team`
-      : `Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time.\n\nWe appreciate your time and encourage you to apply for future openings.\n\nBest regards,\nThe Hiring Team`;
+      ? `Dear ${app.candidate_name || "Candidate"},\n\nCongratulations! You have been selected for the ${jobTitle} position. We look forward to welcoming you to the team and will be in touch shortly with next steps.\n\nBest regards,\nThe Hiring Team`
+      : `Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we will not be moving forward with your application at this time. We appreciate your interest and wish you the best.\n\nBest regards,\nThe Hiring Team`;
 
     setEmailModal({ app, type });
     setEmailMessage(defaultMsg);
@@ -93,42 +93,8 @@ export default function ViewCandidates() {
     try {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: isAcceptForAI
-          ? `Write a formal, warm, and professional acceptance email for a job applicant. Clearly explain WHY they were selected, referencing their specific strengths and skills.
-
-Candidate Name: ${app.candidate_name || "Candidate"}
-Job Title: ${jobTitle}
-Candidate's Skills: ${(app.skills || []).join(", ") || "Not specified"}
-Years of Experience: ${app.years_of_experience || "Not specified"}
-Match Score: ${app.match_score || "N/A"}/100
-Strengths: ${(app.strengths || []).join(", ") || "N/A"}
-
-Instructions:
-- Start with "Dear ${app.candidate_name || "Candidate"},"
-- Congratulate them warmly and clearly state they have been accepted
-- Highlight the specific strengths and skills that made them stand out
-- Mention next steps (e.g. we will be in touch with further details)
-- End with "Best regards,\nThe Hiring Team"
-- Do NOT include a subject line
-- Tone: formal, enthusiastic, and encouraging`
-          : `Write a formal, kind, and professional rejection email for a job applicant. Clearly but gently explain WHY the candidate was not selected, referencing their skill gaps and experience.
-
-Candidate Name: ${app.candidate_name || "Candidate"}
-Job Title: ${jobTitle}
-Candidate's Skills: ${(app.skills || []).join(", ") || "Not specified"}
-Years of Experience: ${app.years_of_experience || "Not specified"}
-Match Score: ${app.match_score || "N/A"}/100
-Strengths: ${(app.strengths || []).join(", ") || "N/A"}
-Areas Lacking: ${(app.improvements || []).join(", ") || "N/A"}
-
-Instructions:
-- Start with "Dear ${app.candidate_name || "Candidate"},"
-- Thank them sincerely for their time and interest
-- Clearly but kindly explain the specific reasons for rejection
-- Acknowledge their strengths genuinely
-- Encourage them to apply for future roles if appropriate
-- End with "Best regards,\nThe Hiring Team"
-- Do NOT include a subject line
-- Tone: formal, warm, and respectful`,
+          ? `Write a short 3-sentence acceptance email for ${app.candidate_name || "the candidate"} for the ${jobTitle} role. Mention 1-2 of their strengths: ${(app.strengths || []).slice(0, 2).join(", ") || "strong skills"}. Start with "Dear ${app.candidate_name || "Candidate"}," and end with "Best regards,\nThe Hiring Team". No subject line.`
+          : `Write a short 3-sentence rejection email for ${app.candidate_name || "the candidate"} for the ${jobTitle} role. Briefly mention why (e.g. ${(app.improvements || []).slice(0, 1).join(", ") || "stronger candidates"}). Start with "Dear ${app.candidate_name || "Candidate"}," and end with "Best regards,\nThe Hiring Team". No subject line.`,
       });
       setEmailMessage(result);
     } catch {
