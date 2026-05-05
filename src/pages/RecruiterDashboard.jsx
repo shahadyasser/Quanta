@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, LogOut, Loader2 } from "lucide-react";
+import { Plus, Search, LogOut, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
@@ -15,16 +15,28 @@ export default function RecruiterDashboard() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [recruiterStatus, setRecruiterStatus] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      base44.entities.Job.list("-created_date"),
-      base44.entities.Application.list("-created_date")
-    ]).then(([jobsData, appsData]) => {
+    const init = async () => {
+      let me = null;
+      try { me = await base44.auth.me(); } catch (_) {}
+      setUser(me);
+      const [jobsData, appsData] = await Promise.all([
+        base44.entities.Job.list("-created_date"),
+        base44.entities.Application.list("-created_date"),
+      ]);
       setJobs(jobsData);
       setApplications(appsData);
+      // Check recruiter approval status if we have an email
+      if (me?.email) {
+        const profiles = await base44.entities.RecruiterProfile.filter({ email: me.email });
+        if (profiles[0]) setRecruiterStatus(profiles[0].status);
+      }
       setLoading(false);
-    });
+    };
+    init();
   }, []);
 
   const filteredJobs = jobs.filter((job) => {
@@ -50,6 +62,28 @@ export default function RecruiterDashboard() {
     { label: "Avg. Match Score", value: avgScore ? `${avgScore}%` : "—", change: "", subtext: "AI computed" },
     { label: "Pending Reviews", value: String(pendingReviews), change: "", subtext: "need action" },
   ];
+
+  // Block access until approved
+  if (!loading && recruiterStatus === "pending") {
+    return (
+      <div className="min-h-screen bg-[#F8F7FF] flex items-center justify-center p-6">
+        <div className="bg-white border border-border rounded-2xl p-10 max-w-md w-full text-center space-y-5">
+          <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto">
+            <Clock className="w-8 h-8 text-orange-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Account Pending Approval</h2>
+            <p className="text-muted-foreground mt-2 leading-relaxed">
+              Your recruiter account is being reviewed by our admin team. You will receive an email once your account is approved.
+            </p>
+          </div>
+          <Button variant="outline" className="rounded-xl" asChild>
+            <Link to="/">Back to Home</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">

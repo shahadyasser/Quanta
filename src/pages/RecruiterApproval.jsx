@@ -1,27 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  ArrowLeft, CheckCircle, XCircle, Building2, User, Clock,
-  FileText, Globe, Mail, MapPin, Hash, Phone, Shield, Calendar
-} from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Building2, User, Clock, Mail, Phone, Shield, Calendar, Loader2, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { base44 } from "@/api/base44Client";
 
-const RECRUITER = {
-  company: "TechCorp Solutions",
-  regNumber: "REG-2024-TC-001",
-  location: "New York, USA",
-  address: "123 Tech Street, Manhattan, NY 10001",
-  website: "https://www.techcorp.com",
-  email: "hr@techcorp.com",
-  documents: ["Business License", "Tax Registration", "Identity Proof"],
-  name: "Sarah Mitchell",
-  phone: "+1 (555) 123-4567",
-  type: "Self-registration",
-  date: "12/15/2024, 10:30:00 AM",
-};
-
-function FieldBox({ icon: Icon, label, value, isLink, isDate }) {
+function FieldBox({ icon: Icon, label, value }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
@@ -29,16 +13,7 @@ function FieldBox({ icon: Icon, label, value, isLink, isDate }) {
         {label}
       </div>
       <div className="border border-border rounded-xl px-3 py-2.5 bg-white text-sm text-foreground min-h-[42px] flex items-center">
-        {isLink ? (
-          <a href={value} target="_blank" rel="noreferrer" className="text-primary hover:underline">{value}</a>
-        ) : isDate ? (
-          <span>
-            {value.split(",")[0]},{" "}
-            <span className="text-orange-500">{value.split(",")[1]}</span>
-          </span>
-        ) : (
-          value
-        )}
+        {value || <span className="text-muted-foreground italic">Not provided</span>}
       </div>
     </div>
   );
@@ -46,8 +21,50 @@ function FieldBox({ icon: Icon, label, value, isLink, isDate }) {
 
 export default function RecruiterApproval() {
   const navigate = useNavigate();
-  const [approvalNote, setApprovalNote] = useState("");
+  const [recruiters, setRecruiters] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [note, setNote] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
+  const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    base44.entities.RecruiterProfile.filter({ status: "pending" }, "-created_date").then((data) => {
+      setRecruiters(data);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleApprove = async () => {
+    if (!selected) return;
+    setProcessing(true);
+    await base44.entities.RecruiterProfile.update(selected.id, { status: "approved" });
+    // Optionally notify the recruiter
+    await base44.integrations.Core.SendEmail({
+      to: selected.email,
+      subject: "Your QuantaHire Recruiter Account Has Been Approved!",
+      body: `Dear ${selected.full_name || "Recruiter"},\n\nCongratulations! Your recruiter account on QuantaHire has been approved. You can now log in and start posting jobs and reviewing candidates.\n\n${note ? `Note from admin: ${note}\n\n` : ""}Welcome aboard!\n\nThe QuantaHire Team`
+    });
+    setRecruiters((prev) => prev.filter((r) => r.id !== selected.id));
+    setSelected(null);
+    setNote("");
+    setProcessing(false);
+  };
+
+  const handleReject = async () => {
+    if (!selected || !rejectionReason.trim()) return;
+    setProcessing(true);
+    await base44.entities.RecruiterProfile.update(selected.id, { status: "suspended" });
+    await base44.integrations.Core.SendEmail({
+      to: selected.email,
+      subject: "QuantaHire Recruiter Application Update",
+      body: `Dear ${selected.full_name || "Recruiter"},\n\nThank you for registering on QuantaHire. After careful review, we are unable to approve your account at this time.\n\nReason: ${rejectionReason}\n\nIf you believe this is an error, please contact support.\n\nBest regards,\nThe QuantaHire Team`
+    });
+    setRecruiters((prev) => prev.filter((r) => r.id !== selected.id));
+    setSelected(null);
+    setRejectionReason("");
+    setProcessing(false);
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F3FF]">
@@ -56,123 +73,115 @@ export default function RecruiterApproval() {
         <span className="font-bold text-lg text-primary">QuantaHire Admin</span>
       </nav>
 
-      <div className="max-w-3xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* Back */}
-        <Link
-          to="/admin-dashboard"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
+      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
+        <Link to="/admin-dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
 
-        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Recruiter Approval</h1>
-          <p className="text-muted-foreground mt-1">Review and approve recruiter registration</p>
+          <h1 className="text-2xl font-bold text-foreground">Recruiter Approval Queue</h1>
+          <p className="text-muted-foreground mt-1">Review and approve pending recruiter registrations</p>
         </div>
 
-        {/* Company Information */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold text-foreground">Company Information</h2>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5 ml-7">Verify company details and business credentials</p>
-            </div>
-            <Badge className="bg-muted text-foreground border border-border font-semibold text-sm px-3 py-1">Pending</Badge>
+        {loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : recruiters.length === 0 ? (
+          <div className="bg-white border border-border rounded-2xl p-14 text-center space-y-3">
+            <Inbox className="w-10 h-10 text-muted-foreground mx-auto" />
+            <p className="font-semibold text-foreground">No pending approvals</p>
+            <p className="text-sm text-muted-foreground">All recruiter requests have been reviewed.</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldBox icon={Building2} label="Company Name" value={RECRUITER.company} />
-            <FieldBox icon={Hash} label="Business Registration / License Number" value={RECRUITER.regNumber} />
-            <FieldBox icon={MapPin} label="Company Location" value={RECRUITER.location} />
-            <FieldBox icon={MapPin} label="Company Address" value={RECRUITER.address} />
-            <FieldBox icon={Globe} label="Company Website" value={RECRUITER.website} isLink />
-            <FieldBox icon={Mail} label="Company Email" value={RECRUITER.email} />
-          </div>
-
-          {/* Documents */}
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-foreground">Submitted Documents</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {RECRUITER.documents.map((doc) => (
-                <div key={doc} className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 font-medium">
-                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                  {doc}
-                </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* List */}
+            <div className="lg:col-span-1 space-y-3">
+              {recruiters.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => { setSelected(r); setNote(""); setRejectionReason(""); }}
+                  className={`w-full text-left bg-white border rounded-2xl p-4 transition-all hover:border-primary/40 ${selected?.id === r.id ? "border-primary shadow-sm" : "border-border"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                      <Building2 className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate">{r.company || "Unknown Company"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.email}</p>
+                    </div>
+                    <Badge className="bg-orange-50 text-orange-500 border-orange-200 text-xs shrink-0">Pending</Badge>
+                  </div>
+                </button>
               ))}
             </div>
-          </div>
-        </div>
 
-        {/* Recruiter Information */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground">Recruiter Information</h2>
+            {/* Detail panel */}
+            <div className="lg:col-span-2">
+              {!selected ? (
+                <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground h-full flex items-center justify-center">
+                  <p>Select a recruiter from the list to review</p>
+                </div>
+              ) : (
+                <div className="bg-white border border-border rounded-2xl p-6 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="font-semibold text-foreground text-lg">{selected.company || "Unknown Company"}</h2>
+                      <p className="text-sm text-muted-foreground">Registration request</p>
+                    </div>
+                    <Badge className="bg-orange-50 text-orange-500 border-orange-200">Pending Review</Badge>
+                  </div>
+
+                  {/* Company & Recruiter Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FieldBox icon={Building2} label="Company Name" value={selected.company} />
+                    <FieldBox icon={User} label="Recruiter Name" value={selected.full_name} />
+                    <FieldBox icon={Mail} label="Email" value={selected.email} />
+                    <FieldBox icon={Phone} label="Phone" value={selected.phone} />
+                    <FieldBox icon={Calendar} label="Registered On" value={selected.created_date ? new Date(selected.created_date).toLocaleString() : "—"} />
+                    <FieldBox icon={Shield} label="Role" value={selected.role || "recruiter"} />
+                  </div>
+
+                  {/* Decision */}
+                  <div className="space-y-4 pt-2 border-t border-border">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Approval Note <span className="text-muted-foreground font-normal">(Optional — sent to recruiter)</span></p>
+                      <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Add any welcome notes or special instructions..."
+                        className="w-full h-20 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Rejection Reason <span className="text-muted-foreground font-normal">(Required if rejecting)</span></p>
+                      <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Explain why the application is being rejected..."
+                        className="w-full h-20 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                      />
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl h-11 gap-2" onClick={handleApprove} disabled={processing}>
+                        {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                        Approve & Notify
+                      </Button>
+                      <Button className="flex-1 bg-destructive hover:bg-destructive/90 text-white rounded-xl h-11 gap-2" onClick={handleReject} disabled={processing || !rejectionReason.trim()}>
+                        {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+                        Reject & Notify
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground bg-muted rounded-xl px-4 py-3">
+                      <span className="font-semibold text-foreground">Note: </span>
+                      The recruiter will be notified by email once you approve or reject their application.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5 ml-7">Primary contact person details</p>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FieldBox icon={User} label="Recruiter Name" value={RECRUITER.name} />
-            <FieldBox icon={Phone} label="Recruiter Phone Number" value={RECRUITER.phone} />
-            <FieldBox icon={Shield} label="Registration Type" value={RECRUITER.type} />
-            <FieldBox icon={Calendar} label="Registration Date" value={RECRUITER.date} isDate />
-          </div>
-        </div>
-
-        {/* Review Decision */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div>
-            <h2 className="font-semibold text-foreground">Review Decision</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Approve or reject this recruiter registration</p>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Approval Note <span className="text-muted-foreground font-normal">(Optional)</span></p>
-            <textarea
-              value={approvalNote}
-              onChange={(e) => setApprovalNote(e.target.value)}
-              placeholder="Add any internal notes or special conditions for this approval..."
-              className="w-full h-24 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">
-              Rejection Reason <span className="text-destructive">*</span>
-            </p>
-            <textarea
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="If rejecting, please provide a clear reason that will be sent to the applicant..."
-              className="w-full h-24 rounded-xl border border-input bg-muted/40 px-3 py-2.5 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-1">
-            <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl h-11 gap-2" onClick={() => navigate("/admin-dashboard")}>
-              <CheckCircle className="w-4 h-4" />
-              Approve Recruiter
-            </Button>
-            <Button className="flex-1 bg-destructive hover:bg-destructive/90 text-white rounded-xl h-11 gap-2" onClick={() => navigate("/admin-dashboard")}>
-              <XCircle className="w-4 h-4" />
-              Reject Registration
-            </Button>
-          </div>
-
-          {/* Note */}
-          <p className="text-xs text-muted-foreground bg-muted rounded-xl px-4 py-3">
-            <span className="font-semibold text-foreground">Note: </span>
-            Approving this recruiter will grant them full access to the QuantaHire platform. They will be able to post jobs, review candidates, and conduct interviews.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

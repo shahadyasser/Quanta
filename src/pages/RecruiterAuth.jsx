@@ -1,19 +1,50 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, ArrowLeft, Briefcase, Eye, EyeOff } from "lucide-react";
+import { Sparkles, ArrowLeft, Briefcase, Eye, EyeOff, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { base44 } from "@/api/base44Client";
 
 export default function RecruiterAuth() {
   const [tab, setTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [pendingScreen, setPendingScreen] = useState(false);
+  const [blockedScreen, setBlockedScreen] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/recruiter-dashboard");
+    setLoading(true);
+    if (tab === "register") {
+      // Create a pending recruiter profile
+      await base44.entities.RecruiterProfile.create({
+        full_name: fullName,
+        company,
+        email,
+        role: "recruiter",
+        status: "pending",
+      });
+      setLoading(false);
+      setPendingScreen(true);
+    } else {
+      // Login: check approval status
+      const profiles = await base44.entities.RecruiterProfile.filter({ email });
+      const profile = profiles[0];
+      setLoading(false);
+      if (!profile || profile.status === "pending") {
+        setPendingScreen(true);
+      } else if (profile.status === "suspended") {
+        setBlockedScreen(true);
+      } else {
+        navigate("/recruiter-dashboard");
+      }
+    }
   };
 
   return (
@@ -62,146 +93,118 @@ export default function RecruiterAuth() {
 
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-md">
-            {/* Header */}
-            <div className="mb-8">
-              <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-2">Recruiter Portal</p>
-              <h2 className="text-3xl font-semibold text-foreground tracking-tight">
-                {tab === "login" ? "Welcome" : "Create Account"}
-              </h2>
-              <p className="mt-1.5 text-muted-foreground">
-                {tab === "login"
-                  ? "Sign in to your account or create a new one"
-                  : "Fill in the details below to get started"}
-              </p>
-            </div>
 
-            {/* Tabs */}
-            <div className="flex bg-muted rounded-xl p-1 mb-8">
-              <button
-                onClick={() => setTab("login")}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  tab === "login"
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Login
-              </button>
-              <button
-                onClick={() => setTab("register")}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                  tab === "register"
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Register
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Full Name — register only */}
-              {tab === "register" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="fullname">Full Name</Label>
-                  <Input
-                    id="fullname"
-                    type="text"
-                    placeholder="John Doe"
-                    className="h-12 rounded-xl border-border"
-                  />
+            {/* Pending approval screen */}
+            {pendingScreen ? (
+              <div className="text-center space-y-5 py-8">
+                <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto">
+                  <Clock className="w-8 h-8 text-orange-500" />
                 </div>
-              )}
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="h-12 rounded-xl border-border"
-                />
-              </div>
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="h-12 rounded-xl border-border pr-11"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Pending Approval</h2>
+                  <p className="text-muted-foreground mt-2 leading-relaxed">
+                    Your recruiter account is awaiting admin approval. You will be notified once approved and can then log in to access the platform.
+                  </p>
                 </div>
+                <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline">
+                  <ArrowLeft className="w-4 h-4" /> Back to Home
+                </Link>
               </div>
+            ) : blockedScreen ? (
+              <div className="text-center space-y-5 py-8">
+                <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+                  <Briefcase className="w-8 h-8 text-red-500" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Account Suspended</h2>
+                  <p className="text-muted-foreground mt-2">Your account has been suspended. Please contact support.</p>
+                </div>
+                <Link to="/" className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline">
+                  <ArrowLeft className="w-4 h-4" /> Back to Home
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="mb-8">
+                  <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-2">Recruiter Portal</p>
+                  <h2 className="text-3xl font-semibold text-foreground tracking-tight">
+                    {tab === "login" ? "Welcome" : "Create Account"}
+                  </h2>
+                  <p className="mt-1.5 text-muted-foreground">
+                    {tab === "login" ? "Sign in to your account" : "Fill in the details below to get started"}
+                  </p>
+                </div>
 
-              {/* Confirm Password — register only */}
-              {tab === "register" && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="confirm">Confirm Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm"
-                      type={showConfirm ? "text" : "password"}
-                      placeholder="••••••••"
-                      className="h-12 rounded-xl border-border pr-11"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                {/* Tabs */}
+                <div className="flex bg-muted rounded-xl p-1 mb-8">
+                  <button onClick={() => setTab("login")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "login" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Login</button>
+                  <button onClick={() => setTab("register")} className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${tab === "register" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Register</button>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {tab === "register" && (
+                    <>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="fullname">Full Name</Label>
+                        <Input id="fullname" type="text" placeholder="John Doe" className="h-12 rounded-xl border-border" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="company">Company Name</Label>
+                        <Input id="company" type="text" placeholder="Acme Corp" className="h-12 rounded-xl border-border" value={company} onChange={(e) => setCompany(e.target.value)} required />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" type="email" placeholder="you@example.com" className="h-12 rounded-xl border-border" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   </div>
-                </div>
-              )}
 
-              {/* Submit */}
-              <Button
-                type="submit"
-                className="w-full h-12 rounded-xl text-base font-medium bg-primary hover:bg-primary/90 mt-2"
-              >
-                {tab === "login" ? "Sign In" : "Create Account"}
-              </Button>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Switch tab hint */}
-              <p className="text-center text-sm text-muted-foreground">
-                {tab === "login" ? (
-                  <>
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setTab("register")}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      Register
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    Already have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setTab("login")}
-                      className="text-primary font-medium hover:underline"
-                    >
-                      Login
-                    </button>
-                  </>
-                )}
-              </p>
-            </form>
+                  {tab === "register" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirm">Confirm Password</Label>
+                      <div className="relative">
+                        <Input id="confirm" type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" />
+                        <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                          {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {tab === "register" && (
+                    <p className="text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded-xl px-3 py-2.5">
+                      <Clock className="w-3.5 h-3.5 inline mr-1" />
+                      New accounts require admin approval before you can access the platform.
+                    </p>
+                  )}
+
+                  <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl text-base font-medium bg-primary hover:bg-primary/90 mt-2">
+                    {loading ? "Please wait..." : tab === "login" ? "Sign In" : "Submit for Approval"}
+                  </Button>
+
+                  <p className="text-center text-sm text-muted-foreground">
+                    {tab === "login" ? (
+                      <>Don't have an account?{" "}<button type="button" onClick={() => setTab("register")} className="text-primary font-medium hover:underline">Register</button></>
+                    ) : (
+                      <>Already have an account?{" "}<button type="button" onClick={() => setTab("login")} className="text-primary font-medium hover:underline">Login</button></>
+                    )}
+                  </p>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>
