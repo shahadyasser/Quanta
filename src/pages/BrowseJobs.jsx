@@ -293,7 +293,7 @@ export default function BrowseJobs() {
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${applyFile ? "border-primary bg-accent/30" : "border-border hover:border-primary/50 hover:bg-accent/20"}`}
                   >
-                    <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => e.target.files[0] && setApplyFile(e.target.files[0])} />
+                    <input ref={fileInputRef} type="file" accept=".pdf,.docx" className="hidden" onChange={(e) => e.target.files[0] && setApplyFile(e.target.files[0])} />
                     {applyFile ? (
                       <>
                         <CheckCircle className="w-8 h-8 text-green-500 mb-2" />
@@ -306,7 +306,7 @@ export default function BrowseJobs() {
                           <FileText className="w-6 h-6 text-primary" />
                         </div>
                         <p className="font-medium text-foreground text-sm">Drop your CV or click to browse</p>
-                        <p className="text-xs text-muted-foreground mt-1">PDF only, up to 10MB</p>
+                        <p className="text-xs text-muted-foreground mt-1">PDF or DOCX, up to 10MB</p>
                       </>
                     )}
                   </div>
