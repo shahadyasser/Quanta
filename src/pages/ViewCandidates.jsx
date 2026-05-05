@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ export default function ViewCandidates() {
   const [emailModal, setEmailModal] = useState(null); // { app, type: 'accept' | 'reject' }
   const [emailMessage, setEmailMessage] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -134,6 +136,58 @@ export default function ViewCandidates() {
     setEmailModal(null);
   };
 
+  const toggleSelect = (id) => setSelected((prev) => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map((a) => a.id)));
+    }
+  };
+
+  const deleteCandidate = async (appId) => {
+    await base44.entities.Application.delete(appId);
+    setApplications((prev) => prev.filter((a) => a.id !== appId));
+    setSelected((prev) => { const next = new Set(prev); next.delete(appId); return next; });
+  };
+
+  const handleBulkAction = async (type) => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setBulkProcessing(true);
+    const isAccept = type === "accept";
+    const status = isAccept ? "shortlisted" : "rejected";
+    const subject = isAccept ? `Congratulations – ${jobTitle} Offer` : `Application Update – ${jobTitle}`;
+    const selectedApps = filtered.filter((a) => ids.includes(a.id));
+    await Promise.all(selectedApps.map((app) => {
+      const body = isAccept
+        ? `Dear ${app.candidate_name || "Candidate"},\n\nCongratulations! You have been selected for the ${jobTitle} position. We look forward to welcoming you to the team.\n\nBest regards,\nThe Hiring Team`
+        : `Dear ${app.candidate_name || "Candidate"},\n\nThank you for applying for the ${jobTitle} position. After careful consideration, we will not be moving forward with your application at this time.\n\nBest regards,\nThe Hiring Team`;
+      return Promise.all([
+        base44.integrations.Core.SendEmail({ to: app.candidate_email, subject, body }),
+        base44.entities.Application.update(app.id, { status })
+      ]);
+    }));
+    setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
+    setSelected(new Set());
+    setBulkProcessing(false);
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    setBulkProcessing(true);
+    await Promise.all(ids.map((id) => base44.entities.Application.delete(id)));
+    setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
+    setSelected(new Set());
+    setBulkProcessing(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Header */}
@@ -188,9 +242,33 @@ export default function ViewCandidates() {
 
         {/* Candidates list */}
         <div>
-          <div className="mb-3">
-            <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
-            <p className="text-sm text-muted-foreground">Ranked by AI match score from CV analysis</p>
+          <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
+              <p className="text-sm text-muted-foreground">Ranked by AI match score from CV analysis</p>
+            </div>
+            {filtered.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
+                  {selected.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
+                </button>
+                {selected.size > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">{selected.size} selected</span>
+                    <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white gap-1.5" onClick={() => handleBulkAction("accept")} disabled={bulkProcessing}>
+                      {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Accept Selected
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50 gap-1.5" onClick={() => handleBulkAction("reject")} disabled={bulkProcessing}>
+                      {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Reject Selected
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50 gap-1.5" onClick={handleBulkDelete} disabled={bulkProcessing}>
+                      <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {loading ? (
@@ -209,9 +287,12 @@ export default function ViewCandidates() {
                 const rankColors = ["text-yellow-500", "text-slate-400", "text-amber-600"];
                 const rankColor = a.match_score && i < 3 ? rankColors[i] : "text-muted-foreground";
                 return (
-                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${i === 0 && a.match_score ? "border-yellow-300 shadow-sm" : "border-border"}`}>
+                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${selected.has(a.id) ? "border-primary/50 bg-accent/10" : i === 0 && a.match_score ? "border-yellow-300 shadow-sm" : "border-border"}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-4 flex-1">
+                        <button onClick={() => toggleSelect(a.id)} className="shrink-0">
+                          {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
+                        </button>
                         <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>
                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">{initials}</span>
@@ -263,6 +344,9 @@ export default function ViewCandidates() {
                               Reject
                             </Button>
                           )}
+                          <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50" onClick={() => deleteCandidate(a.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
                       </div>
                     </div>
