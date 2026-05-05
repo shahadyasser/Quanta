@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Users, UserCheck, UserX } from "lucide-react";
+import { ArrowLeft, Search, Users, UserCheck, UserX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,48 +12,49 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-const INITIAL_RECRUITERS = [
-  { company: "Microsoft Corporation", email: "hr@microsoft.com", name: "Alice Johnson", approvalDate: "11/15/2024", jobsPosted: 23, activeJobs: 8, status: "Active" },
-  { company: "Google LLC", email: "talent@google.com", name: "Bob Smith", approvalDate: "11/20/2024", jobsPosted: 31, activeJobs: 12, status: "Active" },
-  { company: "Amazon Web Services", email: "recruitment@aws.com", name: "Carol Davis", approvalDate: "10/5/2024", jobsPosted: 18, activeJobs: 0, status: "Suspended" },
-  { company: "Meta Platforms", email: "careers@meta.com", name: "David Wilson", approvalDate: "12/1/2024", jobsPosted: 15, activeJobs: 7, status: "Active" },
-  { company: "Apple Inc.", email: "jobs@apple.com", name: "Eve Martinez", approvalDate: "11/10/2024", jobsPosted: 27, activeJobs: 11, status: "Active" },
-];
+import { base44 } from "@/api/base44Client";
 
 export default function RecruiterManagement() {
-  const [recruiters, setRecruiters] = useState(INITIAL_RECRUITERS);
+  const [recruiters, setRecruiters] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [confirmDialog, setConfirmDialog] = useState(null); // { email, action: 'suspend'|'activate' }
+  const [confirmDialog, setConfirmDialog] = useState(null); // { id, action: 'suspend'|'activate' }
+
+  useEffect(() => {
+    base44.entities.RecruiterProfile.list("-created_date").then((data) => {
+      setRecruiters(data);
+      setLoading(false);
+    });
+  }, []);
 
   const total = recruiters.length;
-  const active = recruiters.filter((r) => r.status === "Active").length;
-  const suspended = recruiters.filter((r) => r.status === "Suspended").length;
+  const active = recruiters.filter((r) => r.status === "approved").length;
+  const suspended = recruiters.filter((r) => r.status === "suspended").length;
 
   const filtered = recruiters.filter(
     (r) =>
-      r.company.toLowerCase().includes(search.toLowerCase()) ||
-      r.email.toLowerCase().includes(search.toLowerCase())
+      (r.company || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.email || "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.full_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const confirmToggle = (email) => {
-    const recruiter = recruiters.find((r) => r.email === email);
-    setConfirmDialog({ email, action: recruiter.status === "Active" ? "suspend" : "activate" });
+  const confirmToggle = (id) => {
+    const recruiter = recruiters.find((r) => r.id === id);
+    setConfirmDialog({ id, action: recruiter.status === "approved" ? "suspend" : "activate" });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    const newStatus = confirmDialog.action === "suspend" ? "suspended" : "approved";
+    await base44.entities.RecruiterProfile.update(confirmDialog.id, { status: newStatus });
     setRecruiters((prev) =>
-      prev.map((r) =>
-        r.email === confirmDialog.email
-          ? { ...r, status: r.status === "Active" ? "Suspended" : "Active" }
-          : r
-      )
+      prev.map((r) => r.id === confirmDialog.id ? { ...r, status: newStatus } : r)
     );
     setConfirmDialog(null);
   };
 
-  const deleteRecruiter = (email) => {
-    setRecruiters((prev) => prev.filter((r) => r.email !== email));
+  const deleteRecruiter = async (id) => {
+    await base44.entities.RecruiterProfile.delete(id);
+    setRecruiters((prev) => prev.filter((r) => r.id !== id));
   };
 
   return (
@@ -116,30 +117,34 @@ export default function RecruiterManagement() {
             </div>
           </div>
 
+          {loading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">No recruiters found.</p>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                  {["Company Name", "Email", "Recruiter Name", "Approval Date", "Jobs Posted", "Active Jobs", "Status", "Actions"].map((h) => (
+                  {["Company Name", "Email", "Recruiter Name", "Registered On", "Status", "Actions"].map((h) => (
                     <th key={h} className="pb-3 pr-4 font-medium whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((r) => (
-                  <tr key={r.email}>
-                    <td className="py-3.5 pr-4 font-medium text-foreground whitespace-nowrap">{r.company}</td>
+                  <tr key={r.id}>
+                    <td className="py-3.5 pr-4 font-medium text-foreground whitespace-nowrap">{r.company || "—"}</td>
                     <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.email}</td>
-                    <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.name}</td>
-                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.approvalDate}</td>
-                    <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.jobsPosted}</td>
-                    <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.activeJobs}</td>
+                    <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
+                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</td>
                     <td className="py-3.5 pr-4 whitespace-nowrap">
-                      <Badge className={r.status === "Active"
-                        ? "bg-green-50 text-green-600 border-green-200"
-                        : "bg-orange-50 text-orange-500 border-orange-200"
+                      <Badge className={
+                        r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" :
+                        r.status === "suspended" ? "bg-red-50 text-red-500 border-red-200" :
+                        "bg-orange-50 text-orange-500 border-orange-200"
                       }>
-                        {r.status}
+                        {r.status === "approved" ? "Approved" : r.status === "suspended" ? "Suspended" : "Pending"}
                       </Badge>
                     </td>
                     <td className="py-3.5 whitespace-nowrap">
@@ -148,19 +153,19 @@ export default function RecruiterManagement() {
                           size="sm"
                           variant="outline"
                           className={`rounded-lg text-xs h-8 px-3 ${
-                            r.status === "Active"
+                            r.status === "approved"
                               ? "border-orange-300 text-orange-500 hover:bg-orange-50"
                               : "border-green-300 text-green-600 hover:bg-green-50"
                           }`}
-                          onClick={() => confirmToggle(r.email)}
+                          onClick={() => confirmToggle(r.id)}
                         >
-                          {r.status === "Active" ? "Suspend" : "Activate"}
+                          {r.status === "approved" ? "Suspend" : "Activate"}
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="rounded-lg text-xs h-8 px-3 border-destructive/40 text-destructive hover:bg-destructive/5"
-                          onClick={() => deleteRecruiter(r.email)}
+                          onClick={() => deleteRecruiter(r.id)}
                         >
                           Delete
                         </Button>
@@ -171,11 +176,12 @@ export default function RecruiterManagement() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
       </div>
       {/* Confirmation Dialog */}
       {confirmDialog && (() => {
-        const r = recruiters.find((rec) => rec.email === confirmDialog.email);
+        const r = recruiters.find((rec) => rec.id === confirmDialog.id);
         const isActivate = confirmDialog.action === "activate";
         return (
           <Dialog open={true} onOpenChange={() => setConfirmDialog(null)}>
