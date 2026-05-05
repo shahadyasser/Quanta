@@ -1,61 +1,47 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-import { LogOut, ClipboardList, Briefcase, PlayCircle, Eye } from "lucide-react";
+import { LogOut, ClipboardList, Briefcase, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const STATS = [
-  { label: "Applications", value: "8" },
-  { label: "New Messages", value: "3" },
-];
+import { base44 } from "@/api/base44Client";
 
 const QUICK_ACTIONS = [
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
   { icon: Briefcase, label: "Browse Jobs", description: "Find jobs and apply with your CV", href: "/browse-jobs" },
 ];
 
-const APPLICATIONS = [
-  {
-    company: "TechCorp Inc.",
-    role: "Senior Software Engineer",
-    date: "Nov 8, 2025",
-    status: "Under Review",
-    action: null,
-  },
-  {
-    company: "DesignHub",
-    role: "Frontend Developer",
-    date: "Nov 5, 2025",
-    status: "Under Review",
-    action: null,
-  },
-  {
-    company: "DataSystems",
-    role: "Full Stack Engineer",
-    date: "Nov 3, 2025",
-    status: "Application Sent",
-    action: null,
-  },
-  {
-    company: "CloudVentures",
-    role: "DevOps Engineer",
-    date: "Nov 1, 2025",
-    status: "Feedback Available",
-    action: "View Feedback",
-    href: "/feedback-report",
-  },
-];
+const STATUS_LABEL = {
+  pending: "In Progress",
+  processed: "In Progress",
+  shortlisted: "Accepted",
+  rejected: "Rejected",
+};
 
 const STATUS_STYLES = {
-  "Interview Scheduled": "bg-green-50 text-green-600 border-green-200",
-  "Under Review": "bg-orange-50 text-orange-500 border-orange-200",
-  "Application Sent": "bg-blue-50 text-blue-600 border-blue-200",
-  "Feedback Available": "bg-purple-50 text-purple-600 border-purple-200",
+  "In Progress": "bg-orange-50 text-orange-500 border-orange-200",
+  "Accepted": "bg-green-50 text-green-600 border-green-200",
+  "Rejected": "bg-red-50 text-red-500 border-red-200",
 };
 
 export default function CandidateDashboard() {
   const navigate = useNavigate();
+  const [applications, setApplications] = useState([]);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const init = async () => {
+      let me = null;
+      try { me = await base44.auth.me(); } catch (_) {}
+      setUser(me);
+      if (me?.email) {
+        const apps = await base44.entities.Application.filter({ candidate_email: me.email }, "-created_date");
+        setApplications(apps);
+      }
+      setLoading(false);
+    };
+    init();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
@@ -64,7 +50,7 @@ export default function CandidateDashboard() {
         <span className="font-bold text-lg text-primary">QuantaHire</span>
         <div className="flex items-center gap-3">
           <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">
-            candidate@quantahire.com
+            {user?.email || ""}
           </span>
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/">
@@ -79,22 +65,24 @@ export default function CandidateDashboard() {
         {/* Header */}
         <div>
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Candidate Portal</p>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, محمد العمري!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.full_name || "Candidate"}!</h1>
           <p className="text-muted-foreground mt-1">Track your job applications and status updates.</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 max-w-xs">
-          {STATS.map((s) => (
-            <div key={s.label} className="bg-white border border-border rounded-2xl p-5 text-center">
-              <p className="text-3xl font-bold text-foreground">{s.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
+          <div className="bg-white border border-border rounded-2xl p-5 text-center">
+            <p className="text-3xl font-bold text-foreground">{applications.length}</p>
+            <p className="text-sm text-muted-foreground mt-1">Applications</p>
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-5 text-center">
+            <p className="text-3xl font-bold text-green-600">{applications.filter(a => a.status === "shortlisted").length}</p>
+            <p className="text-sm text-muted-foreground mt-1">Accepted</p>
+          </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {QUICK_ACTIONS.map(({ icon: Icon, label, description, href }) => (
             <div
               key={label}
@@ -119,47 +107,39 @@ export default function CandidateDashboard() {
             <p className="text-sm text-muted-foreground">Track the status of your job applications</p>
           </div>
 
-          <div className="space-y-3">
-            {APPLICATIONS.map((app) => (
-              <div
-                key={app.company}
-                className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                    <span className="text-primary font-bold">{app.company[0]}</span>
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                      <h3 className="font-semibold text-foreground">{app.company}</h3>
-                      <Badge className={`text-xs ${STATUS_STYLES[app.status]}`}>{app.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{app.role} • {app.date}</p>
-                  </div>
-                </div>
-
-                {app.action && (
-                  <Button
-                    size="sm"
-                    onClick={() => app.href && navigate(app.href)}
-                    className={`rounded-xl shrink-0 gap-2 ${
-                      app.action === "Start Interview"
-                        ? "bg-primary hover:bg-primary/90 text-white"
-                        : "border border-primary text-primary bg-transparent hover:bg-accent"
-                    }`}
-                    variant={app.action === "Start Interview" ? "default" : "outline"}
+          {loading ? (
+            <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : applications.length === 0 ? (
+            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
+              No applications yet. Browse jobs and apply!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {applications.map((app) => {
+                const statusLabel = STATUS_LABEL[app.status] || "In Progress";
+                const initials = (app.company || app.job_title || "?")[0].toUpperCase();
+                return (
+                  <div
+                    key={app.id}
+                    className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
-                    {app.action === "Start Interview" ? (
-                      <PlayCircle className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                    {app.action}
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                        <span className="text-primary font-bold">{initials}</span>
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                          <h3 className="font-semibold text-foreground">{app.company || "Company"}</h3>
+                          <Badge className={`text-xs ${STATUS_STYLES[statusLabel] || "bg-muted text-muted-foreground"}`}>{statusLabel}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{app.job_title} • {new Date(app.created_date).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
