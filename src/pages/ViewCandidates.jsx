@@ -256,12 +256,6 @@ export default function ViewCandidates() {
                 {selected.size > 0 && (
                   <>
                     <span className="text-sm text-muted-foreground">{selected.size} selected</span>
-                    <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white gap-1.5" onClick={() => handleBulkAction("accept")} disabled={bulkProcessing}>
-                      {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Accept Selected
-                    </Button>
-                    <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50 gap-1.5" onClick={() => handleBulkAction("reject")} disabled={bulkProcessing}>
-                      {bulkProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />} Reject Selected
-                    </Button>
                     <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50 gap-1.5" onClick={handleBulkDelete} disabled={bulkProcessing}>
                       <Trash2 className="w-3.5 h-3.5" /> Delete Selected
                     </Button>
