@@ -115,6 +115,7 @@ export default function ViewCandidates() {
       }),
       updateStatus(app.id, isAccept ? "shortlisted" : "rejected")
     ]);
+    setApplications((prev) => prev.filter((a) => a.id !== app.id));
     setSendingEmail(false);
     setEmailModal(null);
   };
