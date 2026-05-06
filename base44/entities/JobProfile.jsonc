@@ -1,0 +1,57 @@
+{
+  "name": "JobProfile",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Job title"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department"
+    },
+    "ideal_openness": {
+      "type": "number",
+      "description": "Ideal openness score 1-5"
+    },
+    "ideal_conscientiousness": {
+      "type": "number",
+      "description": "Ideal conscientiousness score 1-5"
+    },
+    "ideal_extraversion": {
+      "type": "number",
+      "description": "Ideal extraversion score 1-5"
+    },
+    "ideal_agreeableness": {
+      "type": "number",
+      "description": "Ideal agreeableness score 1-5"
+    },
+    "ideal_stability": {
+      "type": "number",
+      "description": "Ideal stability score 1-5"
+    },
+    "weight_openness": {
+      "type": "number",
+      "description": "Weight for openness 0.5-2.0"
+    },
+    "weight_conscientiousness": {
+      "type": "number",
+      "description": "Weight for conscientiousness 0.5-2.0"
+    },
+    "weight_extraversion": {
+      "type": "number",
+      "description": "Weight for extraversion 0.5-2.0"
+    },
+    "weight_agreeableness": {
+      "type": "number",
+      "description": "Weight for agreeableness 0.5-2.0"
+    },
+    "weight_stability": {
+      "type": "number",
+      "description": "Weight for stability 0.5-2.0"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

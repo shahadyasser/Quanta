@@ -1,0 +1,54 @@
+{
+  "name": "AssessmentResult",
+  "type": "object",
+  "properties": {
+    "candidate_email": {
+      "type": "string",
+      "description": "Candidate email"
+    },
+    "candidate_name": {
+      "type": "string",
+      "description": "Candidate full name"
+    },
+    "job_profile_id": {
+      "type": "string",
+      "description": "Reference to JobProfile entity"
+    },
+    "job_profile_title": {
+      "type": "string",
+      "description": "Job title (denormalized)"
+    },
+    "score_openness": {
+      "type": "number",
+      "description": "Average openness score"
+    },
+    "score_conscientiousness": {
+      "type": "number",
+      "description": "Average conscientiousness score"
+    },
+    "score_extraversion": {
+      "type": "number",
+      "description": "Average extraversion score"
+    },
+    "score_agreeableness": {
+      "type": "number",
+      "description": "Average agreeableness score"
+    },
+    "score_stability": {
+      "type": "number",
+      "description": "Average stability score"
+    },
+    "fit_score": {
+      "type": "number",
+      "description": "Weighted fit score 0-100"
+    },
+    "answers": {
+      "type": "object",
+      "description": "Map of question_id to answer value"
+    }
+  },
+  "required": [
+    "candidate_email",
+    "job_profile_id"
+  ]
+}

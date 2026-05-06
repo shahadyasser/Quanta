@@ -1,0 +1,34 @@
+{
+  "name": "PsychQuestion",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Question text"
+    },
+    "trait": {
+      "type": "string",
+      "enum": [
+        "openness",
+        "conscientiousness",
+        "extraversion",
+        "agreeableness",
+        "stability"
+      ],
+      "description": "Big Five trait"
+    },
+    "is_reverse_scored": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether to reverse score (6 - answer)"
+    },
+    "order_index": {
+      "type": "number",
+      "description": "Display order"
+    }
+  },
+  "required": [
+    "text",
+    "trait"
+  ]
+}
