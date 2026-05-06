@@ -65,17 +65,14 @@ export default function Home() {
       </div>
 
       {/* Right side — account selection */}
-      <div className="relative flex items-center justify-center px-6 md:px-12 py-16 bg-gradient-to-b from-background via-background to-[#F5F3FF] overflow-hidden">
-        {/* Subtle background blob */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/5 blur-2xl" />
-        
-        <div className="relative w-full max-w-md z-10">
+      <div className="flex items-center justify-center px-6 md:px-12 py-16 bg-background">
+        <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <h2 className="text-4xl font-bold text-foreground tracking-tight">
-              Welcome Back
+            <h2 className="text-3xl font-semibold text-foreground tracking-tight">
+              Welcome to QuantaHire
             </h2>
-            <p className="mt-3 text-muted-foreground text-lg">
-              Choose your role to get started
+            <p className="mt-2 text-muted-foreground">
+              Choose your account type to continue
             </p>
           </div>
 
@@ -101,13 +98,11 @@ export default function Home() {
           </div>
 
           {/* Demo Accounts */}
-          <div className="mt-10 p-5 bg-primary/5 border border-primary/20 rounded-2xl text-center space-y-2">
-            <p className="text-xs font-semibold text-primary uppercase tracking-wide">Demo Accounts:</p>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground"><span className="font-medium">Recruiter:</span> recruiter@quantahire.com</p>
-              <p className="text-xs text-muted-foreground"><span className="font-medium">Candidate:</span> candidate@quantahire.com</p>
-              <p className="text-xs text-muted-foreground"><span className="font-medium">Admin:</span> admin@quantahire.com</p>
-            </div>
+          <div className="mt-8 text-center space-y-1">
+            <p className="text-sm text-muted-foreground font-medium">Demo Accounts:</p>
+            <p className="text-xs text-muted-foreground">Recruiter: recruiter@quantahire.com / recruiter123</p>
+            <p className="text-xs text-muted-foreground">Candidate: candidate@quantahire.com / candidate123</p>
+            <p className="text-xs text-muted-foreground">Admin: admin@quantahire.com / admin123</p>
           </div>
         </div>
       </div>
