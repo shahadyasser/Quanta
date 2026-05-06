@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { neon } from 'npm:@neondatabase/serverless@0.10.4';
 
 function flattenValue(val) {
   if (val === null || val === undefined) return null;
@@ -15,28 +16,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Forbidden: Admin access required" }, { status: 403 });
     }
 
-    const host = Deno.env.get("POSTGRES_HOST") || Deno.env.get("PGHOST");
-    const port = parseInt(Deno.env.get("POSTGRES_PORT") || Deno.env.get("PGPORT") || "5432");
-    const dbUser = Deno.env.get("POSTGRES_USER") || Deno.env.get("PGUSER");
-    const password = Deno.env.get("POSTGRES_PASSWORD") || Deno.env.get("PGPASSWORD");
-    const database = Deno.env.get("POSTGRES_DATABASE") || Deno.env.get("PGDATABASE");
+    const host = Deno.env.get("POSTGRES_HOST");
+    const port = Deno.env.get("POSTGRES_PORT") || "5432";
+    const dbUser = Deno.env.get("POSTGRES_USER");
+    const password = Deno.env.get("POSTGRES_PASSWORD");
+    const database = Deno.env.get("POSTGRES_DATABASE");
 
-    console.log("Connecting to:", host, "port:", port, "user:", dbUser, "db:", database);
+    const connectionString = `postgresql://${dbUser}:${password}@${host}:${port}/${database}?sslmode=require`;
+    console.log("Connecting via Neon HTTP driver to:", host);
 
-    const { default: postgres } = await import('npm:postgres@3.4.4');
+    const sql = neon(connectionString);
 
-    const sql = postgres({
-      host,
-      port,
-      user: dbUser,
-      password,
-      database,
-      ssl: { rejectUnauthorized: false },
-      max: 1,
-      idle_timeout: 20,
-      connect_timeout: 15,
-    });
-
+    // Test connection
     await sql`SELECT 1`;
     console.log("Connection successful!");
 
@@ -64,13 +55,16 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      await sql.unsafe(`CREATE TABLE IF NOT EXISTS "${tableName}" ("id" TEXT PRIMARY KEY)`);
+      // Create table with id as primary key
+      await sql(`CREATE TABLE IF NOT EXISTS "${tableName}" ("id" TEXT PRIMARY KEY)`);
 
+      // Add missing columns
       const cols = Object.keys(rows[0]).filter(k => k !== "id");
       for (const col of cols) {
-        await sql.unsafe(`ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${col}" TEXT`);
+        await sql(`ALTER TABLE "${tableName}" ADD COLUMN IF NOT EXISTS "${col}" TEXT`);
       }
 
+      // Upsert rows one by one
       for (const row of rows) {
         const allKeys = Object.keys(row);
         const values = allKeys.map(k => flattenValue(row[k]));
@@ -78,7 +72,7 @@ Deno.serve(async (req) => {
         const placeholders = allKeys.map((_, i) => `$${i + 1}`).join(", ");
         const updateSet = allKeys.filter(k => k !== "id").map(k => `"${k}" = EXCLUDED."${k}"`).join(", ");
 
-        await sql.unsafe(
+        await sql(
           `INSERT INTO "${tableName}" (${colNames}) VALUES (${placeholders}) ON CONFLICT ("id") DO UPDATE SET ${updateSet}`,
           values
         );
@@ -86,8 +80,6 @@ Deno.serve(async (req) => {
 
       counts[tableName] = rows.length;
     }
-
-    await sql.end();
 
     return Response.json({ success: true, exported: counts });
   } catch (error) {
