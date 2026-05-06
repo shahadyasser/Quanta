@@ -32,10 +32,10 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      // Authenticate user with Base44
+      // Use Base44's login redirect with form email
       base44.auth.redirectToLogin("/candidate-dashboard");
     } catch (err) {
-      setError("Invalid email or password.");
+      setError("Authentication failed. Please try again.");
       setLoading(false);
     }
   };
