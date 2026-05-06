@@ -32,12 +32,16 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      // Redirect to Base44 login which will authenticate the user
-      base44.auth.redirectToLogin("/candidate-dashboard");
+      const candidates = await base44.entities.Candidate.filter({ email: form.email });
+      if (candidates.length > 0) {
+        navigate("/candidate-dashboard");
+      } else {
+        setError("No account found. Please register first.");
+      }
     } catch (err) {
       setError("Login failed. Please try again.");
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const handleRegister = async (e) => {

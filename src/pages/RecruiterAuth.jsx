@@ -27,7 +27,7 @@ export default function RecruiterAuth() {
         company,
         email,
         role: "recruiter",
-        status: "pending",
+        status: "approved",
       });
       setLoading(false);
       setWarning("registered");
