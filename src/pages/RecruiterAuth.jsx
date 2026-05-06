@@ -33,16 +33,11 @@ export default function RecruiterAuth() {
       setWarning("registered");
     } else {
       const profiles = await base44.entities.RecruiterProfile.filter({ email });
-      const profile = profiles[0];
       setLoading(false);
-      if (!profile) {
-        setWarning("no_access");
-      } else if (profile.status === "pending") {
-        setWarning("pending");
-      } else if (profile.status === "suspended") {
-        setWarning("suspended");
-      } else {
+      if (profiles.length > 0) {
         navigate("/recruiter-dashboard");
+      } else {
+        setWarning("no_access");
       }
     }
   };
