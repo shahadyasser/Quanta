@@ -31,8 +31,13 @@ export default function CandidateAuth() {
       return;
     }
     setLoading(true);
-    // Use Base44's login redirect — passes next URL so user lands on dashboard
-    base44.auth.redirectToLogin("/candidate-dashboard");
+    try {
+      // Authenticate user with Base44
+      base44.auth.redirectToLogin("/candidate-dashboard");
+    } catch (err) {
+      setError("Invalid email or password.");
+      setLoading(false);
+    }
   };
 
   const handleRegister = async (e) => {
