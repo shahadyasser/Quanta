@@ -34,7 +34,6 @@ export default function Home() {
         <div className="relative max-w-xl">
           {/* Pill */}
           <div className="inline-flex items-center gap-2 bg-white/60 backdrop-blur-md border border-white/40 rounded-full px-4 py-1.5 shadow-lg hover:bg-white/70 transition-all">
-            <Sparkles className="w-4 h-4 text-purple-600 animate-spin" style={{ animationDuration: '3s' }} />
             <span className="text-sm font-medium text-gray-700">AI-Powered Recruitment Platform</span>
           </div>
 
