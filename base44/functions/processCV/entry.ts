@@ -249,6 +249,7 @@ Return only the JSON object with these fields.`,
 
     // Step 5: LLM scoring with RAG-augmented context and system prompt
     const scoringResp = await base44.integrations.Core.InvokeLLM({
+      system_prompt: SCORE_SYSTEM,
       prompt: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`
     });
 
