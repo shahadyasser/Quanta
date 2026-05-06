@@ -31,6 +31,11 @@ export default function CandidateDashboard() {
 
   useEffect(() => {
     const init = async () => {
+      const authed = await base44.auth.isAuthenticated();
+      if (!authed) {
+        base44.auth.redirectToLogin("/candidate-dashboard");
+        return;
+      }
       let me = null;
       try { me = await base44.auth.me(); } catch (_) {}
       setUser(me);
