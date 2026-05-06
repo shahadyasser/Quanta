@@ -41,6 +41,22 @@ export default function RecruiterDashboard() {
     init();
   }, [navigate]);
 
+  useEffect(() => {
+    const unsubscribe = base44.entities.Application.subscribe((event) => {
+      setApplications((prev) => {
+        if (event.type === "create") {
+          return [event.data, ...prev];
+        } else if (event.type === "update") {
+          return prev.map(a => a.id === event.id ? event.data : a);
+        } else if (event.type === "delete") {
+          return prev.filter(a => a.id !== event.id);
+        }
+        return prev;
+      });
+    });
+    return () => unsubscribe();
+  }, []);
+
   const filteredJobs = jobs.filter((job) => {
     const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
     const matchesSearch = (job.title || "").toLowerCase().includes(search.toLowerCase());
