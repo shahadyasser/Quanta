@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Reference to Application entity"
     },
+    "job_id": {
+      "type": "string",
+      "description": "Reference to Job entity for cross-CV retrieval"
+    },
     "embedding": {
       "type": "array",
       "items": {

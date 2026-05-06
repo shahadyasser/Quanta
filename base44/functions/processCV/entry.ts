@@ -36,18 +36,34 @@ async function computeRealSimilarity(text1, text2) {
   return Math.round(Math.max(0, sim) * 1000) / 10; // 0-100 scale
 }
 
-// Chunk CV text into ~1500 char pieces
-function chunkText(text, chunkSize = 1500) {
+// Smart chunking: split on paragraph breaks, keep chunks under 1500 chars
+function chunkText(text, maxChunkSize = 1500) {
+  const paragraphs = text.split('\n\n').filter(p => p.trim());
   const chunks = [];
-  for (let i = 0; i < text.length; i += chunkSize) {
-    chunks.push(text.slice(i, i + chunkSize));
+  let currentChunk = '';
+  
+  for (const para of paragraphs) {
+    if ((currentChunk + '\n\n' + para).length > maxChunkSize && currentChunk.length > 0) {
+      chunks.push(currentChunk.trim());
+      currentChunk = para;
+    } else {
+      currentChunk = currentChunk ? currentChunk + '\n\n' + para : para;
+    }
   }
+  
+  if (currentChunk.trim()) chunks.push(currentChunk.trim());
   return chunks;
 }
 
-// Retrieve top-10 most similar chunks
-async function retrieveTopChunks(base44, jobEmbedding, applicationId, topK = 10) {
-  const allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id: applicationId });
+// Retrieve top-10 most similar chunks from same job posting, with fallback to current CV
+async function retrieveTopChunks(base44, jobEmbedding, jobId, applicationId, topK = 10) {
+  // Try to get embeddings from all CVs for this job
+  let allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ job_id: jobId });
+  
+  // Fallback to current CV only if no cross-CV embeddings exist
+  if (!allEmbeddings || allEmbeddings.length === 0) {
+    allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id: applicationId });
+  }
   
   const scored = allEmbeddings.map(emb => {
     const sim = cosineSimilarity(jobEmbedding, emb.embedding);
@@ -139,7 +155,7 @@ function hybridScore(similarity, llmTotal, weightSim = 0.3, weightLlm = 0.7) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { cv_url, application_id, job_title, job_description, job_skills } = await req.json();
+    const { cv_url, application_id, job_id, job_title, job_description, job_skills } = await req.json();
 
     // Step 1: Extract CV text content
     const isDocx = cv_url.toLowerCase().includes(".docx");
@@ -218,22 +234,22 @@ Return only the JSON object with these fields.`,
       const embedding = await getEmbedding(chunk);
       await base44.asServiceRole.entities.CVEmbedding.create({
         application_id,
+        job_id: job_id || "",
         embedding,
         cv_text_chunk: chunk.slice(0, 2000),
         chunk_index: idx
       });
     }));
 
-    // Step 4: Stage 3 — Retrieve top 10 most relevant chunks for this job
+    // Step 4: Stage 3 — Retrieve top 10 most relevant chunks from all CVs for this job
     const jobEmbedding = await getEmbedding(jobText);
-    const retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, application_id, 10);
+    const retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, job_id || "", application_id, 10);
     const retrievedText = retrievedChunks.map(c => c.cv_text_chunk).join("\n---\n");
     const chunksCount = retrievedChunks.length;
 
-    // Step 5: LLM scoring with RAG-augmented context
+    // Step 5: LLM scoring with RAG-augmented context and system prompt
     const scoringResp = await base44.integrations.Core.InvokeLLM({
-      prompt: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`,
-      response_json_schema: null
+      prompt: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`
     });
 
     // Parse the 4-construct ratings
