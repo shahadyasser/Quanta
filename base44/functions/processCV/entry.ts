@@ -1,5 +1,63 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+// ─── OpenAI Embeddings for Real RAG ───
+async function getEmbedding(text) {
+  const response = await fetch('https://api.openai.com/v1/embeddings', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`
+    },
+    body: JSON.stringify({
+      model: 'text-embedding-3-small',
+      input: text.slice(0, 8000)
+    })
+  });
+  const data = await response.json();
+  return data.data[0].embedding; // 1536-dimensional vector
+}
+
+function cosineSimilarity(vecA, vecB) {
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dot += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+async function computeRealSimilarity(text1, text2) {
+  const [emb1, emb2] = await Promise.all([
+    getEmbedding(text1),
+    getEmbedding(text2)
+  ]);
+  const sim = cosineSimilarity(emb1, emb2);
+  return Math.round(Math.max(0, sim) * 1000) / 10; // 0-100 scale
+}
+
+// Chunk CV text into ~1500 char pieces
+function chunkText(text, chunkSize = 1500) {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+// Retrieve top-10 most similar chunks
+async function retrieveTopChunks(base44, jobEmbedding, applicationId, topK = 10) {
+  const allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id: applicationId });
+  
+  const scored = allEmbeddings.map(emb => {
+    const sim = cosineSimilarity(jobEmbedding, emb.embedding);
+    return { ...emb, similarity: sim };
+  });
+  
+  scored.sort((a, b) => b.similarity - a.similarity);
+  return scored.slice(0, topK);
+}
+
 // ─── Paper's Multi-Construct Scoring System ───
 const SCORE_SYSTEM = `You are a professional HR that rates resumes. Generate a score on the scale 1–5 for each work experience match, skills match, educational background match and certifications/extracurricular match based on the job description summary and resume. Additionally provide the reasons for the generated rating. Be strict in rating.
 
@@ -78,36 +136,6 @@ function hybridScore(similarity, llmTotal, weightSim = 0.3, weightLlm = 0.7) {
   return Math.round((weightSim * similarity + weightLlm * llmTotal) * 10) / 10;
 }
 
-// Compute cosine similarity between two text embeddings via LLM
-async function computeSemanticSimilarity(base44, text1, text2) {
-  if (!text1 || !text2) return 0;
-  // Use LLM to compute a semantic similarity score (0-100)
-  // since we can't run sentence-transformers in Deno
-  const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `Rate the semantic similarity between these two texts on a scale of 0-100, where:
-- 0 = completely unrelated
-- 50 = somewhat related  
-- 100 = identical meaning
-
-Text 1 (Job Description):
-${text1.slice(0, 2000)}
-
-Text 2 (CV/Resume):
-${text2.slice(0, 2000)}
-
-Output ONLY a single number between 0 and 100. Nothing else.`,
-    response_json_schema: {
-      type: "object",
-      properties: {
-        similarity_score: { type: "number" }
-      }
-    }
-  });
-  const score = result?.similarity_score;
-  if (typeof score === "number") return Math.min(100, Math.max(0, score));
-  return 50;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -181,12 +209,30 @@ Return only the JSON object with these fields.`,
       job_skills?.length ? `Required Skills: ${job_skills.join(", ")}` : ""
     ].filter(Boolean).join("\n\n");
 
-    // Step 2: Stage 1 — Semantic similarity score (like embedding cosine similarity in the paper)
-    const similarityScore = await computeSemanticSimilarity(base44, jobText, cvText);
+    // Step 2: Stage 1 — Real cosine similarity using OpenAI embeddings
+    const similarityScore = await computeRealSimilarity(jobText, cvText);
 
-    // Step 3: Stage 2 — Paper's multi-construct LLM scoring (4 constructs: WE, Skills, Education, Certifications)
+    // Step 3: Stage 2 — Store CV chunks and embeddings
+    const cvChunks = chunkText(cvText, 1500);
+    await Promise.all(cvChunks.map(async (chunk, idx) => {
+      const embedding = await getEmbedding(chunk);
+      await base44.asServiceRole.entities.CVEmbedding.create({
+        application_id,
+        embedding,
+        cv_text_chunk: chunk.slice(0, 2000),
+        chunk_index: idx
+      });
+    }));
+
+    // Step 4: Stage 3 — Retrieve top 10 most relevant chunks for this job
+    const jobEmbedding = await getEmbedding(jobText);
+    const retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, application_id, 10);
+    const retrievedText = retrievedChunks.map(c => c.cv_text_chunk).join("\n---\n");
+    const chunksCount = retrievedChunks.length;
+
+    // Step 5: LLM scoring with RAG-augmented context
     const scoringResp = await base44.integrations.Core.InvokeLLM({
-      prompt: `Job description summary:\n${jobText.slice(0, 3000)}\n\nResume content:\n${cvText.slice(0, 5000)}`,
+      prompt: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`,
       response_json_schema: null
     });
 
@@ -220,7 +266,7 @@ Return only the JSON object with these fields.`,
     if (scores.certifications < 3) improvements.push("Additional certifications would strengthen the application");
     if (improvements.length === 0) improvements.push("Continue developing domain-specific expertise");
 
-    // Step 5: Update Application record
+    // Step 6: Update Application record with RAG metadata
     const updateData = {
       candidate_name: cvData.full_name || "",
       candidate_email: cvData.email || "",
@@ -237,6 +283,10 @@ Return only the JSON object with these fields.`,
         similarity_score: similarityScore,
         llm_total: llmTotal,
         final_score: finalScore,
+        chunks_stored: cvChunks.length,
+        chunks_retrieved: chunksCount,
+        retrieval_method: "embedding_cosine",
+        embedding_model: "text-embedding-3-small",
         construct_scores: {
           work_experience: scores.work_exp,
           skills: scores.skills,
