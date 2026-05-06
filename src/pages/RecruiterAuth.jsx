@@ -27,17 +27,21 @@ export default function RecruiterAuth() {
         company,
         email,
         role: "recruiter",
-        status: "approved",
+        status: "pending",
       });
       setLoading(false);
       setWarning("registered");
     } else {
       const profiles = await base44.entities.RecruiterProfile.filter({ email });
       setLoading(false);
-      if (profiles.length > 0) {
-        navigate("/recruiter-dashboard");
-      } else {
+      if (profiles.length === 0) {
         setWarning("no_access");
+      } else if (profiles[0].status === "pending") {
+        setWarning("pending");
+      } else if (profiles[0].status === "suspended") {
+        setWarning("suspended");
+      } else if (profiles[0].status === "approved") {
+        navigate("/recruiter-dashboard");
       }
     }
   };
