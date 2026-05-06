@@ -85,7 +85,25 @@ export default function BrowseJobs() {
       status: "pending"
     });
 
-    // 3. Show success immediately — AI processing runs in the background
+    // 3. Upsert Candidate record
+    const existingCandidates = await base44.entities.Candidate.filter({ email: currentUser?.email || "" });
+    const allApps = await base44.entities.Application.filter({ candidate_email: currentUser?.email || "" });
+    const candData = {
+      email: currentUser?.email || "",
+      full_name: currentUser?.full_name || "",
+      user_id: currentUser?.id || "",
+      total_applications: allApps.length,
+      accepted_count: allApps.filter(a => a.status === "shortlisted").length,
+      rejected_count: allApps.filter(a => a.status === "rejected").length,
+      cv_url: file_url,
+    };
+    if (existingCandidates.length > 0) {
+      base44.entities.Candidate.update(existingCandidates[0].id, candData);
+    } else {
+      base44.entities.Candidate.create(candData);
+    }
+
+    // 4. Show success immediately — AI processing runs in the background
     setApplyUploading(false);
     setApplyDone(true);
     setAppliedJobIds((prev) => new Set([...prev, applyJob.id]));

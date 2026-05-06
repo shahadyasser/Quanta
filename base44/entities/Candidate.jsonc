@@ -1,0 +1,48 @@
+{
+  "name": "Candidate",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Linked user ID from auth"
+    },
+    "email": {
+      "type": "string",
+      "description": "Candidate email address"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Full name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "total_applications": {
+      "type": "number",
+      "default": 0,
+      "description": "Total number of job applications submitted"
+    },
+    "accepted_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of accepted applications"
+    },
+    "rejected_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of rejected applications"
+    },
+    "last_seen_statuses": {
+      "type": "object",
+      "description": "Map of application_id to last seen status for alert tracking"
+    },
+    "cv_url": {
+      "type": "string",
+      "description": "Latest uploaded CV URL"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}
