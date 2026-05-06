@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
       {/* Left side — branding */}
-      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#4F46E5] via-[#6366F1] to-[#7C3AED]">
+      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#5B21B6] via-[#6D28D9] to-[#7C3AED]">
         {/* Logo in top-left corner */}
         <div className="absolute top-8 left-8 flex items-center gap-3 z-20 whitespace-nowrap">
           <img 
@@ -24,7 +24,7 @@ export default function Home() {
             alt="QuantaHire Logo" 
             className="w-12 h-12"
           />
-          <span className="text-white font-bold text-lg">QuantaHire</span>
+          <span className="text-white font-bold text-lg drop-shadow-lg">QuantaHire</span>
         </div>
 
         {/* Animated gradient blobs */}
