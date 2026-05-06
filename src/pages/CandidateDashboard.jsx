@@ -4,6 +4,7 @@ import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import CandidateEmailGate from "@/components/CandidateEmailGate";
 
 const QUICK_ACTIONS = [
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
@@ -30,6 +31,7 @@ export default function CandidateDashboard() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]); // { id, job_title, status }
+  const [emailVerified, setEmailVerified] = useState(false);
   const prevStatusesRef = useRef({});
 
   // Dismiss an alert
@@ -85,6 +87,7 @@ export default function CandidateDashboard() {
       try { me = await base44.auth.me(); } catch (_) {}
       setUser(me);
       if (me?.email) {
+        setEmailVerified(true);
         const apps = await base44.entities.Application.filter({ candidate_email: me.email }, "-created_date");
         // Initialize prev statuses on first load (no alerts)
         apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
@@ -123,6 +126,10 @@ export default function CandidateDashboard() {
     });
     return () => unsubscribe();
   }, [user]);
+
+  if (!emailVerified || !user) {
+    return <CandidateEmailGate onVerified={() => setEmailVerified(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
