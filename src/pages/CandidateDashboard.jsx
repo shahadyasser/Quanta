@@ -126,19 +126,47 @@ export default function CandidateDashboard() {
                 return (
                   <div
                     key={app.id}
-                    className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                        <span className="text-primary font-bold">{initials}</span>
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                        <span className="text-primary font-bold text-base">{initials}</span>
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                          <h3 className="font-semibold text-foreground">{app.company || "Company"}</h3>
+                          <h3 className="font-semibold text-foreground">{app.job_title || "Job"}</h3>
                           <Badge className={`text-xs ${STATUS_STYLES[statusLabel] || "bg-muted text-muted-foreground"}`}>{statusLabel}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{app.job_title} • {new Date(app.created_date).toLocaleDateString()}</p>
+                        <p className="text-sm text-muted-foreground font-medium">{app.company || "Company"}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Applied on {new Date(app.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}</p>
+                        {(app.skills || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {(app.skills || []).slice(0, 4).map((s) => (
+                              <span key={s} className="text-xs bg-accent text-primary px-2 py-0.5 rounded-md">{s}</span>
+                            ))}
+                            {app.skills.length > 4 && <span className="text-xs text-muted-foreground">+{app.skills.length - 4} more</span>}
+                          </div>
+                        )}
                       </div>
+                    </div>
+                    <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 shrink-0">
+                      {app.match_score ? (
+                        <div className="text-center">
+                          <p className={`text-2xl font-bold ${app.match_score >= 80 ? "text-green-600" : app.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
+                            {app.match_score}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Match Score</p>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-xs text-muted-foreground italic">Analyzing...</p>
+                        </div>
+                      )}
+                      {app.cv_url && (
+                        <a href={app.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-accent transition-colors">
+                          View CV
+                        </a>
+                      )}
                     </div>
                   </div>
                 );
