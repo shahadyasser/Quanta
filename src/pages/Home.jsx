@@ -30,12 +30,6 @@ export default function Home() {
         <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/10 blur-3xl animate-pulse" />
         <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] rounded-full bg-pink-500/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 right-1/3 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-        
-        {/* Floating decorative elements */}
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400/40 rounded-full animate-bounce" style={{ animationDelay: '0s', animationDuration: '3s' }} />
-        <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-purple-300/30 rounded-full animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '4s' }} />
-        <div className="absolute bottom-1/3 left-1/3 w-2 h-2 bg-purple-400/20 rounded-full animate-bounce" style={{ animationDelay: '1s', animationDuration: '3.5s' }} />
-        <div className="absolute top-1/2 right-1/2 w-2.5 h-2.5 bg-purple-300/40 rounded-full animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '4.5s' }} />
 
         <div className="relative max-w-xl">
           {/* Pill */}
