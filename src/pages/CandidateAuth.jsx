@@ -51,15 +51,8 @@ export default function CandidateAuth() {
       return;
     }
     setLoading(true);
-    try {
-      await base44.functions.invoke("inviteCandidate", { email: form.email });
-      setSuccess(`Invitation sent to ${form.email}. Please check your inbox to complete registration.`);
-      setForm({ fullName: "", email: "", password: "", confirm: "" });
-    } catch (err) {
-      setError(err.message || "Registration failed. This email may already be registered.");
-    } finally {
-      setLoading(false);
-    }
+    // Use Base44's built-in registration flow
+    base44.auth.redirectToLogin("/candidate-dashboard");
   };
 
   return (
