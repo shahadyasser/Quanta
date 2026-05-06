@@ -52,7 +52,7 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      await base44.users.inviteUser(form.email, "user");
+      await base44.functions.invoke("inviteCandidate", { email: form.email });
       setSuccess(`Invitation sent to ${form.email}. Please check your inbox to complete registration.`);
       setForm({ fullName: "", email: "", password: "", confirm: "" });
     } catch (err) {
