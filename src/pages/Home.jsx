@@ -39,7 +39,7 @@ export default function Home() {
           </div>
 
           {/* Heading */}
-          <h1 className="mt-8 text-7xl md:text-8xl font-bold text-purple-600 tracking-tight leading-tight">
+          <h1 className="mt-8 text-6xl md:text-7xl font-bold text-purple-600 tracking-tight leading-tight break-words">
             QuantaHire
           </h1>
 
