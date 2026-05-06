@@ -12,11 +12,11 @@
     },
     "job_profile_id": {
       "type": "string",
-      "description": "Reference to JobProfile entity"
+      "description": "Reference to JobProfile or 'personality'"
     },
     "job_profile_title": {
       "type": "string",
-      "description": "Job title (denormalized)"
+      "description": "Job title or assessment type"
     },
     "score_openness": {
       "type": "number",
@@ -40,11 +40,22 @@
     },
     "fit_score": {
       "type": "number",
-      "description": "Weighted fit score 0-100"
+      "description": "Weighted fit score 0-100 (used for job-profile matching)"
     },
     "answers": {
       "type": "object",
       "description": "Map of question_id to answer value"
+    },
+    "recommended_jobs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Recommended job types based on personality pattern"
+    },
+    "recommended_reason": {
+      "type": "string",
+      "description": "Explanation of why these jobs fit"
     }
   },
   "required": [

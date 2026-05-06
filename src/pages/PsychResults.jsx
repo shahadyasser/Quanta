@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Briefcase, TrendingUp, TrendingDown } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from "recharts";
 import { base44 } from "@/api/base44Client";
 
@@ -12,39 +12,57 @@ const TRAIT_LABELS = {
   stability: "Stability",
 };
 
-const TRAIT_DESCS = {
-  openness: "Curiosity, creativity and openness to new experiences.",
-  conscientiousness: "Organization, dependability and goal-directed behavior.",
-  extraversion: "Sociability, assertiveness and positive emotionality.",
-  agreeableness: "Cooperation, trust and empathy toward others.",
-  stability: "Emotional resilience and calmness under pressure.",
+const TRAIT_DESCRIPTIONS = {
+  openness: {
+    high: "Creative and curious. Embraces new ideas, enjoys variety, adapts well to change. Thrives in innovation-driven roles.",
+    low: "Practical and grounded. Prefers proven methods and clear structure. Reliable in roles with established processes.",
+  },
+  conscientiousness: {
+    high: "Organized and dependable. Plans ahead, meets deadlines, maintains high standards. Strong responsibility.",
+    low: "Flexible and spontaneous. Adapts to shifting priorities but may benefit from more structure.",
+  },
+  extraversion: {
+    high: "Energetic and sociable. Thrives in collaboration, comfortable leading, builds relationships easily.",
+    low: "Thoughtful and independent. Works well alone, listens carefully, prefers depth over breadth.",
+  },
+  agreeableness: {
+    high: "Cooperative and empathetic. Values harmony, supports teammates, resolves conflicts well.",
+    low: "Direct and objective. Makes tough decisions, values honesty over diplomacy. Strong in competition.",
+  },
+  stability: {
+    high: "Calm and resilient. Handles pressure well, recovers from setbacks, stays composed.",
+    low: "Passionate and sensitive. Deeply invested, high effort but may feel stress more intensely.",
+  },
 };
 
-function FitBadge({ score }) {
-  if (score >= 80) return <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 font-bold px-4 py-1.5 rounded-full text-sm">🟢 Strong Fit — {score}</span>;
-  if (score >= 60) return <span className="inline-flex items-center gap-1.5 bg-yellow-50 text-yellow-700 border border-yellow-200 font-bold px-4 py-1.5 rounded-full text-sm">🟡 Moderate Fit — {score}</span>;
-  return <span className="inline-flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 font-bold px-4 py-1.5 rounded-full text-sm">🔴 Low Fit — {score}</span>;
+function getTraitLabel(score) {
+  if (score >= 4.3) return "Very High";
+  if (score >= 3.5) return "High";
+  if (score >= 2.6) return "Moderate";
+  if (score >= 1.9) return "Low";
+  return "Very Low";
 }
+
+function getTraitColor(score) {
+  if (score >= 3.5) return "text-green-600";
+  if (score >= 2.6) return "text-orange-500";
+  return "text-red-500";
+}
+
+const TRAITS = ["openness", "conscientiousness", "extraversion", "agreeableness", "stability"];
 
 export default function PsychResults() {
   const [result, setResult] = useState(null);
-  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     if (!id) { setLoading(false); return; }
-    const load = async () => {
-      const res = await base44.entities.AssessmentResult.filter({ id });
-      if (res.length > 0) {
-        setResult(res[0]);
-        const prof = await base44.entities.JobProfile.filter({ id: res[0].job_profile_id });
-        if (prof.length > 0) setProfile(prof[0]);
-      }
+    base44.entities.AssessmentResult.filter({ id }).then(res => {
+      if (res.length > 0) setResult(res[0]);
       setLoading(false);
-    };
-    load();
+    });
   }, []);
 
   if (loading) return (
@@ -55,17 +73,22 @@ export default function PsychResults() {
 
   if (!result) return (
     <div className="min-h-screen bg-[#F8F7FF] flex items-center justify-center">
-      <div className="text-center text-muted-foreground">No result found.</div>
+      <p className="text-muted-foreground">No result found.</p>
     </div>
   );
 
-  const traits = ["openness", "conscientiousness", "extraversion", "agreeableness", "stability"];
+  const scores = TRAITS.map(t => ({ trait: t, score: result[`score_${t}`] || 0 }));
+  const sorted = [...scores].sort((a, b) => b.score - a.score);
+  const strengths = sorted.slice(0, 2);
+  const growth = sorted.slice(-2).reverse();
 
-  const candidateData = traits.map(t => ({
-    trait: TRAIT_LABELS[t],
-    candidate: result[`score_${t}`] || 0,
-    ideal: profile ? (profile[`ideal_${t}`] || 0) : null,
+  const radarData = scores.map(s => ({
+    trait: TRAIT_LABELS[s.trait].slice(0, 5),
+    score: s.score,
   }));
+
+  const recommendedJobs = result.recommended_jobs || [];
+  const recommendedReason = result.recommended_reason || "";
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
@@ -80,59 +103,102 @@ export default function PsychResults() {
 
         {/* Header */}
         <div className="bg-white border border-border rounded-2xl p-6">
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Assessment Results</p>
+          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Personality Profile</p>
           <h1 className="text-2xl font-bold text-foreground">{result.candidate_name || result.candidate_email}</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Role: <span className="font-medium text-foreground">{result.job_profile_title}</span></p>
-          <div className="mt-3">
-            <FitBadge score={result.fit_score} />
-          </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Fit Score = 100 × (1 − totalWeightedDiff / (4 × sumOfWeights))
+          <p className="text-sm text-muted-foreground mt-0.5">Big Five Personality Assessment</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Completed {new Date(result.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
 
         {/* Radar Chart */}
         <div className="bg-white border border-border rounded-2xl p-6">
-          <h2 className="font-semibold text-foreground mb-4">Big Five Personality Profile</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadarChart data={candidateData}>
+          <h2 className="font-semibold text-foreground mb-4">Personality Radar</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <RadarChart data={radarData}>
               <PolarGrid stroke="#e5e7eb" />
               <PolarAngleAxis dataKey="trait" tick={{ fontSize: 12, fill: "#6b7280" }} />
               <PolarRadiusAxis angle={90} domain={[0, 5]} tick={{ fontSize: 10 }} tickCount={6} />
-              <Radar name="You" dataKey="candidate" stroke="hsl(262,83%,58%)" fill="hsl(262,83%,58%)" fillOpacity={0.25} strokeWidth={2} />
-              {profile && <Radar name="Ideal" dataKey="ideal" stroke="#10b981" fill="#10b981" fillOpacity={0.1} strokeWidth={2} strokeDasharray="5 4" />}
-              <Tooltip formatter={(v) => v.toFixed(2)} />
+              <Radar name="Score" dataKey="score" stroke="hsl(262,83%,58%)" fill="hsl(262,83%,58%)" fillOpacity={0.25} strokeWidth={2} />
+              <Tooltip formatter={(v) => v.toFixed(1)} />
             </RadarChart>
           </ResponsiveContainer>
-          <div className="flex items-center gap-5 justify-center mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-primary inline-block rounded" />You</span>
-            {profile && <span className="flex items-center gap-1.5"><span className="w-4 h-0.5 bg-green-500 inline-block rounded border-dashed" />Ideal</span>}
-          </div>
         </div>
 
         {/* Trait Breakdown */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {traits.map(t => {
-            const score = result[`score_${t}`] || 0;
-            const ideal = profile ? (profile[`ideal_${t}`] || 3) : null;
+          {scores.map(({ trait, score }) => {
+            const isHigh = score >= 3.5;
+            const desc = TRAIT_DESCRIPTIONS[trait][isHigh ? "high" : "low"];
             const pct = (score / 5) * 100;
             return (
-              <div key={t} className="bg-white border border-border rounded-2xl p-5 space-y-3">
+              <div key={trait} className="bg-white border border-border rounded-2xl p-5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-foreground capitalize">{TRAIT_LABELS[t]}</h3>
-                  <span className="text-2xl font-bold text-primary">{score.toFixed(1)}<span className="text-sm font-normal text-muted-foreground">/5</span></span>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{TRAIT_LABELS[trait]}</h3>
+                    <span className={`text-xs font-medium ${getTraitColor(score)}`}>{getTraitLabel(score)}</span>
+                  </div>
+                  <span className={`text-2xl font-bold ${getTraitColor(score)}`}>
+                    {score.toFixed(1)}<span className="text-sm font-normal text-muted-foreground">/5</span>
+                  </span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
                   <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
-                {ideal && (
-                  <p className="text-xs text-muted-foreground">Ideal for {result.job_profile_title}: <span className="font-medium text-foreground">{ideal}</span></p>
-                )}
-                <p className="text-xs text-muted-foreground">{TRAIT_DESCS[t]}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{desc}</p>
               </div>
             );
           })}
         </div>
+
+        {/* Strengths & Growth */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="w-4 h-4 text-green-600" />
+              <h3 className="font-semibold text-green-700">Top Strengths</h3>
+            </div>
+            {strengths.map(({ trait, score }) => (
+              <div key={trait} className="flex items-center justify-between py-1.5 border-b border-green-100 last:border-0">
+                <span className="text-sm font-medium text-green-800">{TRAIT_LABELS[trait]}</span>
+                <span className="text-sm font-bold text-green-700">{score.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingDown className="w-4 h-4 text-orange-500" />
+              <h3 className="font-semibold text-orange-700">Growth Areas</h3>
+            </div>
+            {growth.map(({ trait, score }) => (
+              <div key={trait} className="flex items-center justify-between py-1.5 border-b border-orange-100 last:border-0">
+                <span className="text-sm font-medium text-orange-800">{TRAIT_LABELS[trait]}</span>
+                <span className="text-sm font-bold text-orange-700">{score.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Job Recommendations */}
+        {recommendedJobs.length > 0 && (
+          <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Briefcase className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-foreground">Recommended Job Types</h2>
+            </div>
+            {recommendedReason && (
+              <p className="text-sm text-muted-foreground bg-accent/50 rounded-xl px-4 py-3">{recommendedReason}</p>
+            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {recommendedJobs.map((job, i) => (
+                <div key={job} className="flex items-center gap-3 border border-border rounded-xl px-4 py-3 bg-muted/30">
+                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                  <span className="text-sm font-medium text-foreground">{job}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
