@@ -31,7 +31,13 @@ export default function CandidateAuth() {
       return;
     }
     setLoading(true);
-    navigate("/candidate-dashboard");
+    try {
+      // Redirect to Base44 login which will authenticate the user
+      base44.auth.redirectToLogin("/candidate-dashboard");
+    } catch (err) {
+      setError("Login failed. Please try again.");
+      setLoading(false);
+    }
   };
 
   const handleRegister = async (e) => {
