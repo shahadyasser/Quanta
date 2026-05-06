@@ -57,8 +57,11 @@ export default function CandidateAuth() {
         email: form.email,
         full_name: form.fullName
       });
-      // Use Base44's built-in registration flow
-      base44.auth.redirectToLogin("/candidate-dashboard");
+      // Redirect to login page
+      setSuccess("Account created successfully! Redirecting to login...");
+      setTimeout(() => {
+        base44.auth.redirectToLogin();
+      }, 1500);
     } catch (err) {
       setError(err.message || "Registration failed.");
       setLoading(false);
