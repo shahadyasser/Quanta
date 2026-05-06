@@ -16,52 +16,64 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
       {/* Left side — branding */}
-      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#EEE9FF] via-[#F3EEFF] to-[#E8E0FF]">
-        {/* Soft blobs */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] rounded-full bg-purple-300/20 blur-3xl" />
+      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#7C3AED] via-[#6D28D9] to-[#5B21B6]">
+        {/* Logo in top-left corner */}
+        <div className="absolute top-8 left-8 flex items-center gap-2 z-20">
+          <div className="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30">
+            <span className="text-xl font-bold text-white">Q</span>
+          </div>
+          <span className="text-white font-bold text-lg hidden sm:block">QuantaHire</span>
+        </div>
+
+        {/* Animated gradient blobs */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-white/10 blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] rounded-full bg-pink-500/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-1/3 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
 
         <div className="relative max-w-xl">
           {/* Pill */}
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-white rounded-full px-4 py-1.5 shadow-sm">
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">AI-Powered Recruitment Platform</span>
+          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-1.5 shadow-lg hover:bg-white/30 transition-all">
+            <Sparkles className="w-4 h-4 text-white animate-spin" style={{ animationDuration: '3s' }} />
+            <span className="text-sm font-medium text-white">AI-Powered Recruitment Platform</span>
           </div>
 
           {/* Heading */}
-          <h1 className="mt-6 text-6xl md:text-7xl font-bold text-primary tracking-tight">
+          <h1 className="mt-8 text-7xl md:text-8xl font-bold text-white tracking-tight leading-tight">
             QuantaHire
           </h1>
 
-          <p className="mt-5 text-lg text-muted-foreground leading-relaxed max-w-md">
-            Transform your hiring process with intelligent candidate matching and unbiased screening.
+          <p className="mt-6 text-xl text-white/90 leading-relaxed max-w-md font-light">
+            Transform your hiring with intelligent candidate matching and unbiased screening powered by advanced AI.
           </p>
 
           {/* Feature cards */}
-          <div className="mt-10 grid grid-cols-2 gap-4 max-w-md">
-            <FeatureCard
-              icon={Briefcase}
-              title="For Recruiters"
-              description="Smart candidate screening & AI matching"
-            />
-            <FeatureCard
-              icon={Users}
-              title="For Candidates"
-              description="Fair evaluation & instant feedback"
-            />
+          <div className="mt-12 grid grid-cols-2 gap-4 max-w-md">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 hover:bg-white/20 transition-all">
+              <Briefcase className="w-6 h-6 text-white mb-2" />
+              <h3 className="font-semibold text-white text-sm">For Recruiters</h3>
+              <p className="text-white/70 text-xs mt-1">Smart screening & AI matching</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 hover:bg-white/20 transition-all">
+              <Users className="w-6 h-6 text-white mb-2" />
+              <h3 className="font-semibold text-white text-sm">For Candidates</h3>
+              <p className="text-white/70 text-xs mt-1">Fair evaluation & instant feedback</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Right side — account selection */}
-      <div className="flex items-center justify-center px-6 md:px-12 py-16 bg-background">
-        <div className="w-full max-w-md">
+      <div className="relative flex items-center justify-center px-6 md:px-12 py-16 bg-gradient-to-b from-background via-background to-[#F5F3FF] overflow-hidden">
+        {/* Subtle background blob */}
+        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/5 blur-2xl" />
+        
+        <div className="relative w-full max-w-md z-10">
           <div className="text-center mb-10">
-            <h2 className="text-3xl font-semibold text-foreground tracking-tight">
-              Welcome to QuantaHire
+            <h2 className="text-4xl font-bold text-foreground tracking-tight">
+              Welcome Back
             </h2>
-            <p className="mt-2 text-muted-foreground">
-              Choose your account type to continue
+            <p className="mt-3 text-muted-foreground text-lg">
+              Choose your role to get started
             </p>
           </div>
 
@@ -87,11 +99,13 @@ export default function Home() {
           </div>
 
           {/* Demo Accounts */}
-          <div className="mt-8 text-center space-y-1">
-            <p className="text-sm text-muted-foreground font-medium">Demo Accounts:</p>
-            <p className="text-xs text-muted-foreground">Recruiter: recruiter@quantahire.com / recruiter123</p>
-            <p className="text-xs text-muted-foreground">Candidate: candidate@quantahire.com / candidate123</p>
-            <p className="text-xs text-muted-foreground">Admin: admin@quantahire.com / admin123</p>
+          <div className="mt-10 p-5 bg-primary/5 border border-primary/20 rounded-2xl text-center space-y-2">
+            <p className="text-xs font-semibold text-primary uppercase tracking-wide">Demo Accounts:</p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground"><span className="font-medium">Recruiter:</span> recruiter@quantahire.com</p>
+              <p className="text-xs text-muted-foreground"><span className="font-medium">Candidate:</span> candidate@quantahire.com</p>
+              <p className="text-xs text-muted-foreground"><span className="font-medium">Admin:</span> admin@quantahire.com</p>
+            </div>
           </div>
         </div>
       </div>
