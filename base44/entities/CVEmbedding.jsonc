@@ -1,0 +1,31 @@
+{
+  "name": "CVEmbedding",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string",
+      "description": "Reference to Application entity"
+    },
+    "embedding": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "1536-dimensional embedding vector from OpenAI"
+    },
+    "cv_text_chunk": {
+      "type": "string",
+      "description": "Text chunk (max 2000 chars) of CV content"
+    },
+    "chunk_index": {
+      "type": "number",
+      "description": "Index of this chunk in the CV"
+    }
+  },
+  "required": [
+    "application_id",
+    "embedding",
+    "cv_text_chunk",
+    "chunk_index"
+  ]
+}
