@@ -117,7 +117,9 @@ export default function CandidateDashboard() {
         setApplications((prev) => {
           const updated = [event.data, ...prev];
           prevStatusesRef.current[event.id] = event.data.status;
-          setCandidate(c => c ? { ...c, total_applications: updated.length } : c);
+          const accepted = updated.filter(a => a.status === "shortlisted").length;
+          const rejected = updated.filter(a => a.status === "rejected").length;
+          setCandidate(c => c ? { ...c, total_applications: updated.length, accepted_count: accepted, rejected_count: rejected } : c);
           return updated;
         });
       }
