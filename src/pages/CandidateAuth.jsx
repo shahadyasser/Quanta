@@ -51,8 +51,18 @@ export default function CandidateAuth() {
       return;
     }
     setLoading(true);
-    // Use Base44's built-in registration flow
-    base44.auth.redirectToLogin("/candidate-dashboard");
+    try {
+      // Create Candidate record in database
+      await base44.entities.Candidate.create({
+        email: form.email,
+        full_name: form.fullName
+      });
+      // Use Base44's built-in registration flow
+      base44.auth.redirectToLogin("/candidate-dashboard");
+    } catch (err) {
+      setError(err.message || "Registration failed.");
+      setLoading(false);
+    }
   };
 
   return (
