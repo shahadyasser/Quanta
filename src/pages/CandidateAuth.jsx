@@ -57,10 +57,12 @@ export default function CandidateAuth() {
         email: form.email,
         full_name: form.fullName
       });
-      // Redirect to login page
-      setSuccess("Account created successfully! Redirecting to login...");
+      // Switch to login tab
+      setSuccess("Account created successfully! Please login.");
+      setForm({ fullName: "", email: "", password: "", confirm: "" });
       setTimeout(() => {
-        base44.auth.redirectToLogin();
+        setTab("login");
+        setSuccess("");
       }, 1500);
     } catch (err) {
       setError(err.message || "Registration failed.");
