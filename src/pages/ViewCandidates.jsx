@@ -224,7 +224,7 @@ export default function ViewCandidates() {
               size="lg"
               className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8 mx-auto"
               onClick={triggerRAGPipeline}
-              disabled={ragProcessing || applications.length === 0}
+              disabled={ragProcessing || applications.length <= 1}
             >
               {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               {ragProcessing ? "Analyzing All CVs..." : "Start RAG Analysis"}
