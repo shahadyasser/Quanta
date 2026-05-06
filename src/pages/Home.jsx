@@ -16,15 +16,14 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
       {/* Left side — branding */}
-      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#5B21B6] via-[#6D28D9] to-[#7C3AED]">
+      <div className="relative flex items-center px-8 md:px-16 py-16 overflow-hidden bg-gradient-to-br from-[#EDE9FE] to-[#F5F3FF]">
         {/* Logo in top-left corner */}
-        <div className="absolute top-8 left-8 flex items-center gap-3 z-20 whitespace-nowrap">
+        <div className="absolute top-8 left-8 z-20">
           <img 
             src="https://media.base44.com/images/public/69e37c1ef6734d47b8621a83/d2e37d1a5_AI_Female_16.png" 
             alt="QuantaHire Logo" 
             className="w-12 h-12"
           />
-          <span className="text-white font-bold text-lg drop-shadow-lg">QuantaHire</span>
         </div>
 
         {/* Animated gradient blobs */}
@@ -34,31 +33,31 @@ export default function Home() {
 
         <div className="relative max-w-xl">
           {/* Pill */}
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full px-4 py-1.5 shadow-lg hover:bg-white/30 transition-all">
-            <Sparkles className="w-4 h-4 text-white animate-spin" style={{ animationDuration: '3s' }} />
-            <span className="text-sm font-medium text-white">AI-Powered Recruitment Platform</span>
+          <div className="inline-flex items-center gap-2 bg-white/60 backdrop-blur-md border border-white/40 rounded-full px-4 py-1.5 shadow-lg hover:bg-white/70 transition-all">
+            <Sparkles className="w-4 h-4 text-purple-600 animate-spin" style={{ animationDuration: '3s' }} />
+            <span className="text-sm font-medium text-gray-700">AI-Powered Recruitment Platform</span>
           </div>
 
           {/* Heading */}
-          <h1 className="mt-8 text-7xl md:text-8xl font-bold text-white tracking-tight leading-tight">
+          <h1 className="mt-8 text-7xl md:text-8xl font-bold text-purple-600 tracking-tight leading-tight">
             QuantaHire
           </h1>
 
-          <p className="mt-6 text-xl text-white/90 leading-relaxed max-w-md font-light">
+          <p className="mt-6 text-xl text-gray-600 leading-relaxed max-w-md font-light">
             Transform your hiring with intelligent candidate matching and unbiased screening powered by advanced AI.
           </p>
 
           {/* Feature cards */}
           <div className="mt-12 grid grid-cols-2 gap-4 max-w-md">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 hover:bg-white/20 transition-all">
-              <Briefcase className="w-6 h-6 text-white mb-2" />
-              <h3 className="font-semibold text-white text-sm">For Recruiters</h3>
-              <p className="text-white/70 text-xs mt-1">Smart screening & AI matching</p>
+            <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-2xl p-4 hover:bg-white/80 transition-all shadow-sm">
+              <Briefcase className="w-6 h-6 text-purple-600 mb-2" />
+              <h3 className="font-semibold text-gray-800 text-sm">For Recruiters</h3>
+              <p className="text-gray-600 text-xs mt-1">Smart screening & AI matching</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 hover:bg-white/20 transition-all">
-              <Users className="w-6 h-6 text-white mb-2" />
-              <h3 className="font-semibold text-white text-sm">For Candidates</h3>
-              <p className="text-white/70 text-xs mt-1">Fair evaluation & instant feedback</p>
+            <div className="bg-white/70 backdrop-blur-md border border-white/40 rounded-2xl p-4 hover:bg-white/80 transition-all shadow-sm">
+              <Users className="w-6 h-6 text-purple-600 mb-2" />
+              <h3 className="font-semibold text-gray-800 text-sm">For Candidates</h3>
+              <p className="text-gray-600 text-xs mt-1">Fair evaluation & instant feedback</p>
             </div>
           </div>
         </div>
