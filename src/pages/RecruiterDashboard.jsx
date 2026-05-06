@@ -20,24 +20,26 @@ export default function RecruiterDashboard() {
 
   useEffect(() => {
     const init = async () => {
-      let me = null;
-      try { me = await base44.auth.me(); } catch (_) {}
-      setUser(me);
+      const recruiterEmail = localStorage.getItem("recruiterEmail");
+      if (!recruiterEmail) {
+        navigate("/recruiter-auth");
+        return;
+      }
+      setUser({ email: recruiterEmail });
+      const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
+      if (profiles.length > 0) {
+        setRecruiterStatus(profiles[0].status);
+      }
       const [jobsData, appsData] = await Promise.all([
         base44.entities.Job.list("-created_date"),
         base44.entities.Application.list("-created_date"),
       ]);
       setJobs(jobsData);
       setApplications(appsData);
-      // Check recruiter approval status if we have an email
-      if (me?.email) {
-        const profiles = await base44.entities.RecruiterProfile.filter({ email: me.email });
-        if (profiles[0]) setRecruiterStatus(profiles[0].status);
-      }
       setLoading(false);
     };
     init();
-  }, []);
+  }, [navigate]);
 
   const filteredJobs = jobs.filter((job) => {
     const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
@@ -95,8 +97,8 @@ export default function RecruiterDashboard() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">recruiter@quantahire.com</span>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
-            <Link to="/"><LogOut className="w-4 h-4" />Logout</Link>
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("recruiterEmail"); navigate("/"); }}>
+            <LogOut className="w-4 h-4" />Logout
           </Button>
         </div>
       </nav>

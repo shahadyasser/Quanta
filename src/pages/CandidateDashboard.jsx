@@ -78,27 +78,25 @@ export default function CandidateDashboard() {
 
   useEffect(() => {
     const init = async () => {
-      const authed = await base44.auth.isAuthenticated();
-      if (!authed) {
-        base44.auth.redirectToLogin("/candidate-dashboard");
+      const candidateEmail = localStorage.getItem("candidateEmail");
+      if (!candidateEmail) {
+        navigate("/candidate-auth");
         return;
       }
-      let me = null;
-      try { me = await base44.auth.me(); } catch (_) {}
-      setUser(me);
-      if (me?.email) {
-        setEmailVerified(true);
-        const apps = await base44.entities.Application.filter({ candidate_email: me.email }, "-created_date");
-        // Initialize prev statuses on first load (no alerts)
-        apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
-        setApplications(apps);
-        const rec = await upsertCandidate(me, apps);
-        setCandidate(rec);
+      setEmailVerified(true);
+      setUser({ email: candidateEmail, full_name: "" });
+      const apps = await base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date");
+      // Initialize prev statuses on first load (no alerts)
+      apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
+      setApplications(apps);
+      const candidates = await base44.entities.Candidate.filter({ email: candidateEmail });
+      if (candidates.length > 0) {
+        setCandidate(candidates[0]);
       }
       setLoading(false);
     };
     init();
-  }, []);
+  }, [navigate]);
 
   // Real-time subscription for application status changes
   useEffect(() => {
@@ -127,9 +125,7 @@ export default function CandidateDashboard() {
     return () => unsubscribe();
   }, [user]);
 
-  if (!emailVerified || !user) {
-    return <CandidateEmailGate onVerified={() => setEmailVerified(true)} />;
-  }
+
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">

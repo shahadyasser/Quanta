@@ -34,6 +34,7 @@ export default function CandidateAuth() {
     try {
       const candidates = await base44.entities.Candidate.filter({ email: form.email });
       if (candidates.length > 0) {
+        localStorage.setItem("candidateEmail", form.email);
         navigate("/candidate-dashboard");
       } else {
         setError("No account found. Please register first.");
