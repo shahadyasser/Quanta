@@ -112,6 +112,7 @@ export default function BrowseJobs() {
     base44.functions.invoke("processCV", {
       cv_url: file_url,
       application_id: application.id,
+      job_id: applyJob.id,
       job_title: applyJob.title,
       job_description: applyJob.description || "",
       job_skills: applyJob.skills || []

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ export default function ViewCandidates() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [ragProcessing, setRagProcessing] = useState(false);
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -166,6 +167,25 @@ export default function ViewCandidates() {
     setBulkProcessing(false);
   };
 
+  const triggerRAGPipeline = async () => {
+    if (!jobId) return;
+    setRagProcessing(true);
+    const pending = applications.filter((a) => a.status === "pending");
+    await Promise.all(
+      pending.map((app) =>
+        base44.functions.invoke("processCV", {
+          cv_url: app.cv_url,
+          application_id: app.id,
+          job_id: jobId,
+          job_title: jobTitle,
+          job_description: "", // Fetch from job entity if needed
+          job_skills: []
+        })
+      )
+    );
+    setRagProcessing(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Header */}
@@ -187,7 +207,7 @@ export default function ViewCandidates() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* Stats */}
+        {/* Stats & RAG Button */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-border rounded-2xl p-5">
             <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
@@ -201,9 +221,22 @@ export default function ViewCandidates() {
             <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
             <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
           </div>
-          <div className="bg-white border border-border rounded-2xl p-5">
-            <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
-            <p className="text-base font-bold text-green-600">Bias Check Passed ✓</p>
+          <div className="bg-white border border-border rounded-2xl p-5 flex flex-col justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">Pending CVs</p>
+              <p className="text-2xl font-bold text-foreground">{applications.filter((a) => a.status === "pending").length}</p>
+            </div>
+            {applications.filter((a) => a.status === "pending").length > 0 && (
+              <Button
+                size="sm"
+                className="mt-2 bg-primary hover:bg-primary/90 rounded-lg gap-1.5 w-full"
+                onClick={triggerRAGPipeline}
+                disabled={ragProcessing}
+              >
+                {ragProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                {ragProcessing ? "Analyzing..." : "Analyze All CVs"}
+              </Button>
+            )}
           </div>
         </div>
 
