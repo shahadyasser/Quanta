@@ -3,11 +3,11 @@ import pg from 'npm:pg@8.11.3';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 
 const pool = new pg.Pool({
-  host: Deno.env.get('PGHOST'),
-  port: parseInt(Deno.env.get('PGPORT') || '5432'),
-  database: Deno.env.get('PGDATABASE'),
-  user: Deno.env.get('PGUSER'),
-  password: Deno.env.get('PGPASSWORD'),
+  host: Deno.env.get('POSTGRES_HOST'),
+  port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
+  database: Deno.env.get('POSTGRES_DATABASE'),
+  user: Deno.env.get('POSTGRES_USER'),
+  password: Deno.env.get('POSTGRES_PASSWORD'),
   ssl: { rejectUnauthorized: false },
 });
 

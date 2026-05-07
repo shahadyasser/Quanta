@@ -3,11 +3,11 @@ import pg from 'npm:pg@8.11.3';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 
 const pool = new pg.Pool({
-  host: Deno.env.get('PGHOST'),
-  port: parseInt(Deno.env.get('PGPORT') || '5432'),
-  database: Deno.env.get('PGDATABASE'),
-  user: Deno.env.get('PGUSER'),
-  password: Deno.env.get('PGPASSWORD'),
+  host: Deno.env.get('POSTGRES_HOST'),
+  port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
+  database: Deno.env.get('POSTGRES_DATABASE'),
+  user: Deno.env.get('POSTGRES_USER'),
+  password: Deno.env.get('POSTGRES_PASSWORD'),
   ssl: { rejectUnauthorized: false },
 });
 
@@ -36,9 +36,9 @@ Deno.serve(async (req) => {
       const is_active = role === 'candidate';
 
       const result = await client.query(
-        `INSERT INTO users (email, password_hash, full_name, role, company, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, full_name, role, is_active`,
-        [email.trim().toLowerCase(), password_hash, full_name, role, company || null, is_active]
+        `INSERT INTO users (email, password_hash, full_name, role, is_active)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, role, is_active`,
+        [email.trim().toLowerCase(), password_hash, full_name, role, is_active]
       );
       const newUser = result.rows[0];
 
