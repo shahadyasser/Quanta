@@ -24,6 +24,7 @@ import RecruiterApproval from './pages/RecruiterApproval';
 import BrowseJobs from './pages/BrowseJobs';
 import PsychResults from './pages/PsychResults';
 import PsychAdmin from './pages/PsychAdmin';
+import JobsReference from './pages/JobsReference';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -71,6 +72,7 @@ const AuthenticatedApp = () => {
       <Route path="/browse-jobs" element={<BrowseJobs />} />
       <Route path="/psych-results" element={<PsychResults />} />
       <Route path="/psych-admin" element={<PsychAdmin />} />
+      <Route path="/jobs-reference" element={<JobsReference />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

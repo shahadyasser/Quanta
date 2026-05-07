@@ -116,6 +116,9 @@ export default function AdminDashboard() {
           <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/view-candidates")}>
             <FileText className="w-4 h-4" />All Applications
           </Button>
+          <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/jobs-reference")}>
+            <Briefcase className="w-4 h-4" />Jobs Reference
+          </Button>
         </div>
 
         {/* Recent Applications */}
