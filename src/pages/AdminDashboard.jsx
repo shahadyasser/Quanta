@@ -76,16 +76,27 @@ export default function AdminDashboard() {
     : recruiters.filter((r) => r.status === recruiterFilter);
 
   const handleApproveRecruiter = async (id) => {
-    await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "approved", is_approved: true });
-    setRecruiters((prev) => prev.map((r) => r.id === id ? { ...r, status: "approved", is_approved: true } : r));
-    toast({ description: "Recruiter approved successfully" });
-    console.log("Recruiters loaded:", pendingRecruiters.length, "pending,", recruiters.length, "total");
+    try {
+      await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "approved", is_approved: true });
+      const updated = await base44.entities.RecruiterProfile.list();
+      setRecruiters(updated || []);
+      toast({ description: "Recruiter approved successfully" });
+    } catch (err) {
+      toast({ description: "Failed to approve recruiter" });
+      console.error(err);
+    }
   };
 
   const handleBlockRecruiter = async (id) => {
-    await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "blocked" });
-    setRecruiters((prev) => prev.map((r) => r.id === id ? { ...r, status: "blocked" } : r));
-    toast({ description: "Recruiter blocked successfully" });
+    try {
+      await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "blocked" });
+      const updated = await base44.entities.RecruiterProfile.list();
+      setRecruiters(updated || []);
+      toast({ description: "Recruiter blocked successfully" });
+    } catch (err) {
+      toast({ description: "Failed to block recruiter" });
+      console.error(err);
+    }
   };
 
   return (
