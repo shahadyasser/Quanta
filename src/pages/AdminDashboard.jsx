@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, Clock, Briefcase, Users, UserCheck, FileText, Shield, Loader2, TrendingUp, CheckCircle } from "lucide-react";
+import { LogOut, Clock, Briefcase, Users, UserCheck, FileText, Shield, Loader2, TrendingUp, CheckCircle, Check, X } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
 
 
 function StatCard({ label, value, sub, subGreen, subOrange, icon: Icon, iconColor, iconBg, borderColor, loading }) {
@@ -30,11 +31,13 @@ function StatCard({ label, value, sub, subGreen, subOrange, icon: Icon, iconColo
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [recruiters, setRecruiters] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [adminEmail, setAdminEmail] = useState("");
+  const [recruiterFilter, setRecruiterFilter] = useState("all");
 
   useEffect(() => {
     const init = async () => {
@@ -61,11 +64,29 @@ export default function AdminDashboard() {
 
   const pendingRecruiters = recruiters.filter((r) => r.status === "pending");
   const activeRecruiters = recruiters.filter((r) => r.status === "approved");
+  const blockedRecruiters = recruiters.filter((r) => r.status === "blocked");
   const activeJobs = jobs.filter((j) => j.status === "open");
   const scoredApps = applications.filter((a) => a.match_score);
   const avgScore = scoredApps.length
     ? Math.round(scoredApps.reduce((s, a) => s + a.match_score, 0) / scoredApps.length)
     : 0;
+
+  const filteredRecruiters = recruiterFilter === "all" 
+    ? recruiters 
+    : recruiters.filter((r) => r.status === recruiterFilter);
+
+  const handleApproveRecruiter = async (id) => {
+    await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "approved", is_approved: true });
+    setRecruiters((prev) => prev.map((r) => r.id === id ? { ...r, status: "approved", is_approved: true } : r));
+    toast({ description: "Recruiter approved successfully" });
+    console.log("Recruiters loaded:", pendingRecruiters.length, "pending,", recruiters.length, "total");
+  };
+
+  const handleBlockRecruiter = async (id) => {
+    await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "blocked" });
+    setRecruiters((prev) => prev.map((r) => r.id === id ? { ...r, status: "blocked" } : r));
+    toast({ description: "Recruiter blocked successfully" });
+  };
 
   return (
     <div className="min-h-screen bg-[#F4F3FF]">
@@ -199,45 +220,140 @@ export default function AdminDashboard() {
         </div>
 
         {/* Pending Recruiter Requests */}
-        {pendingRecruiters.length > 0 && (
-          <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-orange-500" />
-                <div>
-                  <h2 className="font-semibold text-foreground">Pending Recruiter Requests</h2>
-                  <p className="text-sm text-muted-foreground">Recruiter registrations awaiting approval</p>
-                </div>
+        <div className="bg-white border border-orange-200 border-l-4 border-l-orange-500 rounded-2xl p-6 space-y-5">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-500" />
+              <div>
+                <h2 className="font-semibold text-foreground">Pending Recruiter Approvals</h2>
+                <p className="text-sm text-muted-foreground">Registrations awaiting your review</p>
               </div>
-              <span className="bg-muted text-foreground text-sm font-semibold px-3 py-1 rounded-lg">{pendingRecruiters.length} pending</span>
             </div>
+            <span className="bg-orange-50 text-orange-600 text-sm font-semibold px-3 py-1 rounded-lg">{pendingRecruiters.length} pending</span>
+          </div>
+          {pendingRecruiters.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">No pending recruiter requests</p>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                    {["Company", "Email", "Name", "Action"].map((h) => (
+                    {["Full Name", "Email", "Phone", "Company", "Registered On", "Actions"].map((h) => (
                       <th key={h} className="pb-3 pr-6 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {pendingRecruiters.map((r) => (
-                    <tr key={r.id}>
-                      <td className="py-4 pr-6 font-medium text-foreground whitespace-nowrap">{r.company || "—"}</td>
+                    <tr key={r.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-4 pr-6 font-medium text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
                       <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.email}</td>
-                      <td className="py-4 pr-6 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
-                      <td className="py-4">
-                        <Button size="sm" className="rounded-lg bg-foreground hover:bg-foreground/80 text-white text-xs h-8 px-4" asChild>
-                          <Link to="/recruiter-approval-table">Review All</Link>
-                        </Button>
+                      <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.phone || "—"}</td>
+                      <td className="py-4 pr-6 text-foreground whitespace-nowrap">{r.company || "—"}</td>
+                      <td className="py-4 pr-6 text-xs text-muted-foreground whitespace-nowrap">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</td>
+                      <td className="py-4 pr-6 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs gap-1" onClick={() => handleApproveRecruiter(r.id)}>
+                            <Check className="w-3 h-3" /> Approve
+                          </Button>
+                          <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 rounded-lg h-8 px-3 text-xs gap-1" onClick={() => handleBlockRecruiter(r.id)}>
+                            <X className="w-3 h-3" /> Reject
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+
+        {/* All Recruiters Table */}
+        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              <div>
+                <h2 className="font-semibold text-foreground">All Recruiters</h2>
+                <p className="text-sm text-muted-foreground">Manage all recruiter accounts</p>
+              </div>
+            </div>
+            <span className="bg-muted text-foreground text-sm font-semibold px-3 py-1 rounded-lg">{recruiters.length} total</span>
           </div>
-        )}
+
+          <div className="flex gap-2">
+            {["all", "pending", "approved", "blocked"].map((status) => (
+              <Button
+                key={status}
+                size="sm"
+                variant={recruiterFilter === status ? "default" : "outline"}
+                className="rounded-lg text-xs h-8 px-4"
+                onClick={() => setRecruiterFilter(status)}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Button>
+            ))}
+          </div>
+
+          {filteredRecruiters.length === 0 ? (
+            <p className="text-muted-foreground text-sm text-center py-6">No recruiters found</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                    {["Full Name", "Email", "Phone", "Company", "Status", "Registered On", "Actions"].map((h) => (
+                      <th key={h} className="pb-3 pr-6 font-medium whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredRecruiters.map((r) => (
+                    <tr key={r.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="py-4 pr-6 font-medium text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
+                      <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.email}</td>
+                      <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.phone || "—"}</td>
+                      <td className="py-4 pr-6 text-foreground whitespace-nowrap">{r.company || "—"}</td>
+                      <td className="py-4 pr-6 whitespace-nowrap">
+                        <Badge className={
+                          r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" :
+                          r.status === "blocked" ? "bg-red-50 text-red-500 border-red-200" :
+                          "bg-orange-50 text-orange-500 border-orange-200"
+                        }>
+                          {r.status === "approved" ? "Approved" : r.status === "blocked" ? "Blocked" : "Pending"}
+                        </Badge>
+                      </td>
+                      <td className="py-4 pr-6 text-xs text-muted-foreground whitespace-nowrap">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</td>
+                      <td className="py-4 whitespace-nowrap">
+                        {r.status === "pending" && (
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
+                              Approve
+                            </Button>
+                            <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 rounded-lg h-8 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                        {r.status === "approved" && (
+                          <Button size="sm" variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50 rounded-lg h-8 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
+                            Revoke
+                          </Button>
+                        )}
+                        {r.status === "blocked" && (
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
+                            Re-approve
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
