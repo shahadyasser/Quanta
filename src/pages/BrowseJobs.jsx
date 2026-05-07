@@ -19,6 +19,7 @@ export default function BrowseJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [error, setError] = useState(null);
 
   // Apply modal state
   const [applyJob, setApplyJob] = useState(null);
@@ -32,24 +33,30 @@ export default function BrowseJobs() {
 
   useEffect(() => {
     const init = async () => {
-      const candidateEmail = (localStorage.getItem("candidateEmail") || "").trim().toLowerCase();
-      const candidateId = localStorage.getItem("candidateId");
-      const user = candidateEmail ? { email: candidateEmail, id: candidateId, full_name: "" } : null;
-      setCurrentUser(user);
+      try {
+        const candidateEmail = (localStorage.getItem("candidateEmail") || "").trim().toLowerCase();
+        const candidateId = localStorage.getItem("candidateId");
+        const user = candidateEmail ? { email: candidateEmail, id: candidateId, full_name: "" } : null;
+        setCurrentUser(user);
 
-      // Browse Jobs: SELECT * FROM open_jobs_view
-      const jobsData = await pgPublicQuery('SELECT * FROM open_jobs_view');
-      setJobs(jobsData || []);
+        // Fetch open jobs from Postgres
+        const jobsData = await pgQuery('SELECT * FROM jobs WHERE status = $1 ORDER BY created_at DESC', ['open']);
+        setJobs(jobsData || []);
 
-      // Check already applied: SELECT id FROM applications WHERE candidate_id = :userId AND job_id = :jobId
-      if (candidateId) {
-        const apps = await pgQuery(
-          'SELECT job_id FROM applications WHERE candidate_id = $1',
-          [candidateId]
-        );
-        setAppliedJobIds(new Set((apps || []).map((a) => a.job_id)));
+        // Check already applied
+        if (candidateId) {
+          const apps = await pgQuery(
+            'SELECT job_id FROM applications WHERE candidate_id = $1',
+            [candidateId]
+          );
+          setAppliedJobIds(new Set((apps || []).map((a) => a.job_id)));
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load jobs:", err);
+        setError("Failed to load jobs. Please refresh the page.");
+        setLoading(false);
       }
-      setLoading(false);
     };
     init();
   }, []);
@@ -169,6 +176,8 @@ export default function BrowseJobs() {
           <div className="flex-1 space-y-4 min-w-0">
             {loading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : error ? (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6 text-center">{error}</div>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">{filtered.length} jobs found</p>
