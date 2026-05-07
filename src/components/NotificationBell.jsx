@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { pgQuery } from "@/lib/neonDb";
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
@@ -26,29 +25,33 @@ export default function NotificationBell({ recruiterEmail }) {
   const navigate = useNavigate();
 
   const load = async () => {
-    if (recruiterEmail) {
-      const rows = await pgQuery(
-        `SELECT a.id, a.job_id, a.candidate_name, a.candidate_email, a.match_score, a.applied_at,
-                j.title AS job_title
-         FROM applications a
-         JOIN jobs j ON a.job_id = j.id
-         JOIN users u ON u.id = j.created_by
-         WHERE u.email = $1 AND a.is_viewed = false
-         ORDER BY a.applied_at DESC LIMIT 30`,
-        [recruiterEmail]
-      );
-      setNotifications(rows || []);
-    } else {
-      const rows = await pgQuery(
-        `SELECT a.id, a.job_id, a.candidate_name, a.candidate_email, a.match_score, a.applied_at,
-                j.title AS job_title
-         FROM applications a
-         JOIN jobs j ON a.job_id = j.id
-         WHERE a.is_viewed = false
-         ORDER BY a.applied_at DESC LIMIT 30`,
-        []
-      );
-      setNotifications(rows || []);
+    try {
+      const apps = await base44.entities.Application.filter({ is_viewed: false });
+      
+      if (!apps || apps.length === 0) {
+        setNotifications([]);
+        return;
+      }
+
+      const filtered = recruiterEmail 
+        ? apps.filter(a => a.recruiter_email === recruiterEmail)
+        : apps;
+
+      const notifs = filtered.map(a => ({
+        id: a.id,
+        job_id: a.job_id,
+        candidate_name: a.candidate_name,
+        candidate_email: a.candidate_email,
+        match_score: a.match_score,
+        applied_at: a.created_date,
+        job_title: a.job_title
+      }));
+
+      notifs.sort((a, b) => new Date(b.applied_at) - new Date(a.applied_at));
+      setNotifications(notifs.slice(0, 30));
+    } catch (err) {
+      console.error("Failed to load notifications:", err);
+      setNotifications([]);
     }
   };
 
@@ -68,19 +71,26 @@ export default function NotificationBell({ recruiterEmail }) {
   }, []);
 
   const markViewed = async (notif) => {
-    await pgQuery('UPDATE applications SET is_viewed = true WHERE id = $1', [notif.id]);
-    setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
-    setOpen(false);
-    navigate(`/view-candidates?job_id=${notif.job_id}&job=${encodeURIComponent(notif.job_title || "")}`);
+    try {
+      await base44.entities.Application.update(notif.id, { is_viewed: true });
+      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+      setOpen(false);
+      navigate(`/view-candidates?job_id=${notif.job_id}&job=${encodeURIComponent(notif.job_title || "")}`);
+    } catch (err) {
+      console.error("Failed to mark as viewed:", err);
+    }
   };
 
   const markAllRead = async () => {
-    const ids = notifications.map((n) => n.id);
-    if (ids.length > 0) {
-      await pgQuery('UPDATE applications SET is_viewed = true WHERE id = ANY($1::uuid[])', [ids]);
+    try {
+      for (const notif of notifications) {
+        await base44.entities.Application.update(notif.id, { is_viewed: true });
+      }
+      setNotifications([]);
+      setOpen(false);
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
     }
-    setNotifications([]);
-    setOpen(false);
   };
 
   const count = notifications.length;
