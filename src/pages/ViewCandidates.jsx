@@ -303,9 +303,9 @@ export default function ViewCandidates() {
                 )}
               </div>
             )}
-          </div>
+              </div>
 
-          {loading ? (
+            {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
@@ -453,8 +453,8 @@ export default function ViewCandidates() {
               })}
             </div>
             )}
-            </>
-            )}
+          </>
+        )}
        {/* Propose Interview Modal */}
       {interviewModal && (
         <ProposeInterviewModal
