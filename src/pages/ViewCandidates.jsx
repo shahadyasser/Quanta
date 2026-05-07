@@ -226,29 +226,23 @@ export default function ViewCandidates() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* RAG button: Only show if there are pending (unprocessed) applications */}
+         {/* RAG button - Always visible */}
+         <div className="flex justify-center">
+           <Button
+             size="lg"
+             className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8"
+             onClick={triggerRAGPipeline}
+             disabled={ragProcessing}
+           >
+             {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+             {ragProcessing ? "Analyzing All CVs..." : "Run RAG Analysis"}
+           </Button>
+         </div>
 
-
-        {!ragTriggered ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-6">
-            <div className="text-center space-y-3 max-w-md">
-              <h2 className="text-3xl font-bold text-foreground">Ready to analyze candidates?</h2>
-              <p className="text-muted-foreground">Click the button below to run the AI RAG pipeline on all pending CVs. Candidates will be ranked by AI match score.</p>
-            </div>
-            <Button
-              size="lg"
-              className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8 mx-auto"
-              onClick={triggerRAGPipeline}
-              disabled={ragProcessing}
-            >
-              {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              {ragProcessing ? "Analyzing All CVs..." : "Start RAG Analysis"}
-            </Button>
-          </div>
-        ) : (
-          <>
-            {/* Stats */}
-            {applications.length > 0 && (
+         {ragTriggered && (
+           <>
+             {/* Stats */}
+             {applications.length > 0 && (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white border border-border rounded-2xl p-5">
                   <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
