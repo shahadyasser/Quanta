@@ -243,43 +243,40 @@ export default function ViewCandidates() {
            </Button>
          </div>
 
-         {ragTriggered && (
-           <>
-             {/* Stats */}
-             {applications.length > 0 && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white border border-border rounded-2xl p-5">
-                  <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
-                  <p className="text-2xl font-bold text-foreground">{applications.length}</p>
-                </div>
-                <div className="bg-white border border-border rounded-2xl p-5">
-                  <p className="text-sm text-muted-foreground mb-2">CV Analyzed</p>
-                  <p className="text-2xl font-bold text-foreground">{processed.length}</p>
-                </div>
-                <div className="bg-white border border-border rounded-2xl p-5">
-                  <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
-                  <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
-                </div>
-                <div className="bg-white border border-border rounded-2xl p-5">
-                  <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
-                  <p className="text-base font-bold text-green-600">Bias Check Passed ✓</p>
-                </div>
-              </div>
-            )}
+         {/* Search */}
+         <div className="relative">
+           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+           <Input
+             placeholder="Search by name, email, or skills..."
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+             className="pl-9 h-11 rounded-xl bg-white"
+           />
+         </div>
 
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, or skills..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-11 rounded-xl bg-white"
-              />
+         {ragTriggered && applications.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
+              <p className="text-2xl font-bold text-foreground">{applications.length}</p>
             </div>
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">CV Analyzed</p>
+              <p className="text-2xl font-bold text-foreground">{processed.length}</p>
+            </div>
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
+              <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
+            </div>
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
+              <p className="text-base font-bold text-green-600">Bias Check Passed ✓</p>
+            </div>
+          </div>
+          )}
 
-            {/* Candidates list */}
-            <div>
+         {/* Candidates list */}
+         <div>
               <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
@@ -445,9 +442,8 @@ export default function ViewCandidates() {
               </div>
               )}
               </div>
-              </>
-              )}
-              {/* Propose Interview Modal */}
+
+          {/* Propose Interview Modal */}
            {interviewModal && (
         <ProposeInterviewModal
           application={interviewModal}
