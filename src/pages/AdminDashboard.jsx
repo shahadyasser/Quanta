@@ -5,6 +5,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import { pgAdminQuery } from "@/lib/neonDb";
 
 function StatCard({ label, value, sub, subGreen, subOrange, icon: Icon, iconColor, iconBg, borderColor, loading }) {
   return (
@@ -42,14 +43,20 @@ export default function AdminDashboard() {
       const me = await base44.auth.me();
       if (me?.role !== "admin") { navigate("/"); return; }
       setAdminEmail(me.email);
-      const [r, j, a] = await Promise.all([
-        base44.entities.RecruiterProfile.list(),
-        base44.entities.Job.list(),
-        base44.entities.Application.list("-created_date"),
+
+      // Stats: SELECT * FROM admin_stats
+      // All Users, All Jobs, All Applications
+      const [statsRows, usersData, jobsData, appsData] = await Promise.all([
+        pgAdminQuery('SELECT * FROM admin_stats'),
+        pgAdminQuery('SELECT * FROM users ORDER BY created_at DESC'),
+        pgAdminQuery('SELECT j.*, u.full_name AS recruiter_name FROM jobs j LEFT JOIN users u ON j.created_by = u.id'),
+        pgAdminQuery('SELECT * FROM applications_detail_view'),
       ]);
-      setRecruiters(r);
-      setJobs(j);
-      setApplications(a);
+
+      const stats = statsRows[0] || {};
+      setRecruiters(usersData.filter(u => u.role === 'recruiter'));
+      setJobs(jobsData || []);
+      setApplications(appsData || []);
       setLoading(false);
     };
     init();

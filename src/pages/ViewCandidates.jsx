@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import { pgQuery } from "@/lib/neonDb";
 
 const STATUS_STYLES = {
   "processed": "bg-green-50 text-green-600 border-green-200",
@@ -36,33 +37,37 @@ export default function ViewCandidates() {
 
   useEffect(() => {
     const fetchApplications = async () => {
-      const filter = jobId ? { job_id: jobId } : {};
-      const data = await base44.entities.Application.filter(filter, "-match_score");
-      setApplications(data);
+      // Candidates per Job: SELECT * FROM applications_detail_view WHERE job_id = :jobId ORDER BY match_score DESC NULLS LAST
+      const query = jobId
+        ? 'SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications_detail_view ORDER BY match_score DESC NULLS LAST';
+      const params = jobId ? [jobId] : [];
+      const data = await pgQuery(query, params);
+      setApplications(data || []);
       setLoading(false);
     };
     fetchApplications();
 
     // Auto-refresh every 5s to pick up newly processed CVs
     const interval = setInterval(async () => {
-      const filter = jobId ? { job_id: jobId } : {};
-      const data = await base44.entities.Application.filter(filter, "-match_score");
-      const hasPending = data.some((a) => a.status === "pending");
+      const query = jobId
+        ? 'SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications_detail_view ORDER BY match_score DESC NULLS LAST';
+      const params = jobId ? [jobId] : [];
+      const data = await pgQuery(query, params);
+      const hasPending = (data || []).some((a) => a.status === "pending" || a.status === "submitted");
       if (!hasPending) { clearInterval(interval); return; }
       setApplications((prev) => {
         const prevIds = new Set(prev.map((a) => a.id));
-        // Update existing candidates in-place (only update, never add back removed ones)
         const updated = prev.map((a) => {
-          const fresh = data.find((d) => d.id === a.id);
-          // Only refresh if the candidate is still in prev (not removed) and was pending
-          return fresh && a.status === "pending" ? fresh : a;
+          const fresh = (data || []).find((d) => d.id === a.id);
+          return fresh && (a.status === "pending" || a.status === "submitted") ? fresh : a;
         });
-        // Add brand new pending applications not yet seen
-        data.forEach((d) => {
-          if (!prevIds.has(d.id) && d.status === "pending") updated.push(d);
+        (data || []).forEach((d) => {
+          if (!prevIds.has(d.id) && (d.status === "pending" || d.status === "submitted")) updated.push(d);
         });
         return updated;
-      });
+      })
     }, 5000);
 
     return () => clearInterval(interval);

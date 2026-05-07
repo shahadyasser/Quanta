@@ -4,6 +4,7 @@ import { ArrowLeft, Search, MapPin, Clock, Star, Sparkles, Building2, X, CheckCi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
+import { pgQuery, pgPublicQuery } from "@/lib/neonDb";
 
 const ARRANGEMENTS = ["On-site", "Remote", "Hybrid"];
 const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Freelance", "Internship"];
@@ -31,15 +32,23 @@ export default function BrowseJobs() {
 
   useEffect(() => {
     const init = async () => {
-      const candidateEmail = localStorage.getItem("candidateEmail");
-      const user = candidateEmail ? { email: candidateEmail, full_name: "" } : null;
+      const candidateEmail = (localStorage.getItem("candidateEmail") || "").trim().toLowerCase();
+      const candidateId = localStorage.getItem("candidateId");
+      const user = candidateEmail ? { email: candidateEmail, id: candidateId, full_name: "" } : null;
       setCurrentUser(user);
-      const [jobsData, apps] = await Promise.all([
-        base44.entities.Job.filter({ status: "Active" }, "-created_date"),
-        candidateEmail ? base44.entities.Application.filter({ candidate_email: candidateEmail }) : Promise.resolve([])
-      ]);
-      setJobs(jobsData);
-      setAppliedJobIds(new Set(apps.map((a) => a.job_id)));
+
+      // Browse Jobs: SELECT * FROM open_jobs_view
+      const jobsData = await pgPublicQuery('SELECT * FROM open_jobs_view');
+      setJobs(jobsData || []);
+
+      // Check already applied: SELECT id FROM applications WHERE candidate_id = :userId AND job_id = :jobId
+      if (candidateId) {
+        const apps = await pgQuery(
+          'SELECT job_id FROM applications WHERE candidate_id = $1',
+          [candidateId]
+        );
+        setAppliedJobIds(new Set((apps || []).map((a) => a.job_id)));
+      }
       setLoading(false);
     };
     init();
@@ -73,39 +82,17 @@ export default function BrowseJobs() {
     // 1. Upload CV
     const { file_url } = await base44.integrations.Core.UploadFile({ file: applyFile });
 
-    // 2. Get candidate name from Candidate entity, then create Application record
-    const candidateRec = await base44.entities.Candidate.filter({ email: currentUser?.email || "" });
-    const candidateName = candidateRec[0]?.full_name || "";
-    const application = await base44.entities.Application.create({
-      job_id: applyJob.id,
-      job_title: applyJob.title,
-      company: applyJob.company,
-      candidate_email: currentUser?.email || "",
-      candidate_name: candidateName,
-      cv_url: file_url,
-      recruiter_email: applyJob.recruiter_email,
-      status: "pending"
-    });
+    // 2. INSERT INTO applications (candidate_id, job_id, cv_url, status) VALUES (...)
+    const candidateId = currentUser?.id;
+    const rows = await pgQuery(
+      `INSERT INTO applications (candidate_id, job_id, cv_url, status)
+       VALUES ($1, $2, $3, 'submitted')
+       RETURNING id`,
+      [candidateId, applyJob.id, file_url]
+    );
+    const applicationId = rows[0]?.id;
 
-    // 3. Upsert Candidate record
-    const candidateEmail = currentUser?.email || "";
-    const existingCandidates = await base44.entities.Candidate.filter({ email: candidateEmail });
-    const allApps = await base44.entities.Application.filter({ candidate_email: candidateEmail });
-    const candData = {
-      email: candidateEmail,
-      full_name: existingCandidates[0]?.full_name || "",
-      total_applications: allApps.length,
-      accepted_count: allApps.filter(a => a.status === "shortlisted").length,
-      rejected_count: allApps.filter(a => a.status === "rejected").length,
-      cv_url: file_url,
-    };
-    if (existingCandidates.length > 0) {
-      base44.entities.Candidate.update(existingCandidates[0].id, candData);
-    } else {
-      base44.entities.Candidate.create(candData);
-    }
-
-    // 4. Show success immediately — AI processing runs in the background
+    // 3. Show success immediately — AI processing runs in the background
     setApplyUploading(false);
     setApplyDone(true);
     setAppliedJobIds((prev) => new Set([...prev, applyJob.id]));
@@ -113,7 +100,7 @@ export default function BrowseJobs() {
     // Fire-and-forget AI processing (doesn't block the user)
     base44.functions.invoke("processCV", {
       cv_url: file_url,
-      application_id: application.id,
+      application_id: applicationId,
       job_id: applyJob.id,
       job_title: applyJob.title,
       job_description: applyJob.description || "",

@@ -5,6 +5,7 @@ import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import { pgQuery } from "@/lib/neonDb";
 import CandidateEmailGate from "@/components/CandidateEmailGate";
 
 const QUICK_ACTIONS = [
@@ -84,37 +85,32 @@ export default function CandidateDashboard() {
   useEffect(() => {
     const init = async () => {
       const candidateEmail = (localStorage.getItem("candidateEmail") || "").trim().toLowerCase();
-      if (!candidateEmail) {
+      const candidateId = localStorage.getItem("candidateId");
+      if (!candidateEmail || !candidateId) {
         navigate("/candidate-auth");
         return;
       }
       setEmailVerified(true);
 
-      // Load candidate profile, applications, and interview invites in parallel
-      const [candidateRecords, apps, interviewSlots] = await Promise.all([
-        base44.entities.Candidate.filter({ email: candidateEmail }),
-        base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date"),
+      // My Applications: SELECT * FROM applications_detail_view WHERE candidate_id = :currentUserId ORDER BY applied_at DESC
+      const [apps, interviewSlots] = await Promise.all([
+        pgQuery(
+          'SELECT * FROM applications_detail_view WHERE candidate_id = $1 ORDER BY applied_at DESC',
+          [candidateId]
+        ),
         base44.entities.InterviewSlot.filter({ candidate_email: candidateEmail }, "-created_date"),
       ]);
       setInvites(interviewSlots);
 
-      const candidateRecord = candidateRecords[0] || null;
-      setUser({ email: candidateEmail, full_name: candidateRecord?.full_name || "" });
+      setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || "" });
 
       // Initialize prev statuses on first load (no alerts)
-      apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
-      setApplications(apps);
+      (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });
+      setApplications(apps || []);
 
-      // Build stats from applications (source of truth)
-      const accepted = apps.filter(a => a.status === "shortlisted").length;
-      const rejected = apps.filter(a => a.status === "rejected").length;
-      const stats = { email: candidateEmail, full_name: candidateRecord?.full_name || "", total_applications: apps.length, accepted_count: accepted, rejected_count: rejected };
-      setCandidate(stats);
-
-      // Persist updated stats back to Candidate entity
-      if (candidateRecord) {
-        base44.entities.Candidate.update(candidateRecord.id, { total_applications: apps.length, accepted_count: accepted, rejected_count: rejected });
-      }
+      const accepted = (apps || []).filter(a => a.status === "shortlisted" || a.status === "accepted").length;
+      const rejected = (apps || []).filter(a => a.status === "rejected").length;
+      setCandidate({ email: candidateEmail, full_name: apps[0]?.candidate_name || "", total_applications: (apps || []).length, accepted_count: accepted, rejected_count: rejected });
 
       setLoading(false);
     };

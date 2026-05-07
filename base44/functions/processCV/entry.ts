@@ -1,4 +1,14 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import pg from 'npm:pg@8.11.3';
+
+const pool = new pg.Pool({
+  host: Deno.env.get('PGHOST'),
+  port: parseInt(Deno.env.get('PGPORT') || '5432'),
+  database: Deno.env.get('PGDATABASE'),
+  user: Deno.env.get('PGUSER'),
+  password: Deno.env.get('PGPASSWORD'),
+  ssl: { rejectUnauthorized: false },
+});
 
 // ─── OpenAI Embeddings for Real RAG ───
 async function getEmbedding(text) {
@@ -230,16 +240,29 @@ Return only the JSON object with these fields.`,
 
     // Step 3: Stage 2 — Store CV chunks and embeddings
     const cvChunks = chunkText(cvText, 1500);
-    await Promise.all(cvChunks.map(async (chunk, idx) => {
-      const embedding = await getEmbedding(chunk);
-      await base44.asServiceRole.entities.CVEmbedding.create({
-        application_id,
-        job_id: job_id || "",
-        embedding,
-        cv_text_chunk: chunk.slice(0, 2000),
-        chunk_index: idx
-      });
-    }));
+    const pgClient = await pool.connect();
+    try {
+      await Promise.all(cvChunks.map(async (chunk, idx) => {
+        const embedding = await getEmbedding(chunk);
+        // Write to Neon cv_embeddings table
+        await pgClient.query(
+          `INSERT INTO cv_embeddings (application_id, job_id, embedding, cv_text_chunk, chunk_index)
+           VALUES ($1, $2, $3, $4, $5)
+           ON CONFLICT DO NOTHING`,
+          [application_id, job_id || null, JSON.stringify(embedding), chunk.slice(0, 2000), idx]
+        );
+        // Also write to Base44 entity for backward compatibility
+        await base44.asServiceRole.entities.CVEmbedding.create({
+          application_id,
+          job_id: job_id || "",
+          embedding,
+          cv_text_chunk: chunk.slice(0, 2000),
+          chunk_index: idx
+        });
+      }));
+    } finally {
+      pgClient.release();
+    }
 
     // Step 4: Stage 3 — Retrieve top 10 most relevant chunks from all CVs for this job
     const jobEmbedding = await getEmbedding(jobText);
@@ -283,7 +306,24 @@ Return only the JSON object with these fields.`,
     if (scores.certifications < 3) improvements.push("Additional certifications would strengthen the application");
     if (improvements.length === 0) improvements.push("Continue developing domain-specific expertise");
 
-    // Step 6: Update Application record with RAG metadata
+    // Step 6: Update applications table directly in Neon Postgres
+    const ragResults = {
+      similarity_score: similarityScore,
+      llm_total: llmTotal,
+      final_score: finalScore,
+      chunks_stored: cvChunks.length,
+      chunks_retrieved: chunksCount,
+      retrieval_method: "embedding_cosine",
+      embedding_model: "text-embedding-3-small",
+      construct_scores: {
+        work_experience: scores.work_exp,
+        skills: scores.skills,
+        education: scores.education,
+        certifications: scores.certifications
+      },
+      verdict: `WE:${scores.work_exp} Sk:${scores.skills} Ed:${scores.education} Cert:${scores.certifications}`
+    };
+
     const updateData = {
       candidate_name: cvData.full_name || "",
       candidate_email: cvData.email || "",
@@ -296,25 +336,46 @@ Return only the JSON object with these fields.`,
       improvements,
       cv_url,
       status: "processed",
-      rag_results: {
-        similarity_score: similarityScore,
-        llm_total: llmTotal,
-        final_score: finalScore,
-        chunks_stored: cvChunks.length,
-        chunks_retrieved: chunksCount,
-        retrieval_method: "embedding_cosine",
-        embedding_model: "text-embedding-3-small",
-        construct_scores: {
-          work_experience: scores.work_exp,
-          skills: scores.skills,
-          education: scores.education,
-          certifications: scores.certifications
-        },
-        verdict: `WE:${scores.work_exp} Sk:${scores.skills} Ed:${scores.education} Cert:${scores.certifications}`
-      }
+      rag_results: ragResults
     };
 
     if (application_id) {
+      // Write directly to Neon Postgres applications table
+      const client = await pool.connect();
+      try {
+        await client.query(
+          `UPDATE applications SET
+            match_score = $1,
+            strengths = $2,
+            improvements = $3,
+            rag_results = $4,
+            status = 'processed',
+            skills = $5,
+            years_of_experience = $6,
+            education_summary = $7,
+            work_experience_summary = $8,
+            candidate_name = $9,
+            candidate_email = $10
+          WHERE id = $11`,
+          [
+            finalScore,
+            JSON.stringify(strengths),
+            JSON.stringify(improvements),
+            JSON.stringify(ragResults),
+            JSON.stringify(cvData.skills || []),
+            cvData.years_of_experience || 0,
+            cvData.education_summary || "",
+            cvData.work_experience_summary || "",
+            cvData.full_name || "",
+            cvData.email || "",
+            application_id
+          ]
+        );
+      } finally {
+        client.release();
+      }
+
+      // Also update Base44 entity for backward compatibility
       await base44.asServiceRole.entities.Application.update(application_id, updateData);
     }
 

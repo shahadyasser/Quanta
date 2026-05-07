@@ -32,13 +32,21 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("candidateLogin", { email: form.email.trim().toLowerCase() });
-      if (res.data.found) {
-        localStorage.setItem("candidateEmail", form.email.trim().toLowerCase());
-        navigate("/candidate-dashboard");
-      } else {
-        setError("No account found. Please register first.");
+      const res = await base44.functions.invoke("authLogin", { email: form.email.trim().toLowerCase(), password: form.password });
+      if (res.data.error) {
+        setError(res.data.error);
+        setLoading(false);
+        return;
       }
+      const user = res.data.user;
+      if (user.role !== 'candidate') {
+        setError("No candidate account found. Please register first.");
+        setLoading(false);
+        return;
+      }
+      localStorage.setItem("candidateEmail", user.email);
+      localStorage.setItem("candidateId", user.id);
+      navigate("/candidate-dashboard");
     } catch (err) {
       setError("Login failed. Please try again.");
     }
@@ -62,7 +70,12 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("candidateRegister", { email: form.email, full_name: form.fullName });
+      const res = await base44.functions.invoke("authRegister", {
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        full_name: form.fullName,
+        role: "candidate"
+      });
       if (res.data.error) {
         setError(res.data.error);
         setLoading(false);

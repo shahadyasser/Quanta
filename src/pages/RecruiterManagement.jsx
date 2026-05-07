@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { base44 } from "@/api/base44Client";
+import { pgAdminQuery } from "@/lib/neonDb";
 
 export default function RecruiterManagement() {
   const [recruiters, setRecruiters] = useState([]);
@@ -21,15 +22,16 @@ export default function RecruiterManagement() {
   const [confirmDialog, setConfirmDialog] = useState(null); // { id, action: 'suspend'|'activate' }
 
   useEffect(() => {
-    base44.entities.RecruiterProfile.list("-created_date").then((data) => {
-      setRecruiters(data);
+    // All Users: SELECT * FROM users WHERE role = 'recruiter' ORDER BY created_at DESC
+    pgAdminQuery("SELECT * FROM users WHERE role = 'recruiter' ORDER BY created_at DESC").then((data) => {
+      setRecruiters(data || []);
       setLoading(false);
     });
   }, []);
 
   const total = recruiters.length;
-  const active = recruiters.filter((r) => r.status === "approved").length;
-  const suspended = recruiters.filter((r) => r.status === "suspended").length;
+  const active = recruiters.filter((r) => r.is_active).length;
+  const suspended = recruiters.filter((r) => !r.is_active).length;
 
   const filtered = recruiters.filter(
     (r) =>
@@ -40,20 +42,25 @@ export default function RecruiterManagement() {
 
   const confirmToggle = (id) => {
     const recruiter = recruiters.find((r) => r.id === id);
-    setConfirmDialog({ id, action: recruiter.status === "approved" ? "suspend" : "activate" });
+    setConfirmDialog({ id, action: recruiter.is_active ? "suspend" : "activate" });
   };
 
   const handleConfirm = async () => {
-    const newStatus = confirmDialog.action === "suspend" ? "suspended" : "approved";
-    await base44.entities.RecruiterProfile.update(confirmDialog.id, { status: newStatus });
+    // Approve User: UPDATE users SET is_active = true WHERE id = :userId
+    // Block User: UPDATE users SET is_active = false WHERE id = :userId
+    const isActivate = confirmDialog.action === "activate";
+    await pgAdminQuery(
+      'UPDATE users SET is_active = $1 WHERE id = $2',
+      [isActivate, confirmDialog.id]
+    );
     setRecruiters((prev) =>
-      prev.map((r) => r.id === confirmDialog.id ? { ...r, status: newStatus } : r)
+      prev.map((r) => r.id === confirmDialog.id ? { ...r, is_active: isActivate } : r)
     );
     setConfirmDialog(null);
   };
 
   const deleteRecruiter = async (id) => {
-    await base44.entities.RecruiterProfile.delete(id);
+    await pgAdminQuery('DELETE FROM users WHERE id = $1', [id]);
     setRecruiters((prev) => prev.filter((r) => r.id !== id));
   };
 
@@ -137,14 +144,10 @@ export default function RecruiterManagement() {
                     <td className="py-3.5 pr-4 font-medium text-foreground whitespace-nowrap">{r.company || "—"}</td>
                     <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.email}</td>
                     <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
-                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</td>
+                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
                     <td className="py-3.5 pr-4 whitespace-nowrap">
-                      <Badge className={
-                        r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" :
-                        r.status === "suspended" ? "bg-red-50 text-red-500 border-red-200" :
-                        "bg-orange-50 text-orange-500 border-orange-200"
-                      }>
-                        {r.status === "approved" ? "Approved" : r.status === "suspended" ? "Suspended" : "Pending"}
+                      <Badge className={r.is_active ? "bg-green-50 text-green-600 border-green-200" : "bg-red-50 text-red-500 border-red-200"}>
+                        {r.is_active ? "Active" : "Inactive"}
                       </Badge>
                     </td>
                     <td className="py-3.5 whitespace-nowrap">
@@ -153,13 +156,13 @@ export default function RecruiterManagement() {
                           size="sm"
                           variant="outline"
                           className={`rounded-lg text-xs h-8 px-3 ${
-                            r.status === "approved"
+                            r.is_active
                               ? "border-orange-300 text-orange-500 hover:bg-orange-50"
                               : "border-green-300 text-green-600 hover:bg-green-50"
                           }`}
                           onClick={() => confirmToggle(r.id)}
                         >
-                          {r.status === "approved" ? "Suspend" : "Activate"}
+                          {r.is_active ? "Suspend" : "Activate"}
                         </Button>
                         <Button
                           size="sm"
@@ -190,8 +193,8 @@ export default function RecruiterManagement() {
                 <DialogTitle>{isActivate ? "Activate Recruiter Account?" : "Suspend Recruiter Account?"}</DialogTitle>
                 <DialogDescription className="pt-1">
                   {isActivate
-                    ? `Are you sure you want to reactivate ${r?.company}? This will restore their full access to the platform.`
-                    : `Are you sure you want to suspend ${r?.company}? They will lose access to the platform.`}
+                    ? `Are you sure you want to reactivate ${r?.full_name || r?.email}? This will restore their full access to the platform.`
+                    : `Are you sure you want to suspend ${r?.full_name || r?.email}? They will lose access to the platform.`}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="flex gap-2 sm:gap-2 pt-2">

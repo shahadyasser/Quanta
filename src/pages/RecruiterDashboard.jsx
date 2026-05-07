@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
+import { pgQuery } from "@/lib/neonDb";
 
 const TABS = ["All Jobs", "Active", "Inactive"];
 
@@ -21,24 +22,33 @@ export default function RecruiterDashboard() {
 
   useEffect(() => {
     const init = async () => {
+      const recruiterId = localStorage.getItem("recruiterId");
       const recruiterEmail = localStorage.getItem("recruiterEmail");
-      if (!recruiterEmail) {
+      if (!recruiterId || !recruiterEmail) {
         navigate("/recruiter-auth");
         return;
       }
-      setUser({ email: recruiterEmail });
+      setUser({ email: recruiterEmail, id: recruiterId });
       try {
-        const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
-        if (profiles.length > 0) {
-          setRecruiterStatus(profiles[0].status);
-        }
-        // Fetch jobs and applications filtered by recruiter email directly
-        const [jobsData, appsData] = await Promise.all([
-          base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date", 200),
-          base44.entities.Application.filter({ recruiter_email: recruiterEmail }, "-created_date", 500),
+        // My Jobs: SELECT * FROM jobs WHERE created_by = :currentUserId ORDER BY created_at DESC
+        const [jobsData, appsData, profileRows] = await Promise.all([
+          pgQuery('SELECT * FROM jobs WHERE created_by = $1 ORDER BY created_at DESC', [recruiterId]),
+          pgQuery(
+            `SELECT a.*, j.title AS job_title FROM applications a
+             JOIN jobs j ON a.job_id = j.id
+             WHERE j.created_by = $1 ORDER BY a.applied_at DESC`,
+            [recruiterId]
+          ),
+          pgQuery('SELECT is_active, role FROM users WHERE id = $1', [recruiterId]),
         ]);
-        setJobs(jobsData);
-        setApplications(appsData);
+        const profile = profileRows[0];
+        if (profile && !profile.is_active) {
+          setRecruiterStatus("pending");
+        } else {
+          setRecruiterStatus("approved");
+        }
+        setJobs(jobsData || []);
+        setApplications(appsData || []);
       } finally {
         setLoading(false);
       }

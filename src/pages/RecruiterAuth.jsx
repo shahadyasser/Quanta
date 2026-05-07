@@ -17,28 +17,54 @@ export default function RecruiterAuth() {
   const [warning, setWarning] = useState(null); // 'no_access' | 'pending' | 'suspended' | 'registered'
   const navigate = useNavigate();
 
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setWarning(null);
     setLoading(true);
     if (tab === "register") {
-      await base44.functions.invoke("recruiterRegister", { full_name: fullName, company, email });
+      if (password !== confirm) { setWarning("no_access"); setLoading(false); return; }
+      const res = await base44.functions.invoke("authRegister", {
+        email: email.trim().toLowerCase(),
+        password,
+        full_name: fullName,
+        role: "recruiter",
+        company
+      });
       setLoading(false);
-      setWarning("registered");
-    } else {
-      const res = await base44.functions.invoke("recruiterLogin", { email: email.trim() });
-      setLoading(false);
-      const { status } = res.data;
-      if (status === "not_found") {
+      if (res.data.error) {
         setWarning("no_access");
-      } else if (status === "pending") {
-        setWarning("pending");
-      } else if (status === "suspended") {
-        setWarning("suspended");
-      } else if (status === "approved") {
-        localStorage.setItem("recruiterEmail", res.data.profile.email);
-        navigate("/recruiter-dashboard");
+      } else {
+        setWarning("registered");
       }
+    } else {
+      const res = await base44.functions.invoke("authLogin", { email: email.trim().toLowerCase(), password });
+      setLoading(false);
+      if (res.data.error) {
+        // Map error messages to warnings
+        if (res.data.error.includes('pending')) {
+          setWarning("pending");
+        } else if (res.data.error.includes('suspended') || res.data.error.includes('active')) {
+          setWarning("pending");
+        } else {
+          setWarning("no_access");
+        }
+        return;
+      }
+      const user = res.data.user;
+      if (user.role !== 'recruiter') {
+        setWarning("no_access");
+        return;
+      }
+      if (!user.is_active) {
+        setWarning("pending");
+        return;
+      }
+      localStorage.setItem("recruiterEmail", user.email);
+      localStorage.setItem("recruiterId", user.id);
+      navigate("/recruiter-dashboard");
     }
   };
 
@@ -163,7 +189,7 @@ export default function RecruiterAuth() {
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" />
+                      <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" value={password} onChange={(e) => setPassword(e.target.value)} required />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -174,7 +200,7 @@ export default function RecruiterAuth() {
                     <div className="space-y-1.5">
                       <Label htmlFor="confirm">Confirm Password</Label>
                       <div className="relative">
-                        <Input id="confirm" type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" />
+                        <Input id="confirm" type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
                         <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
