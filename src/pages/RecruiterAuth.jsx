@@ -14,7 +14,7 @@ export default function RecruiterAuth() {
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [warning, setWarning] = useState(null); // 'no_access' | 'pending' | 'suspended' | 'registered'
+  const [warning, setWarning] = useState(null); // 'no_access' | 'pending' | 'suspended' | 'registered' | 'denied'
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
@@ -57,7 +57,7 @@ export default function RecruiterAuth() {
       }
       const user = res.data.user;
       if (user.role !== 'recruiter') {
-        setWarning("no_access");
+        setWarning("denied");
         return;
       }
       if (!user.is_active) {
@@ -227,6 +227,12 @@ export default function RecruiterAuth() {
                     <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">
                       <Briefcase className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
                       <span>Your account has been suspended. Please contact support for assistance.</span>
+                    </div>
+                  )}
+                  {warning === "denied" && (
+                    <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 text-red-700 rounded-xl px-4 py-3 text-sm">
+                      <Briefcase className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
+                      <span>You don't have access to the recruiter portal. Please contact support if you believe this is an error.</span>
                     </div>
                   )}
 
