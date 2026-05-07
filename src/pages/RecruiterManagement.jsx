@@ -12,7 +12,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { base44 } from "@/api/base44Client";
 import { pgAdminQuery } from "@/lib/neonDb";
 
 export default function RecruiterManagement() {

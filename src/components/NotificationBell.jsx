@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { pgQuery } from "@/lib/neonDb";
 
 function timeAgo(dateStr) {
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
@@ -26,28 +27,35 @@ export default function NotificationBell({ recruiterEmail }) {
 
   const load = async () => {
     if (recruiterEmail) {
-      // For recruiters: show unviewed applications for their jobs
-      const all = await base44.entities.Application.filter({ recruiter_email: recruiterEmail, is_viewed: false }, "-created_date", 30);
-      setNotifications(all);
+      const rows = await pgQuery(
+        `SELECT a.id, a.job_id, a.candidate_name, a.candidate_email, a.match_score, a.applied_at,
+                j.title AS job_title
+         FROM applications a
+         JOIN jobs j ON a.job_id = j.id
+         JOIN users u ON u.id = j.created_by
+         WHERE u.email = $1 AND a.is_viewed = false
+         ORDER BY a.applied_at DESC LIMIT 30`,
+        [recruiterEmail]
+      );
+      setNotifications(rows || []);
     } else {
-      // For admin: show all unviewed processed applications
-      const all = await base44.entities.Application.filter({ is_viewed: false }, "-created_date", 30);
-      setNotifications(all);
+      const rows = await pgQuery(
+        `SELECT a.id, a.job_id, a.candidate_name, a.candidate_email, a.match_score, a.applied_at,
+                j.title AS job_title
+         FROM applications a
+         JOIN jobs j ON a.job_id = j.id
+         WHERE a.is_viewed = false
+         ORDER BY a.applied_at DESC LIMIT 30`,
+        []
+      );
+      setNotifications(rows || []);
     }
   };
 
   useEffect(() => {
     load();
-    // Real-time updates
-    const unsub = base44.entities.Application.subscribe((event) => {
-      if (event.type === "create" || event.type === "update") {
-        load();
-      }
-      if (event.type === "delete") {
-        setNotifications((prev) => prev.filter((n) => n.id !== event.id));
-      }
-    });
-    return () => unsub();
+    const interval = setInterval(load, 15000);
+    return () => clearInterval(interval);
   }, [recruiterEmail]);
 
   // Close on outside click
@@ -60,14 +68,17 @@ export default function NotificationBell({ recruiterEmail }) {
   }, []);
 
   const markViewed = async (notif) => {
-    await base44.entities.Application.update(notif.id, { is_viewed: true });
+    await pgQuery('UPDATE applications SET is_viewed = true WHERE id = $1', [notif.id]);
     setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
     setOpen(false);
     navigate(`/view-candidates?job_id=${notif.job_id}&job=${encodeURIComponent(notif.job_title || "")}`);
   };
 
   const markAllRead = async () => {
-    await Promise.all(notifications.map((n) => base44.entities.Application.update(n.id, { is_viewed: true })));
+    const ids = notifications.map((n) => n.id);
+    if (ids.length > 0) {
+      await pgQuery('UPDATE applications SET is_viewed = true WHERE id = ANY($1::uuid[])', [ids]);
+    }
     setNotifications([]);
     setOpen(false);
   };
@@ -131,7 +142,7 @@ export default function NotificationBell({ recruiterEmail }) {
                       ) : (
                         <span className="text-xs text-muted-foreground">Score pending</span>
                       )}
-                      <span className="text-xs text-muted-foreground">· {timeAgo(n.created_date)}</span>
+                      <span className="text-xs text-muted-foreground">· {timeAgo(n.applied_at)}</span>
                     </div>
                   </div>
                 </button>

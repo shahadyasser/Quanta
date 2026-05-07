@@ -96,14 +96,14 @@ export default function ViewCandidates() {
     : 0;
 
   const updateStatus = async (appId, status) => {
-    await base44.entities.Application.update(appId, { status });
-    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
+    await pgQuery('UPDATE applications SET status = $1, is_viewed = true WHERE id = $2', [status, appId]);
+    setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status, is_viewed: true } : a));
   };
 
   const markViewed = async (appId) => {
     const app = applications.find(a => a.id === appId);
     if (app && !app.is_viewed) {
-      await base44.entities.Application.update(appId, { is_viewed: true });
+      await pgQuery('UPDATE applications SET is_viewed = true WHERE id = $1', [appId]);
       setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, is_viewed: true } : a));
     }
   };
@@ -144,7 +144,7 @@ export default function ViewCandidates() {
         subject: isAccept ? `Congratulations – ${jobTitle} Offer` : `Application Update – ${jobTitle}`,
         body: emailMessage
       }),
-      base44.entities.Application.update(app.id, { status: isAccept ? "shortlisted" : "rejected" })
+      pgQuery('UPDATE applications SET status = $1, is_viewed = true WHERE id = $2', [isAccept ? "shortlisted" : "rejected", app.id])
     ]);
     // Remove the candidate from the list immediately
     setApplications((prev) => prev.filter((a) => a.id !== app.id));
@@ -167,7 +167,7 @@ export default function ViewCandidates() {
   };
 
   const deleteCandidate = async (appId) => {
-    await base44.entities.Application.delete(appId);
+    await pgQuery('DELETE FROM applications WHERE id = $1', [appId]);
     setApplications((prev) => prev.filter((a) => a.id !== appId));
     setSelected((prev) => { const next = new Set(prev); next.delete(appId); return next; });
   };
@@ -176,7 +176,7 @@ export default function ViewCandidates() {
     const ids = [...selected];
     if (ids.length === 0) return;
     setBulkProcessing(true);
-    await Promise.all(ids.map((id) => base44.entities.Application.delete(id)));
+    await pgQuery(`DELETE FROM applications WHERE id = ANY($1::uuid[])`, [ids]);
     setApplications((prev) => prev.filter((a) => !ids.includes(a.id)));
     setSelected(new Set());
     setBulkProcessing(false);
@@ -201,8 +201,8 @@ export default function ViewCandidates() {
     setRagProcessing(false);
     setRagTriggered(true);
     // Refresh applications to show updated scores
-    const updated = await base44.entities.Application.filter({ job_id: jobId }, "-match_score");
-    setApplications(updated);
+    const updated = await pgQuery('SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
+    setApplications(updated || []);
   };
 
   return (

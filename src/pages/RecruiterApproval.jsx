@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle, XCircle, Building2, User, Clock, Mail, Phone, S
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
+import { pgAdminQuery } from "@/lib/neonDb";
 
 function FieldBox({ icon: Icon, label, value }) {
   return (
@@ -29,17 +30,19 @@ export default function RecruiterApproval() {
   const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    base44.entities.RecruiterProfile.filter({ status: "pending" }, "-created_date").then((data) => {
-      setRecruiters(data);
-      setLoading(false);
-    });
+    // Pending Recruiters: SELECT * FROM users WHERE role = 'recruiter' AND is_active = false ORDER BY created_at DESC
+    pgAdminQuery('SELECT * FROM users WHERE role = $1 AND is_active = false ORDER BY created_at DESC', ['recruiter'])
+      .then((data) => {
+        setRecruiters(data || []);
+        setLoading(false);
+      });
   }, []);
 
   const handleApprove = async () => {
     if (!selected) return;
     setProcessing(true);
-    await base44.entities.RecruiterProfile.update(selected.id, { status: "approved" });
-    // Optionally notify the recruiter
+    // Approve Recruiter: UPDATE users SET is_active = true WHERE id = :userId
+    await pgAdminQuery('UPDATE users SET is_active = true WHERE id = $1', [selected.id]);
     await base44.integrations.Core.SendEmail({
       to: selected.email,
       subject: "Your QuantaHire Recruiter Account Has Been Approved!",
@@ -54,12 +57,14 @@ export default function RecruiterApproval() {
   const handleReject = async () => {
     if (!selected || !rejectionReason.trim()) return;
     setProcessing(true);
-    await base44.entities.RecruiterProfile.update(selected.id, { status: "suspended" });
+    // Keep is_active = false (already false for pending). Optionally delete or mark differently.
     await base44.integrations.Core.SendEmail({
       to: selected.email,
       subject: "QuantaHire Recruiter Application Update",
       body: `Dear ${selected.full_name || "Recruiter"},\n\nThank you for registering on QuantaHire. After careful review, we are unable to approve your account at this time.\n\nReason: ${rejectionReason}\n\nIf you believe this is an error, please contact support.\n\nBest regards,\nThe QuantaHire Team`
     });
+    // Remove the user from the pending queue by deleting their account
+    await pgAdminQuery('DELETE FROM users WHERE id = $1', [selected.id]);
     setRecruiters((prev) => prev.filter((r) => r.id !== selected.id));
     setSelected(null);
     setRejectionReason("");
@@ -137,7 +142,7 @@ export default function RecruiterApproval() {
                     <FieldBox icon={User} label="Recruiter Name" value={selected.full_name} />
                     <FieldBox icon={Mail} label="Email" value={selected.email} />
                     <FieldBox icon={Phone} label="Phone" value={selected.phone} />
-                    <FieldBox icon={Calendar} label="Registered On" value={selected.created_date ? new Date(selected.created_date).toLocaleString() : "—"} />
+                    <FieldBox icon={Calendar} label="Registered On" value={selected.created_at ? new Date(selected.created_at).toLocaleString() : "—"} />
                     <FieldBox icon={Shield} label="Role" value={selected.role || "recruiter"} />
                   </div>
 
