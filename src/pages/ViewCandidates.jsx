@@ -305,8 +305,8 @@ export default function ViewCandidates() {
             )}
               </div>
 
-            {loading ? (
-            <div className="flex items-center justify-center py-16">
+              {loading ? (
+              <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : !ragTriggered ? (
@@ -451,11 +451,12 @@ export default function ViewCandidates() {
                   </div>
                 );
               })}
+              </div>
+              )}
             </div>
-            )}
-          </>
-        )}
-       {/* Propose Interview Modal */}
+           </>
+          )}
+         {/* Propose Interview Modal */}
       {interviewModal && (
         <ProposeInterviewModal
           application={interviewModal}
