@@ -32,15 +32,13 @@ export default function RecruiterDashboard() {
         if (profiles.length > 0) {
           setRecruiterStatus(profiles[0].status);
         }
-        // Fetch ALL jobs from DB, then filter client-side by recruiter_email
-        const [allJobs, appsData] = await Promise.all([
-          base44.entities.Job.list("-created_date"),
-          base44.entities.Application.list("-created_date"),
+        // Fetch jobs and applications filtered by recruiter email directly
+        const [jobsData, appsData] = await Promise.all([
+          base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date", 200),
+          base44.entities.Application.filter({ recruiter_email: recruiterEmail }, "-created_date", 500),
         ]);
-        const jobsData = allJobs.filter(j => j.recruiter_email === recruiterEmail);
         setJobs(jobsData);
-        const jobIds = new Set(jobsData.map(j => j.id));
-        setApplications(appsData.filter(a => jobIds.has(a.job_id)));
+        setApplications(appsData);
       } finally {
         setLoading(false);
       }
