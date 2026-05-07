@@ -16,7 +16,9 @@ export default function ProposeInterviewModal({ application, recruiterEmail, onC
   const updateSlot = (i, val) => setSlots((prev) => prev.map((s, idx) => idx === i ? val : s));
 
   const handleSend = async () => {
-    const validSlots = slots.filter((s) => s.trim() !== "");
+    const validSlots = slots
+      .filter((s) => s.trim() !== "")
+      .map((s) => new Date(s).toISOString()); // convert to ISO for DB storage
     if (validSlots.length === 0) return;
     setSending(true);
 
@@ -28,7 +30,7 @@ export default function ProposeInterviewModal({ application, recruiterEmail, onC
         meeting_link: meetingLink,
         notes,
         status: "proposed",
-        confirmed_slot: null,
+        confirmed_slot: "",
       });
     } else {
       await base44.entities.InterviewSlot.create({
@@ -37,7 +39,7 @@ export default function ProposeInterviewModal({ application, recruiterEmail, onC
         job_title: application.job_title,
         company: application.company,
         candidate_email: application.candidate_email,
-        candidate_name: application.candidate_name,
+        candidate_name: application.candidate_name || application.candidate_email,
         recruiter_email: recruiterEmail,
         proposed_slots: validSlots,
         meeting_link: meetingLink,
