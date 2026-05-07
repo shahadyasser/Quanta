@@ -26,17 +26,22 @@ export default function RecruiterDashboard() {
         return;
       }
       setUser({ email: recruiterEmail });
-      const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
-      if (profiles.length > 0) {
-        setRecruiterStatus(profiles[0].status);
+      try {
+        const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
+        if (profiles.length > 0) {
+          setRecruiterStatus(profiles[0].status);
+        }
+        const [jobsData, appsData] = await Promise.all([
+          base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date"),
+          base44.entities.Application.list("-created_date"),
+        ]);
+        setJobs(jobsData);
+        // Filter applications by recruiter's jobs
+        const jobIds = new Set(jobsData.map(j => j.id));
+        setApplications(appsData.filter(a => jobIds.has(a.job_id)));
+      } finally {
+        setLoading(false);
       }
-      const [jobsData, appsData] = await Promise.all([
-        base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date"),
-        base44.entities.Application.filter({ recruiter_email: recruiterEmail }, "-created_date"),
-      ]);
-      setJobs(jobsData);
-      setApplications(appsData);
-      setLoading(false);
     };
     init();
   }, [navigate]);
@@ -45,9 +50,10 @@ export default function RecruiterDashboard() {
     if (!user?.email) return;
     const unsubscribe = base44.entities.Application.subscribe((event) => {
       setApplications((prev) => {
-        if (event.type === "create" && event.data?.recruiter_email === user.email) {
+        const jobIds = new Set(jobs.map(j => j.id));
+        if (event.type === "create" && jobIds.has(event.data?.job_id)) {
           return [event.data, ...prev];
-        } else if (event.type === "update" && event.data?.recruiter_email === user.email) {
+        } else if (event.type === "update" && jobIds.has(event.data?.job_id)) {
           return prev.map(a => a.id === event.id ? event.data : a);
         } else if (event.type === "delete") {
           return prev.filter(a => a.id !== event.id);
@@ -56,7 +62,7 @@ export default function RecruiterDashboard() {
       });
     });
     return () => unsubscribe();
-  }, [user]);
+  }, [user, jobs]);
 
   const filteredJobs = jobs.filter((job) => {
     const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
