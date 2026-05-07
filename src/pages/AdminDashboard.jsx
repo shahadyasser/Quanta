@@ -143,9 +143,7 @@ export default function AdminDashboard() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3">
-          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-5" asChild>
-            <Link to="/recruiter-management"><Users className="w-4 h-4" />Recruiter Management</Link>
-          </Button>
+
           <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" asChild>
             <Link to="/system-reports"><FileText className="w-4 h-4" />View Reports</Link>
           </Button>
