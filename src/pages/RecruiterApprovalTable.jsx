@@ -13,14 +13,19 @@ export default function RecruiterApprovalTable() {
 
   useEffect(() => {
     const init = async () => {
-      const authed = await base44.auth.isAuthenticated();
-      if (!authed) { navigate("/admin-auth"); return; }
-      const me = await base44.auth.me();
-      if (me?.role !== "admin") { navigate("/"); return; }
+      try {
+        const authed = await base44.auth.isAuthenticated();
+        if (!authed) { navigate("/admin-auth"); return; }
+        const me = await base44.auth.me();
+        if (me?.role !== "admin") { navigate("/"); return; }
 
-      const data = await base44.entities.RecruiterProfile.list();
-      setRecruiters(data || []);
-      setLoading(false);
+        const data = await base44.asServiceRole.entities.RecruiterProfile.list();
+        setRecruiters(data || []);
+      } catch (err) {
+        console.error("Failed to load recruiters:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     init();
   }, [navigate]);

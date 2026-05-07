@@ -23,6 +23,11 @@ export default function RecruiterManagement() {
   useEffect(() => {
     const init = async () => {
       try {
+        const authed = await base44.auth.isAuthenticated();
+        if (!authed) return;
+        const me = await base44.auth.me();
+        if (me?.role !== "admin") return;
+
         const data = await base44.asServiceRole.entities.RecruiterProfile.list('-created_date');
         setRecruiters(data || []);
       } catch (err) {
