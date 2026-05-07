@@ -1,9 +1,9 @@
 import React from "react";
 import { TrendingUp, Award, Activity, BarChart3 } from "lucide-react";
 
-export default function RankSummaryCards({ total, processed, strongMatches, avgScore }) {
+export default function RankSummaryCards({ total, processed, strongMatches }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div className="bg-white border border-border rounded-2xl p-5">
         <div className="flex items-center gap-2 mb-2">
           <Activity className="w-4 h-4 text-primary" />
@@ -27,14 +27,6 @@ export default function RankSummaryCards({ total, processed, strongMatches, avgS
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Strong Matches</p>
         </div>
         <p className="text-3xl font-bold text-green-600">{strongMatches}</p>
-      </div>
-
-      <div className="bg-white border border-border rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="w-4 h-4 text-orange-600" />
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Average Score</p>
-        </div>
-        <p className="text-3xl font-bold text-orange-600">{avgScore}</p>
       </div>
     </div>
   );

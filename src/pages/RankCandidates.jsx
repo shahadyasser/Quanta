@@ -158,7 +158,6 @@ export default function RankCandidates() {
 
   const processedCount = candidates.filter((a) => a.status === "processed" && a.match_score).length;
   const strongMatches = candidates.filter((a) => a.match_score >= 80).length;
-  const avgScore = candidates.length > 0 ? Math.round((candidates.reduce((sum, a) => sum + (a.match_score || 0), 0) / candidates.length) * 10) / 10 : 0;
 
   if (loading) {
     return (
@@ -204,12 +203,11 @@ export default function RankCandidates() {
         </div>
 
         {/* Summary Cards */}
-        <RankSummaryCards
-          total={candidates.length}
-          processed={processedCount}
-          strongMatches={strongMatches}
-          avgScore={avgScore}
-        />
+         <RankSummaryCards
+           total={candidates.length}
+           processed={processedCount}
+           strongMatches={strongMatches}
+         />
 
         {/* Filters and Search */}
         <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
