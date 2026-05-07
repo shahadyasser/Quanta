@@ -26,7 +26,7 @@ export default function ViewCandidates() {
   const [selected, setSelected] = useState(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [ragProcessing, setRagProcessing] = useState(false);
-  const [ragTriggered, setRagTriggered] = useState(true); // Default true — show scores if already computed
+  const [ragTriggered, setRagTriggered] = useState(false); // Default false — only show after RAG is triggered
   const [interviewModal, setInterviewModal] = useState(null); // application object
   const navigate = useNavigate();
 
