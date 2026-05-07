@@ -4,13 +4,16 @@ Deno.serve(async (req) => {
     console.log("Running query:", query);
     
     const dbUrl = Deno.env.get('DATABASE_URL');
+    if (!dbUrl) {
+      return Response.json({ error: 'DATABASE_URL not set' }, { status: 500 });
+    }
     
-    // Extract connection parts from DATABASE_URL
+    // Parse the connection string
     const url = new URL(dbUrl);
     const host = url.hostname;
-    const database = url.pathname.slice(1);
     const username = url.username;
     const password = url.password;
+    const database = url.pathname.slice(1);
     
     // Use Neon's serverless HTTP API
     const neonUrl = `https://${host}/sql`;
@@ -20,11 +23,11 @@ Deno.serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${password}`,
-        'Neon-Connection-String': dbUrl.split('?')[0],
       },
       body: JSON.stringify({
         query: query,
-        params: params || []
+        params: params || [],
+        database: database,
       })
     });
     
