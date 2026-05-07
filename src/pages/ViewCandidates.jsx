@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { pgQuery } from "@/lib/neonDb";
+import { useToast } from "@/components/ui/use-toast";
 
 const STATUS_STYLES = {
   "processed": "bg-green-50 text-green-600 border-green-200",
@@ -16,6 +17,7 @@ const STATUS_STYLES = {
 };
 
 export default function ViewCandidates() {
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,7 @@ export default function ViewCandidates() {
   const [ragProcessing, setRagProcessing] = useState(false);
   const [ragTriggered, setRagTriggered] = useState(false); // Default false — only show after RAG is triggered
   const [interviewModal, setInterviewModal] = useState(null); // application object
+  const [confirmRag, setConfirmRag] = useState(false); // Confirmation dialog
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -186,25 +189,37 @@ export default function ViewCandidates() {
   const triggerRAGPipeline = async () => {
     if (!jobId) return;
     setRagProcessing(true);
-    const pending = applications.filter((a) => a.status === "pending");
-    await Promise.all(
-      pending.map((app) =>
-        base44.functions.invoke("processCV", {
-          cv_url: app.cv_url,
-          application_id: app.id,
-          job_id: jobId,
-          job_title: jobTitle,
-          job_description: "", // Fetch from job entity if needed
-          job_skills: []
-        })
-      )
-    );
-    setRagProcessing(false);
-    // Refresh applications to show updated scores
-    const updated = await pgQuery('SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
-    setApplications(updated || []);
-    // Navigate to results page
-    navigate(`/rag-analysis-results?job_id=${jobId}&job=${encodeURIComponent(jobTitle)}`);
+    setConfirmRag(false);
+    toast({ description: "Starting RAG analysis on all CVs..." });
+    
+    try {
+      const pending = applications.filter((a) => a.status === "pending");
+      await Promise.all(
+        pending.map((app) =>
+          base44.functions.invoke("processCV", {
+            cv_url: app.cv_url,
+            application_id: app.id,
+            job_id: jobId,
+            job_title: jobTitle,
+            job_description: "", // Fetch from job entity if needed
+            job_skills: []
+          })
+        )
+      );
+      
+      // Refresh applications to show updated scores
+      const updated = await pgQuery('SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
+      setApplications(updated || []);
+      
+      toast({ description: "RAG analysis completed! Navigating to results..." });
+      // Navigate to results page
+      navigate(`/rag-analysis-results?job_id=${jobId}&job=${encodeURIComponent(jobTitle)}`);
+    } catch (error) {
+      toast({ description: "Failed to start RAG analysis. Please try again." });
+      console.error(error);
+    } finally {
+      setRagProcessing(false);
+    }
   };
 
   return (
@@ -233,7 +248,7 @@ export default function ViewCandidates() {
            <Button
              size="lg"
              className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8"
-             onClick={triggerRAGPipeline}
+             onClick={() => setConfirmRag(true)}
              disabled={ragProcessing}
            >
              {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
@@ -443,6 +458,36 @@ export default function ViewCandidates() {
           onClose={() => setInterviewModal(null)}
           onSent={() => setInterviewModal(null)}
         />
+      )}
+
+      {/* Confirm RAG Pipeline Modal */}
+      {confirmRag && (
+        <>
+          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => !ragProcessing && setConfirmRag(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-5">
+              <div>
+                <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-primary" /> Start RAG Analysis?
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  This will analyze all {applications.filter((a) => a.status === "pending").length} pending CVs using AI matching. This process may take a few minutes.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setConfirmRag(false)} disabled={ragProcessing}>Cancel</Button>
+                <Button
+                  className="flex-1 rounded-xl bg-primary hover:bg-primary/90 gap-2 text-white"
+                  onClick={triggerRAGPipeline}
+                  disabled={ragProcessing}
+                >
+                  {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                  {ragProcessing ? "Starting..." : "Start Analysis"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Accept / Reject Email Modal */}
