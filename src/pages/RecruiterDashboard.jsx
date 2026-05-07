@@ -90,20 +90,12 @@ export default function RecruiterDashboard() {
   });
 
   const getJobAppCount = (jobId) => applications.filter((a) => a.job_id === jobId).length;
-  const getJobAvgScore = (jobId) => {
-    const scored = applications.filter((a) => a.job_id === jobId && a.match_score);
-    if (!scored.length) return null;
-    return Math.round(scored.reduce((s, a) => s + a.match_score, 0) / scored.length);
-  };
 
   const totalApplicants = applications.length;
-  const scoredApps = applications.filter((a) => a.match_score);
-  const avgScore = scoredApps.length ? Math.round(scoredApps.reduce((s, a) => s + a.match_score, 0) / scoredApps.length) : 0;
   const pendingReviews = applications.filter((a) => a.status === "pending" || a.status === "processed").length;
 
   const STATS = [
     { label: "Total Applicants", value: String(totalApplicants), change: "", subtext: "across all jobs" },
-    { label: "Avg. Match Score", value: avgScore ? `${avgScore}%` : "—", change: "", subtext: "AI computed" },
     { label: "Pending Reviews", value: String(pendingReviews), change: "", subtext: "need action" },
   ];
 
@@ -181,7 +173,7 @@ export default function RecruiterDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {STATS.map((s) => (
             <StatsCard key={s.label} label={s.label} value={s.value} change={s.change} subtext={s.subtext} />
           ))}
@@ -228,28 +220,26 @@ export default function RecruiterDashboard() {
           ) : (
             <div className="space-y-3">
               {filteredJobs.map((job) => {
-                const appCount = getJobAppCount(job.id);
-                const avgMatch = getJobAvgScore(job.id);
-                return (
-                  <div key={job.id} className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                        <span className="text-primary font-bold text-sm">{(job.title || "J")[0]}</span>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="font-semibold text-foreground">{job.title}</h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "open" ? "bg-green-50 text-green-600" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`}>
-                            {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{appCount} applicants</span>
-                          {avgMatch && <span>Avg match: <strong className="text-foreground">{avgMatch}%</strong></span>}
-                          <span>{job.location}</span>
-                        </div>
-                      </div>
-                    </div>
+                 const appCount = getJobAppCount(job.id);
+                 return (
+                   <div key={job.id} className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                     <div className="flex items-center gap-4 flex-1">
+                       <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                         <span className="text-primary font-bold text-sm">{(job.title || "J")[0]}</span>
+                       </div>
+                       <div>
+                         <div className="flex items-center gap-2 mb-0.5">
+                           <h3 className="font-semibold text-foreground">{job.title}</h3>
+                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "open" ? "bg-green-50 text-green-600" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`}>
+                             {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}
+                           </span>
+                         </div>
+                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                           <span>{appCount} applicants</span>
+                           <span>{job.location}</span>
+                         </div>
+                       </div>
+                     </div>
                     <Button
                       variant="outline"
                       size="sm"
