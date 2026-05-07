@@ -227,11 +227,13 @@ export default function ViewCandidates() {
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
         {/* RAG button: Only show if there are pending (unprocessed) applications */}
-        {applications.some(a => a.status === "pending" && !a.match_score) && (
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 text-center space-y-4">
-            <div>
-              <h3 className="font-semibold text-foreground text-lg mb-1">New CVs need analysis</h3>
-              <p className="text-sm text-muted-foreground">{applications.filter(a => a.status === "pending" && !a.match_score).length} pending application(s). Run AI RAG pipeline to score and rank all candidates.</p>
+
+
+        {!ragTriggered ? (
+          <div className="flex flex-col items-center justify-center py-24 space-y-6">
+            <div className="text-center space-y-3 max-w-md">
+              <h2 className="text-3xl font-bold text-foreground">Ready to analyze candidates?</h2>
+              <p className="text-muted-foreground">Click the button below to run the AI RAG pipeline on all pending CVs. Candidates will be ranked by AI match score.</p>
             </div>
             <Button
               size="lg"
@@ -243,48 +245,48 @@ export default function ViewCandidates() {
               {ragProcessing ? "Analyzing All CVs..." : "Start RAG Analysis"}
             </Button>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Stats */}
+            {applications.length > 0 && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white border border-border rounded-2xl p-5">
+                  <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
+                  <p className="text-2xl font-bold text-foreground">{applications.length}</p>
+                </div>
+                <div className="bg-white border border-border rounded-2xl p-5">
+                  <p className="text-sm text-muted-foreground mb-2">CV Analyzed</p>
+                  <p className="text-2xl font-bold text-foreground">{processed.length}</p>
+                </div>
+                <div className="bg-white border border-border rounded-2xl p-5">
+                  <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
+                  <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
+                </div>
+                <div className="bg-white border border-border rounded-2xl p-5">
+                  <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
+                  <p className="text-base font-bold text-green-600">Bias Check Passed ✓</p>
+                </div>
+              </div>
+            )}
 
-        {/* Stats */}
-         {ragTriggered && applications.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-border rounded-2xl p-5">
-              <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
-              <p className="text-2xl font-bold text-foreground">{applications.length}</p>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or skills..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-11 rounded-xl bg-white"
+              />
             </div>
-            <div className="bg-white border border-border rounded-2xl p-5">
-              <p className="text-sm text-muted-foreground mb-2">CV Analyzed</p>
-              <p className="text-2xl font-bold text-foreground">{processed.length}</p>
-            </div>
-            <div className="bg-white border border-border rounded-2xl p-5">
-              <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
-              <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
-            </div>
-            <div className="bg-white border border-border rounded-2xl p-5">
-              <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
-              <p className="text-base font-bold text-green-600">Bias Check Passed ✓</p>
-            </div>
-          </div>
-        )}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, email, or skills..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-11 rounded-xl bg-white"
-          />
-        </div>
-
-        {/* Candidates list */}
-        <div>
-          <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Candidates list */}
             <div>
-              <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
-              <p className="text-sm text-muted-foreground">Ranked by AI match score from CV analysis</p>
-            </div>
+              <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
+                  <p className="text-sm text-muted-foreground">Ranked by AI match score from CV analysis</p>
+                </div>
             {filtered.length > 0 && (
               <div className="flex items-center gap-2 flex-wrap">
                 <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -450,9 +452,9 @@ export default function ViewCandidates() {
                 );
               })}
             </div>
-          )}
-        </div>
-      </div>
+            )}
+            </>
+            )}
       {/* Propose Interview Modal */}
       {interviewModal && (
         <ProposeInterviewModal
