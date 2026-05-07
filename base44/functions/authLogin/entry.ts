@@ -2,16 +2,24 @@ import pg from 'npm:pg@8.11.3';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const pool = new pg.Pool({
-  host: Deno.env.get('POSTGRES_HOST'),
-  port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
-  database: Deno.env.get('POSTGRES_DATABASE'),
-  user: Deno.env.get('POSTGRES_USER'),
-  password: Deno.env.get('POSTGRES_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
-});
+let pool;
+
+function getPool() {
+  if (!pool) {
+    pool = new pg.Pool({
+      host: Deno.env.get('POSTGRES_HOST'),
+      port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
+      database: Deno.env.get('POSTGRES_DATABASE'),
+      user: Deno.env.get('POSTGRES_USER'),
+      password: Deno.env.get('POSTGRES_PASSWORD'),
+      ssl: { rejectUnauthorized: false },
+    });
+  }
+  return pool;
+}
 
 Deno.serve(async (req) => {
+  const pool = getPool();
   const client = await pool.connect();
   try {
     const { email, password } = await req.json();
