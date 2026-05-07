@@ -246,7 +246,7 @@ export default function ViewCandidates() {
         )}
 
         {/* Stats */}
-        {applications.length > 0 && (
+         {ragTriggered && applications.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-border rounded-2xl p-5">
               <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
@@ -325,7 +325,7 @@ export default function ViewCandidates() {
                         <button onClick={() => toggleSelect(a.id)} className="shrink-0">
                           {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
                         </button>
-                        {a.match_score && <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>}
+                        {ragTriggered && a.match_score && <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>}
                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">{initials}</span>
                         </div>
@@ -368,7 +368,7 @@ export default function ViewCandidates() {
                               </Button>
                             </a>
                           )}
-                          {(a.status === "processed" || a.match_score) && (
+                          {ragTriggered && (a.status === "processed" || a.match_score) && (
                             <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => { setExpanded(isExpanded ? null : a.id); if (!isExpanded) markViewed(a.id); }}>
                               {isExpanded ? "Hide" : "Details"}
                             </Button>
