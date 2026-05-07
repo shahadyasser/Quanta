@@ -252,7 +252,7 @@ export default function RankCandidates() {
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={rankingStarted || processedCount > 0}
+          showScores={rankingStarted}
           onStatusChange={async () => {
             await fetchJobAndCandidates();
           }}
