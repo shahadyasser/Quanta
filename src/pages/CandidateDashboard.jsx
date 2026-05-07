@@ -83,7 +83,7 @@ export default function CandidateDashboard() {
 
   useEffect(() => {
     const init = async () => {
-      const candidateEmail = localStorage.getItem("candidateEmail");
+      const candidateEmail = (localStorage.getItem("candidateEmail") || "").trim().toLowerCase();
       if (!candidateEmail) {
         navigate("/candidate-auth");
         return;

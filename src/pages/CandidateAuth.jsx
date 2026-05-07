@@ -32,9 +32,9 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      const res = await base44.functions.invoke("candidateLogin", { email: form.email });
+      const res = await base44.functions.invoke("candidateLogin", { email: form.email.trim().toLowerCase() });
       if (res.data.found) {
-        localStorage.setItem("candidateEmail", form.email);
+        localStorage.setItem("candidateEmail", form.email.trim().toLowerCase());
         navigate("/candidate-dashboard");
       } else {
         setError("No account found. Please register first.");
