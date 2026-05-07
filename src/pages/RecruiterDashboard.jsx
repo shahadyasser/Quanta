@@ -240,24 +240,14 @@ export default function RecruiterDashboard() {
                          </div>
                        </div>
                      </div>
-                    <div className="flex gap-2 shrink-0">
-                     <Button
+                    <Button
                        size="sm"
-                       className="rounded-xl bg-primary hover:bg-primary/90 gap-1.5"
+                       className="rounded-xl bg-primary hover:bg-primary/90 gap-1.5 shrink-0"
                        onClick={() => navigate(`/rank-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}`)}
                      >
                        <Sparkles className="w-3.5 h-3.5" />
                        Rank All
                      </Button>
-                     <Button
-                       variant="outline"
-                       size="sm"
-                       className="rounded-xl border-primary text-primary hover:bg-accent"
-                       onClick={() => navigate(`/view-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}&status=${job.status}`)}
-                     >
-                       View ({appCount})
-                     </Button>
-                    </div>
                   </div>
                 );
               })}
