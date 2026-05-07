@@ -206,14 +206,14 @@ export default function RAGAnalysisResults() {
                               <Brain className="w-4 h-4 text-green-600" />
                               <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Strengths</p>
                             </div>
-                            <ul className="space-y-1">{(a.strengths || []).map((s, idx) => <li key={idx} className="text-xs text-green-700">• {s}</li>)}</ul>
+                            <ul className="space-y-1">{(Array.isArray(a.strengths) ? a.strengths : []).map((s, idx) => <li key={idx} className="text-xs text-green-700">• {s}</li>)}</ul>
                           </div>
                           <div className="bg-orange-50 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <BookOpen className="w-4 h-4 text-orange-500" />
                               <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Areas to Improve</p>
                             </div>
-                            <ul className="space-y-1">{(a.improvements || []).map((s, idx) => <li key={idx} className="text-xs text-orange-600">• {s}</li>)}</ul>
+                            <ul className="space-y-1">{(Array.isArray(a.improvements) ? a.improvements : []).map((s, idx) => <li key={idx} className="text-xs text-orange-600">• {s}</li>)}</ul>
                           </div>
                         </div>
                         {(a.education_summary || a.work_experience_summary) && (
