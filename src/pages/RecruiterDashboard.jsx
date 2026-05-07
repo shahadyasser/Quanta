@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, LogOut, Loader2, Clock } from "lucide-react";
+import { Plus, Search, LogOut, Loader2, Clock, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -240,14 +240,24 @@ export default function RecruiterDashboard() {
                          </div>
                        </div>
                      </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl border-primary text-primary hover:bg-accent shrink-0"
-                      onClick={() => navigate(`/view-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}&status=${job.status}`)}
-                    >
-                      View Candidates ({appCount})
-                    </Button>
+                    <div className="flex gap-2 shrink-0">
+                     <Button
+                       size="sm"
+                       className="rounded-xl bg-primary hover:bg-primary/90 gap-1.5"
+                       onClick={() => navigate(`/rank-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}`)}
+                     >
+                       <Sparkles className="w-3.5 h-3.5" />
+                       Rank All
+                     </Button>
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       className="rounded-xl border-primary text-primary hover:bg-accent"
+                       onClick={() => navigate(`/view-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}&status=${job.status}`)}
+                     >
+                       View ({appCount})
+                     </Button>
+                    </div>
                   </div>
                 );
               })}

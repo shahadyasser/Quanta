@@ -28,6 +28,7 @@ import PsychAdmin from './pages/PsychAdmin';
 import JobsReference from './pages/JobsReference';
 import Portal from './pages/Portal';
 import RAGAnalysisResults from './pages/RAGAnalysisResults';
+import RankCandidates from './pages/RankCandidates';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
       <Route path="/jobs-reference" element={<JobsReference />} />
       <Route path="/portal" element={<Portal />} />
       <Route path="/rag-analysis-results" element={<RAGAnalysisResults />} />
+      <Route path="/rank-candidates" element={<RankCandidates />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
