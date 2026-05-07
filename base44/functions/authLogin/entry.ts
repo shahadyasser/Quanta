@@ -43,6 +43,11 @@ Deno.serve(async (req) => {
         if (profile.status === 'blocked') {
           return Response.json({ error: 'Your account has been blocked' }, { status: 403 });
         }
+        // If approved, set is_active to true in users table
+        if (profile.status === 'approved' && !user.is_active) {
+          await client.query('UPDATE users SET is_active = true WHERE id = $1', [user.id]);
+          user.is_active = true;
+        }
       }
     }
 
