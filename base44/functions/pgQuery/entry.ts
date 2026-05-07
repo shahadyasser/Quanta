@@ -1,47 +1,31 @@
+import pg from 'npm:pg@8.11.3';
+
+const pool = new pg.Pool({
+  host: Deno.env.get('POSTGRES_HOST'),
+  port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
+  database: Deno.env.get('POSTGRES_DATABASE'),
+  user: Deno.env.get('POSTGRES_USER'),
+  password: Deno.env.get('POSTGRES_PASSWORD'),
+  ssl: { rejectUnauthorized: false },
+});
+
 Deno.serve(async (req) => {
+  const client = await pool.connect();
   try {
     const { query, params } = await req.json();
     console.log("Running query:", query);
     
-    const dbUrl = Deno.env.get('DATABASE_URL');
-    if (!dbUrl) {
-      return Response.json({ error: 'DATABASE_URL not set' }, { status: 500 });
+    if (!query) {
+      return Response.json({ error: 'Query is required' }, { status: 400 });
     }
     
-    // Parse the connection string
-    const url = new URL(dbUrl);
-    const host = url.hostname;
-    const username = url.username;
-    const password = url.password;
-    const database = url.pathname.slice(1);
-    
-    // Use Neon's serverless HTTP API
-    const neonUrl = `https://${host}/sql`;
-    
-    const response = await fetch(neonUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${password}`,
-      },
-      body: JSON.stringify({
-        query: query,
-        params: params || [],
-        database: database,
-      })
-    });
-    
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Neon API error:", errText);
-      return Response.json({ error: errText }, { status: 500 });
-    }
-    
-    const data = await response.json();
-    console.log("Query returned rows:", data.rows?.length || 0);
-    return Response.json({ rows: data.rows || [] });
+    const result = await client.query(query, params || []);
+    console.log("Query returned rows:", result.rows?.length || 0);
+    return Response.json({ rows: result.rows || [] });
   } catch (error) {
     console.error("pgQuery error:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
+  } finally {
+    client.release();
   }
 });
