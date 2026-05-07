@@ -52,6 +52,10 @@ export default function RAGAnalysisResults() {
       setLoading(false);
     };
     fetchApplications();
+
+    // Poll every 2 seconds to show real-time progress
+    const interval = setInterval(fetchApplications, 2000);
+    return () => clearInterval(interval);
   }, [jobId]);
 
   const hasResults = applications.some((a) => a.rag_results?.match_score);
