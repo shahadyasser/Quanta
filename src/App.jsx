@@ -25,6 +25,7 @@ import BrowseJobs from './pages/BrowseJobs';
 import PsychResults from './pages/PsychResults';
 import PsychAdmin from './pages/PsychAdmin';
 import JobsReference from './pages/JobsReference';
+import Portal from './pages/Portal';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -73,6 +74,7 @@ const AuthenticatedApp = () => {
       <Route path="/psych-results" element={<PsychResults />} />
       <Route path="/psych-admin" element={<PsychAdmin />} />
       <Route path="/jobs-reference" element={<JobsReference />} />
+      <Route path="/portal" element={<Portal />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

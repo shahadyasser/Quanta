@@ -40,8 +40,28 @@ Deno.serve(async (req) => {
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, full_name, role, is_active`,
         [email.trim().toLowerCase(), password_hash, full_name, role, company || null, is_active]
       );
+      const newUser = result.rows[0];
 
-      return Response.json({ success: true, user: result.rows[0] });
+      // Keep Base44 entities in sync
+      const base44 = createClientFromRequest(req);
+      if (role === 'candidate') {
+        await base44.asServiceRole.entities.Candidate.create({
+          user_id: newUser.id,
+          email: newUser.email,
+          full_name: full_name,
+        });
+      } else if (role === 'recruiter') {
+        await base44.asServiceRole.entities.RecruiterProfile.create({
+          user_id: newUser.id,
+          email: newUser.email,
+          full_name: full_name,
+          company: company || '',
+          status: 'pending',
+          role: 'recruiter',
+        });
+      }
+
+      return Response.json({ success: true, user: newUser });
     } finally {
       client.release();
     }
