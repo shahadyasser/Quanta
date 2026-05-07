@@ -31,12 +31,12 @@ export default function BrowseJobs() {
 
   useEffect(() => {
     const init = async () => {
-      let user = null;
-      try { user = await base44.auth.me(); } catch (_) {}
+      const candidateEmail = localStorage.getItem("candidateEmail");
+      const user = candidateEmail ? { email: candidateEmail, full_name: "" } : null;
       setCurrentUser(user);
       const [jobsData, apps] = await Promise.all([
         base44.entities.Job.filter({ status: "Active" }),
-        user ? base44.entities.Application.filter({ candidate_email: user.email }) : Promise.resolve([])
+        candidateEmail ? base44.entities.Application.filter({ candidate_email: candidateEmail }) : Promise.resolve([])
       ]);
       setJobs(jobsData);
       setAppliedJobIds(new Set(apps.map((a) => a.job_id)));
@@ -73,25 +73,27 @@ export default function BrowseJobs() {
     // 1. Upload CV
     const { file_url } = await base44.integrations.Core.UploadFile({ file: applyFile });
 
-    // 2. Create Application record
+    // 2. Get candidate name from Candidate entity, then create Application record
+    const candidateRec = await base44.entities.Candidate.filter({ email: currentUser?.email || "" });
+    const candidateName = candidateRec[0]?.full_name || "";
     const application = await base44.entities.Application.create({
       job_id: applyJob.id,
       job_title: applyJob.title,
       company: applyJob.company,
       candidate_email: currentUser?.email || "",
-      candidate_name: currentUser?.full_name || "",
+      candidate_name: candidateName,
       cv_url: file_url,
       recruiter_email: applyJob.recruiter_email,
       status: "pending"
     });
 
     // 3. Upsert Candidate record
-    const existingCandidates = await base44.entities.Candidate.filter({ email: currentUser?.email || "" });
-    const allApps = await base44.entities.Application.filter({ candidate_email: currentUser?.email || "" });
+    const candidateEmail = currentUser?.email || "";
+    const existingCandidates = await base44.entities.Candidate.filter({ email: candidateEmail });
+    const allApps = await base44.entities.Application.filter({ candidate_email: candidateEmail });
     const candData = {
-      email: currentUser?.email || "",
-      full_name: currentUser?.full_name || "",
-      user_id: currentUser?.id || "",
+      email: candidateEmail,
+      full_name: existingCandidates[0]?.full_name || "",
       total_applications: allApps.length,
       accepted_count: allApps.filter(a => a.status === "shortlisted").length,
       rejected_count: allApps.filter(a => a.status === "rejected").length,
