@@ -132,7 +132,7 @@ export default function CandidateAuth() {
           </Link>
         </div>
 
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center relative z-10">
           <div className="w-full max-w-md">
             <div className="mb-8">
               <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-2">Candidate Portal</p>
@@ -147,10 +147,10 @@ export default function CandidateAuth() {
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-muted rounded-xl p-1 mb-8">
+            <div className="flex bg-muted rounded-xl p-1 mb-8 relative z-0">
               <button
                 onClick={() => { setTab("login"); setError(""); setSuccess(""); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all pointer-events-auto ${
                   tab === "login" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -158,7 +158,7 @@ export default function CandidateAuth() {
               </button>
               <button
                 onClick={() => { setTab("register"); setError(""); setSuccess(""); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all pointer-events-auto ${
                   tab === "register" ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
