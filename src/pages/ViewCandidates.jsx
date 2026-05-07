@@ -375,16 +375,16 @@ export default function ViewCandidates() {
                              </Button>
                            )}
                            {a.status !== "shortlisted" && a.status !== "rejected" && (
-                             <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => openEmailModal(a, "accept")}>
+                             <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => navigate(`/rag-analysis-results?job_id=${a.job_id}&job=${encodeURIComponent(a.job_title)}`)}>
                                Accept
                              </Button>
                            )}
                            {a.status !== "rejected" && a.status !== "shortlisted" && (
-                             <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openEmailModal(a, "reject")}>
+                             <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => navigate(`/rag-analysis-results?job_id=${a.job_id}&job=${encodeURIComponent(a.job_title)}`)}>
                                Reject
                              </Button>
                            )}
-                           <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-accent gap-1.5" onClick={() => setInterviewModal(a)}>
+                           <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-accent gap-1.5" onClick={() => navigate(`/rag-analysis-results?job_id=${a.job_id}&job=${encodeURIComponent(a.job_title)}`)}>
                              <CalendarDays className="w-3.5 h-3.5" /> Interview
                            </Button>
                            <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50" onClick={() => deleteCandidate(a.id)}>
