@@ -84,10 +84,14 @@ export default function ViewCandidates() {
       );
     })
     .sort((a, b) => {
-      // Always sort by match_score descending (unscored go to bottom)
-      const scoreA = a.match_score ?? -1;
-      const scoreB = b.match_score ?? -1;
-      return scoreB - scoreA;
+      // Only sort by match_score after RAG is triggered
+      if (ragTriggered) {
+        const scoreA = a.match_score ?? -1;
+        const scoreB = b.match_score ?? -1;
+        return scoreB - scoreA;
+      }
+      // Before RAG, keep original order (by created_date)
+      return new Date(b.created_date) - new Date(a.created_date);
     });
 
   const processed = applications.filter((a) => a.status === "processed" || a.match_score);
