@@ -89,10 +89,15 @@ export default function CandidateDashboard() {
       // Initialize prev statuses on first load (no alerts)
       apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
       setApplications(apps);
-      const candidates = await base44.entities.Candidate.filter({ email: candidateEmail });
-      if (candidates.length > 0) {
-        setCandidate(candidates[0]);
-      }
+      // Build candidate stats directly from applications (source of truth)
+      const accepted = apps.filter(a => a.status === "shortlisted").length;
+      const rejected = apps.filter(a => a.status === "rejected").length;
+      setCandidate({
+        email: candidateEmail,
+        total_applications: apps.length,
+        accepted_count: accepted,
+        rejected_count: rejected,
+      });
       setLoading(false);
     };
     init();
@@ -106,10 +111,7 @@ export default function CandidateDashboard() {
         setApplications((prev) => {
           const updated = prev.map(a => a.id === event.id ? event.data : a);
           checkForAlerts(updated);
-          // Update candidate counts
-          const accepted = updated.filter(a => a.status === "shortlisted").length;
-          const rejected = updated.filter(a => a.status === "rejected").length;
-          setCandidate(c => c ? { ...c, total_applications: updated.length, accepted_count: accepted, rejected_count: rejected } : c);
+          setCandidate({ email: user.email, total_applications: updated.length, accepted_count: updated.filter(a => a.status === "shortlisted").length, rejected_count: updated.filter(a => a.status === "rejected").length });
           return updated;
         });
       }
@@ -117,9 +119,7 @@ export default function CandidateDashboard() {
         setApplications((prev) => {
           const updated = [event.data, ...prev];
           prevStatusesRef.current[event.id] = event.data.status;
-          const accepted = updated.filter(a => a.status === "shortlisted").length;
-          const rejected = updated.filter(a => a.status === "rejected").length;
-          setCandidate(c => c ? { ...c, total_applications: updated.length, accepted_count: accepted, rejected_count: rejected } : c);
+          setCandidate({ email: user.email, total_applications: updated.length, accepted_count: updated.filter(a => a.status === "shortlisted").length, rejected_count: updated.filter(a => a.status === "rejected").length });
           return updated;
         });
       }
