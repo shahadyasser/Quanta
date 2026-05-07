@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, Clock, Briefcase, Users, UserCheck, FileText, Shield, Loader2, TrendingUp, CheckCircle, Check, X } from "lucide-react";
-import NotificationBell from "@/components/NotificationBell";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -113,7 +113,6 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <NotificationBell />
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/"><LogOut className="w-4 h-4" />Logout</Link>
           </Button>
