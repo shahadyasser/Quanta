@@ -12,7 +12,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { pgAdminQuery } from "@/lib/neonDb";
+import { base44 } from "@/api/base44Client";
 
 export default function RecruiterManagement() {
   const [recruiters, setRecruiters] = useState([]);
@@ -21,16 +21,22 @@ export default function RecruiterManagement() {
   const [confirmDialog, setConfirmDialog] = useState(null); // { id, action: 'suspend'|'activate' }
 
   useEffect(() => {
-    // All Users: SELECT * FROM users WHERE role = 'recruiter' ORDER BY created_at DESC
-    pgAdminQuery("SELECT * FROM users WHERE role = 'recruiter' ORDER BY created_at DESC").then((data) => {
-      setRecruiters(data || []);
-      setLoading(false);
-    });
+    const init = async () => {
+      try {
+        const data = await base44.asServiceRole.entities.RecruiterProfile.list('-created_date');
+        setRecruiters(data || []);
+      } catch (err) {
+        console.error("Failed to load recruiters:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   const total = recruiters.length;
-  const active = recruiters.filter((r) => r.is_active).length;
-  const suspended = recruiters.filter((r) => !r.is_active).length;
+  const active = recruiters.filter((r) => r.status === "approved").length;
+  const suspended = recruiters.filter((r) => r.status === "suspended").length;
 
   const filtered = recruiters.filter(
     (r) =>
@@ -41,25 +47,21 @@ export default function RecruiterManagement() {
 
   const confirmToggle = (id) => {
     const recruiter = recruiters.find((r) => r.id === id);
-    setConfirmDialog({ id, action: recruiter.is_active ? "suspend" : "activate" });
+    setConfirmDialog({ id, action: recruiter.status === "approved" ? "suspend" : "activate" });
   };
 
   const handleConfirm = async () => {
-    // Approve User: UPDATE users SET is_active = true WHERE id = :userId
-    // Block User: UPDATE users SET is_active = false WHERE id = :userId
     const isActivate = confirmDialog.action === "activate";
-    await pgAdminQuery(
-      'UPDATE users SET is_active = $1 WHERE id = $2',
-      [isActivate, confirmDialog.id]
-    );
+    const newStatus = isActivate ? "approved" : "suspended";
+    await base44.asServiceRole.entities.RecruiterProfile.update(confirmDialog.id, { status: newStatus });
     setRecruiters((prev) =>
-      prev.map((r) => r.id === confirmDialog.id ? { ...r, is_active: isActivate } : r)
+      prev.map((r) => r.id === confirmDialog.id ? { ...r, status: newStatus } : r)
     );
     setConfirmDialog(null);
   };
 
   const deleteRecruiter = async (id) => {
-    await pgAdminQuery('DELETE FROM users WHERE id = $1', [id]);
+    await base44.asServiceRole.entities.RecruiterProfile.delete(id);
     setRecruiters((prev) => prev.filter((r) => r.id !== id));
   };
 
@@ -145,8 +147,8 @@ export default function RecruiterManagement() {
                     <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
                     <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
                     <td className="py-3.5 pr-4 whitespace-nowrap">
-                      <Badge className={r.is_active ? "bg-green-50 text-green-600 border-green-200" : "bg-red-50 text-red-500 border-red-200"}>
-                        {r.is_active ? "Active" : "Inactive"}
+                      <Badge className={r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" : r.status === "suspended" ? "bg-red-50 text-red-500 border-red-200" : "bg-yellow-50 text-yellow-600 border-yellow-200"}>
+                        {r.status === "approved" ? "Approved" : r.status === "suspended" ? "Suspended" : "Pending"}
                       </Badge>
                     </td>
                     <td className="py-3.5 whitespace-nowrap">
@@ -155,13 +157,13 @@ export default function RecruiterManagement() {
                           size="sm"
                           variant="outline"
                           className={`rounded-lg text-xs h-8 px-3 ${
-                            r.is_active
+                            r.status === "approved"
                               ? "border-orange-300 text-orange-500 hover:bg-orange-50"
                               : "border-green-300 text-green-600 hover:bg-green-50"
                           }`}
                           onClick={() => confirmToggle(r.id)}
                         >
-                          {r.is_active ? "Suspend" : "Activate"}
+                          {r.status === "approved" ? "Suspend" : "Activate"}
                         </Button>
                         <Button
                           size="sm"
