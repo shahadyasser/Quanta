@@ -307,6 +307,10 @@ export default function ViewCandidates() {
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
+          ) : !ragTriggered ? (
+            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
+              Click "Start RAG Analysis" button above to analyze CVs and see applicants.
+            </div>
           ) : filtered.length === 0 ? (
             <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
               No applications yet. Candidates will appear here after applying.
