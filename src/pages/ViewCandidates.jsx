@@ -39,8 +39,8 @@ export default function ViewCandidates() {
     const fetchApplications = async () => {
       // Candidates per Job: SELECT * FROM applications_detail_view WHERE job_id = :jobId ORDER BY match_score DESC NULLS LAST
       const query = jobId
-        ? 'SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
-        : 'SELECT * FROM applications_detail_view ORDER BY match_score DESC NULLS LAST';
+        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications ORDER BY match_score DESC NULLS LAST';
       const params = jobId ? [jobId] : [];
       const data = await pgQuery(query, params);
       setApplications(data || []);
@@ -51,8 +51,8 @@ export default function ViewCandidates() {
     // Auto-refresh every 5s to pick up newly processed CVs
     const interval = setInterval(async () => {
       const query = jobId
-        ? 'SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
-        : 'SELECT * FROM applications_detail_view ORDER BY match_score DESC NULLS LAST';
+        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications ORDER BY match_score DESC NULLS LAST';
       const params = jobId ? [jobId] : [];
       const data = await pgQuery(query, params);
       const hasPending = (data || []).some((a) => a.status === "pending" || a.status === "submitted");
@@ -201,7 +201,7 @@ export default function ViewCandidates() {
     setRagProcessing(false);
     setRagTriggered(true);
     // Refresh applications to show updated scores
-    const updated = await pgQuery('SELECT * FROM applications_detail_view WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
+    const updated = await pgQuery('SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
     setApplications(updated || []);
   };
 
