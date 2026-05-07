@@ -33,7 +33,7 @@ export default function ViewCandidates() {
   const urlParams = new URLSearchParams(window.location.search);
   const jobId = urlParams.get("job_id");
   const jobTitle = urlParams.get("job") || "All Jobs";
-  const jobStatus = urlParams.get("status") || "Active";
+  const jobStatus = urlParams.get("status") || "open";
 
   useEffect(() => {
     const fetchApplications = async () => {

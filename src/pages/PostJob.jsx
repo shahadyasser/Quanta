@@ -64,6 +64,7 @@ export default function PostJob() {
   const [arrangement, setArrangement] = useState("");
   const [location, setLocation] = useState("");
   const [salary, setSalary] = useState("");
+  const [status, setStatus] = useState("open");
   const [skills, setSkills] = useState([]);
   const [benefits, setBenefits] = useState([]);
   const [responsibilities, setResponsibilities] = useState([]);
@@ -98,7 +99,7 @@ export default function PostJob() {
       responsibilities,
       recruiter_email: recruiterEmail,
       company: recruiterCompany,
-      status: "open",
+      status,
     });
     navigate("/recruiter-dashboard");
   };
@@ -127,7 +128,7 @@ export default function PostJob() {
             <Label>Job Description</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the role, responsibilities, and requirements..." className="min-h-[120px] rounded-xl" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="space-y-1.5">
               <Label>Experience Level</Label>
               <Select value={level} onValueChange={setLevel}>
@@ -161,6 +162,17 @@ export default function PostJob() {
                   <SelectItem value="On-site">On-site</SelectItem>
                   <SelectItem value="Remote">Remote</SelectItem>
                   <SelectItem value="Hybrid">Hybrid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Job Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Select status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
                 </SelectContent>
               </Select>
             </div>
