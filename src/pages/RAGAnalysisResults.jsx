@@ -49,9 +49,7 @@ export default function RAGAnalysisResults() {
     );
   });
 
-  const avgScore = filtered.length
-    ? Math.round(filtered.reduce((sum, a) => sum + (a.match_score || 0), 0) / filtered.length)
-    : 0;
+
 
   const topCandidates = filtered.filter((a) => a.match_score >= 80).length;
   const goodCandidates = filtered.filter((a) => a.match_score >= 60 && a.match_score < 80).length;
@@ -97,14 +95,10 @@ export default function RAGAnalysisResults() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-white border border-border rounded-2xl p-5">
             <p className="text-sm text-muted-foreground mb-2">Total Analyzed</p>
             <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
-          </div>
-          <div className="bg-white border border-border rounded-2xl p-5">
-            <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
-            <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
           </div>
           <div className="bg-white border border-border rounded-2xl p-5">
             <p className="text-sm text-muted-foreground mb-2">Top Candidates (80+)</p>
