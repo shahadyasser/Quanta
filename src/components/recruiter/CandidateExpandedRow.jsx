@@ -3,11 +3,18 @@ import { Mail, Phone, FileText, RotateCw, Loader2, CheckCircle, AlertCircle, Thu
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
+import RejectionEmailDialog from "@/components/recruiter/RejectionEmailDialog";
+import AcceptanceEmailDialog from "@/components/recruiter/AcceptanceEmailDialog";
 
 export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isReprocessing, onStatusChange }) {
   const [updating, setUpdating] = useState(null);
-  const [confirmReject, setConfirmReject] = useState(false);
+  const [rejectDialog, setRejectDialog] = useState(false);
+  const [acceptDialog, setAcceptDialog] = useState(false);
   const { toast } = useToast();
+  
+  // Get recruiter name from localStorage (set during login)
+  const recruiterName = localStorage.getItem("recruiterName") || "Recruiter";
+  const companyName = localStorage.getItem("companyName") || "Company";
   return (
     <div className="space-y-6">
       {/* Contact Info */}
@@ -120,93 +127,96 @@ export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isR
           {isReprocessing ? "Reprocessing..." : "Reprocess"}
         </Button>
         <div className="ml-auto flex gap-2">
-          {!["accepted", "rejected"].includes(app.status) && (
+          {!["accepted", "rejected", "interview"].includes(app.status) && (
             <>
               <Button
                 size="sm"
-                className="rounded-xl bg-blue-600 hover:bg-blue-700 gap-1.5"
-                onClick={() => handleStatusChange("accepted")}
-                disabled={updating === "accepted"}
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 gap-1.5 text-white"
+                onClick={() => setAcceptDialog(true)}
               >
-                {updating === "accepted" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ThumbsUp className="w-3.5 h-3.5" />}
-                {updating === "accepted" ? "Accepting..." : "Accept"}
+                <ThumbsUp className="w-3.5 h-3.5" />
+                Accept
               </Button>
               <Button
                 size="sm"
-                className="rounded-xl bg-green-600 hover:bg-green-700 gap-1.5"
-                onClick={() => handleStatusChange("interview")}
-                disabled={updating === "interview"}
+                className="rounded-xl bg-green-600 hover:bg-green-700 gap-1.5 text-white"
+                onClick={() => setAcceptDialog(true)}
               >
-                {updating === "interview" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                {updating === "interview" ? "Moving..." : "Interview"}
+                <CheckCircle className="w-3.5 h-3.5" />
+                Interview
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="rounded-xl border-red-200 text-red-500 hover:bg-red-50 gap-1.5"
-                onClick={() => setConfirmReject(true)}
-                disabled={updating === "rejected"}
+                onClick={() => setRejectDialog(true)}
               >
-                {updating === "rejected" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertCircle className="w-3.5 h-3.5" />}
-                {updating === "rejected" ? "Rejecting..." : "Reject"}
+                <AlertCircle className="w-3.5 h-3.5" />
+                Reject
               </Button>
             </>
           )}
         </div>
       </div>
 
-       {/* Reject Confirmation Modal */}
-       {confirmReject && (
-         <>
-           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setConfirmReject(false)} />
-           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
-               <h2 className="font-bold text-lg text-foreground">Confirm Rejection</h2>
-               <p className="text-sm text-muted-foreground">
-                 Are you sure you want to reject <strong>{app.candidate_name}</strong>? The candidate will be notified.
-               </p>
-               <div className="flex gap-3">
-                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setConfirmReject(false)}>
-                   Cancel
-                 </Button>
-                 <Button
-                   className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
-                   onClick={() => { handleStatusChange("rejected"); setConfirmReject(false); }}
-                 >
-                   Confirm Reject
-                 </Button>
-               </div>
-             </div>
-           </div>
-         </>
-       )}
-       </div>
-       );
+      {/* Rejection Email Dialog */}
+      {rejectDialog && (
+        <RejectionEmailDialog
+          application={app}
+          recruiterName={recruiterName}
+          companyName={companyName}
+          onClose={() => setRejectDialog(false)}
+          onSent={() => {
+            setRejectDialog(false);
+            if (onStatusChange) {
+              onStatusChange(app.id, "rejected");
+            }
+          }}
+        />
+      )}
 
-       async function handleStatusChange(newStatus) {
-       try {
-       setUpdating(newStatus);
-       await base44.entities.Application.update(app.id, {
-         status: newStatus,
-         is_viewed: true,
-         updated_date: new Date().toISOString()
-       });
+      {/* Acceptance Email Dialog */}
+      {acceptDialog && (
+        <AcceptanceEmailDialog
+          application={app}
+          recruiterName={recruiterName}
+          companyName={companyName}
+          onClose={() => setAcceptDialog(false)}
+          onSent={() => {
+            setAcceptDialog(false);
+            if (onStatusChange) {
+              onStatusChange(app.id, "accepted");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
 
-       if (onStatusChange) {
-         await onStatusChange(app.id, newStatus);
-       }
+  async function handleStatusChange(newStatus) {
+    try {
+      setUpdating(newStatus);
+      await base44.entities.Application.update(app.id, {
+        status: newStatus,
+        is_viewed: true,
+        updated_date: new Date().toISOString()
+      });
 
-       const messages = {
-         accepted: "Candidate has been accepted!",
-         interview: "Candidate moved to Interview stage",
-         rejected: "Candidate has been rejected"
-       };
-       toast({ description: messages[newStatus] || "Status updated" });
-       } catch (error) {
-       toast({ description: `Failed to update status: ${error.message}` });
-       console.error("Status update error:", error);
-       } finally {
-       setUpdating(null);
-       }
-       }
-       }
+      if (onStatusChange) {
+        await onStatusChange(app.id, newStatus);
+      }
+
+      const messages = {
+        accepted: "Candidate has been accepted!",
+        interview: "Candidate moved to Interview stage",
+        rejected: "Candidate has been rejected"
+      };
+      toast({ description: messages[newStatus] || "Status updated" });
+    } catch (error) {
+      toast({ description: `Failed to update status: ${error.message}` });
+      console.error("Status update error:", error);
+    } finally {
+      setUpdating(null);
+    }
+  }
+}

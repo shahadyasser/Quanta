@@ -69,6 +69,8 @@
         "pending",
         "processed",
         "shortlisted",
+        "accepted",
+        "interview",
         "rejected"
       ],
       "default": "pending",
@@ -86,6 +88,39 @@
     "rag_results": {
       "type": "object",
       "description": "Full RAG pipeline results including construct scores, similarity, and LLM scoring details"
+    },
+    "interview_date": {
+      "type": "string",
+      "description": "Scheduled interview date (ISO format)"
+    },
+    "interview_time": {
+      "type": "string",
+      "description": "Scheduled interview time (HH:MM format)"
+    },
+    "interview_type": {
+      "type": "string",
+      "enum": [
+        "in-person",
+        "video",
+        "phone"
+      ],
+      "description": "Type of interview"
+    },
+    "interview_location": {
+      "type": "string",
+      "description": "Interview location or meeting link"
+    },
+    "interview_duration": {
+      "type": "string",
+      "description": "Interview duration (30 min, 45 min, 1 hour, 1.5 hours)"
+    },
+    "interviewer_name": {
+      "type": "string",
+      "description": "Name of the interviewer"
+    },
+    "status_email_sent": {
+      "type": "string",
+      "description": "Body of the last status email sent to candidate"
     }
   },
   "required": [
