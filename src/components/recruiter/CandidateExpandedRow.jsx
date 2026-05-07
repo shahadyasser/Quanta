@@ -188,20 +188,20 @@ export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isR
        try {
        setUpdating(newStatus);
        await base44.entities.Application.update(app.id, {
-        status: newStatus,
-        is_viewed: true,
-        updated_date: new Date().toISOString()
+       status: newStatus,
+       is_viewed: true,
+       updated_date: new Date().toISOString()
        });
 
        // Call the status change callback to refresh parent list
        if (onStatusChange) {
-        await onStatusChange(app.id, newStatus);
+       await onStatusChange(app.id, newStatus);
        }
 
        const messages = {
-        accepted: "Candidate has been accepted!",
-        interview: "Candidate moved to Interview stage",
-        rejected: "Candidate has been rejected"
+       accepted: "Candidate has been accepted!",
+       interview: "Candidate moved to Interview stage",
+       rejected: "Candidate has been rejected"
        };
        toast({ description: messages[newStatus] || "Status updated" });
        } catch (error) {
