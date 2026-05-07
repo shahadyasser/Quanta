@@ -453,11 +453,10 @@ export default function ViewCandidates() {
               })}
               </div>
               )}
-            </div>
-           </>
-           )}
-           </div>
-           {/* Propose Interview Modal */}
+              </div>
+              </>
+              )}
+              {/* Propose Interview Modal */}
            {interviewModal && (
         <ProposeInterviewModal
           application={interviewModal}
@@ -502,7 +501,8 @@ export default function ViewCandidates() {
             </div>
           </div>
         </>
-      )}
-    </div>
-  );
-}
+        )}
+        </div>
+        </div>
+        );
+        }
