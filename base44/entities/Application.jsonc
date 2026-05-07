@@ -77,6 +77,11 @@
     "recruiter_email": {
       "type": "string",
       "description": "Recruiter who owns this job"
+    },
+    "is_viewed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the recruiter/admin has viewed this notification"
     }
   },
   "required": [
