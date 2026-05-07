@@ -90,6 +90,8 @@ export default function BrowseJobs() {
     // 2. Create application record in Base44
     const appData = await base44.entities.Application.create({
       job_id: applyJob.id,
+      job_title: applyJob.title,
+      company: applyJob.company,
       candidate_email: currentUser.email,
       candidate_name: currentUser?.full_name || currentUser.email,
       cv_url: file_url,
