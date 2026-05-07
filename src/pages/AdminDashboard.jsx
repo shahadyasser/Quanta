@@ -77,7 +77,7 @@ export default function AdminDashboard() {
 
   const handleApproveRecruiter = async (id) => {
     try {
-      await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "approved", is_approved: true });
+      await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'approve' });
       const updated = await base44.entities.RecruiterProfile.list();
       setRecruiters(updated || []);
       toast({ description: "Recruiter approved successfully" });
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
 
   const handleBlockRecruiter = async (id) => {
     try {
-      await base44.asServiceRole.entities.RecruiterProfile.update(id, { status: "blocked" });
+      await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'block' });
       const updated = await base44.entities.RecruiterProfile.list();
       setRecruiters(updated || []);
       toast({ description: "Recruiter blocked successfully" });
