@@ -187,7 +187,6 @@ export default function ViewCandidates() {
   };
 
   const triggerRAGPipeline = async () => {
-    if (!jobId) return;
     setRagProcessing(true);
     setConfirmRag(false);
     toast({ description: "Starting RAG analysis on all CVs..." });
@@ -199,16 +198,20 @@ export default function ViewCandidates() {
           base44.functions.invoke("processCV", {
             cv_url: app.cv_url,
             application_id: app.id,
-            job_id: jobId,
-            job_title: jobTitle,
-            job_description: "", // Fetch from job entity if needed
+            job_id: jobId || app.job_id,
+            job_title: jobTitle || app.job_title,
+            job_description: "", 
             job_skills: []
           })
         )
       );
       
       // Refresh applications to show updated scores
-      const updated = await pgQuery('SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
+      const query = jobId
+        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications ORDER BY match_score DESC NULLS LAST';
+      const params = jobId ? [jobId] : [];
+      const updated = await pgQuery(query, params);
       setApplications(updated || []);
       
       toast({ description: "RAG analysis completed! Navigating to results..." });
