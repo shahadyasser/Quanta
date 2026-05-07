@@ -29,8 +29,8 @@ export default function RAGAnalysisResults() {
   useEffect(() => {
     const fetchApplications = async () => {
       const query = jobId
-        ? 'SELECT * FROM applications WHERE job_id = $1 AND match_score IS NOT NULL ORDER BY match_score DESC'
-        : 'SELECT * FROM applications WHERE match_score IS NOT NULL ORDER BY match_score DESC';
+        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
+        : 'SELECT * FROM applications ORDER BY match_score DESC NULLS LAST';
       const params = jobId ? [jobId] : [];
       const data = await pgQuery(query, params);
       setApplications(data || []);
