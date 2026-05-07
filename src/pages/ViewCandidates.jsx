@@ -471,7 +471,7 @@ export default function ViewCandidates() {
                   <Zap className="w-5 h-5 text-primary" /> Start RAG Analysis?
                 </h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  This will analyze all {applications.filter((a) => a.status === "pending").length} pending CVs using AI matching. This process may take a few minutes.
+                  This will automatically analyze all {applications.length} available CVs using AI matching. This process may take a few minutes.
                 </p>
               </div>
               <div className="flex gap-3">
