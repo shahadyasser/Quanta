@@ -31,19 +31,19 @@ export default function RecruiterDashboard() {
       setUser({ email: recruiterEmail, id: recruiterId });
       try {
         // My Jobs: fetch from Base44
-        const [jobsData, appsData] = await Promise.all([
-          base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date"),
-          base44.entities.Application.list()
-        ]);
+        const jobsData = await base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date");
+        const appsData = await base44.entities.Application.list();
         
         // Filter applications for recruiter's jobs
-        const recruiterJobIds = new Set(jobsData.map(j => j.id));
+        const recruiterJobIds = new Set((jobsData || []).map(j => j.id));
         const recruiterApps = (appsData || []).filter(a => recruiterJobIds.has(a.job_id));
         
-        setRecruiterStatus("approved"); // Assume approved when fetched
+        setRecruiterStatus("approved");
         setJobs(jobsData || []);
         setApplications(recruiterApps || []);
-      } finally {
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load recruiter data:", err);
         setLoading(false);
       }
     };
