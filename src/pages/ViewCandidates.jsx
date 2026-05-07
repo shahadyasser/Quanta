@@ -455,7 +455,7 @@ export default function ViewCandidates() {
             )}
             </>
             )}
-            {/* Propose Interview Modal */}
+       {/* Propose Interview Modal */}
       {interviewModal && (
         <ProposeInterviewModal
           application={interviewModal}
