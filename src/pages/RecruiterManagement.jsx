@@ -90,7 +90,7 @@ export default function RecruiterManagement() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Recruiter Management</h1>
-          <p className="text-muted-foreground mt-1">Manage approved recruiter accounts</p>
+          <p className="text-muted-foreground mt-1">Manage all recruiter accounts and approvals</p>
         </div>
 
         {/* Stats */}
@@ -116,7 +116,7 @@ export default function RecruiterManagement() {
         <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-foreground">Approved Recruiters</h2>
+              <h2 className="font-semibold text-foreground">All Recruiters</h2>
               <p className="text-sm text-muted-foreground">Search and manage recruiter accounts</p>
             </div>
             <div className="relative">
@@ -132,8 +132,10 @@ export default function RecruiterManagement() {
 
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
-          ) : filtered.length === 0 ? (
+          ) : recruiters.length === 0 ? (
             <p className="text-center text-muted-foreground py-8 text-sm">No recruiters found.</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8 text-sm">No recruiters match your search.</p>
           ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -150,10 +152,10 @@ export default function RecruiterManagement() {
                     <td className="py-3.5 pr-4 font-medium text-foreground whitespace-nowrap">{r.company || "—"}</td>
                     <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.email}</td>
                     <td className="py-3.5 pr-4 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
-                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleDateString() : "—"}</td>
+                    <td className="py-3.5 pr-4 text-muted-foreground whitespace-nowrap">{r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}</td>
                     <td className="py-3.5 pr-4 whitespace-nowrap">
-                      <Badge className={r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" : r.status === "suspended" ? "bg-red-50 text-red-500 border-red-200" : "bg-yellow-50 text-yellow-600 border-yellow-200"}>
-                        {r.status === "approved" ? "Approved" : r.status === "suspended" ? "Suspended" : "Pending"}
+                      <Badge className={r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" : r.status === "blocked" ? "bg-red-50 text-red-500 border-red-200" : "bg-yellow-50 text-yellow-600 border-yellow-200"}>
+                        {r.status === "approved" ? "Approved" : r.status === "blocked" ? "Blocked" : "Pending"}
                       </Badge>
                     </td>
                     <td className="py-3.5 whitespace-nowrap">
@@ -168,16 +170,18 @@ export default function RecruiterManagement() {
                           }`}
                           onClick={() => confirmToggle(r.id)}
                         >
-                          {r.status === "approved" ? "Suspend" : "Activate"}
+                          {r.status === "approved" ? "Suspend" : "Approve"}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-lg text-xs h-8 px-3 border-destructive/40 text-destructive hover:bg-destructive/5"
-                          onClick={() => deleteRecruiter(r.id)}
-                        >
-                          Delete
-                        </Button>
+                        {r.status === "pending" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-lg text-xs h-8 px-3 border-destructive/40 text-destructive hover:bg-destructive/5"
+                            onClick={() => confirmToggle(r.id)}
+                          >
+                            Block
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
