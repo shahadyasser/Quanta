@@ -58,7 +58,7 @@ export default function RAGAnalysisResults() {
     return () => clearInterval(interval);
   }, [jobId]);
 
-  const hasResults = applications.some((a) => a.rag_results?.match_score);
+  const hasResults = applications.some((a) => a.rag_results?.final_score);
 
   const filtered = applications.filter((a) => {
     const q = search.toLowerCase();
@@ -70,12 +70,12 @@ export default function RAGAnalysisResults() {
     );
   });
 
-  const processedCount = applications.filter((a) => a.rag_results?.match_score).length;
+  const processedCount = applications.filter((a) => a.rag_results?.final_score).length;
   const totalCount = applications.length;
   const progressPercent = totalCount > 0 ? Math.round((processedCount / totalCount) * 100) : 0;
-  const ragFiltered = filtered.filter((a) => a.rag_results?.match_score);
-  const topCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 80).length;
-  const goodCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 60 && a.rag_results?.match_score < 80).length;
+  const ragFiltered = filtered.filter((a) => a.rag_results?.final_score);
+  const topCandidates = ragFiltered.filter((a) => a.rag_results?.final_score >= 80).length;
+  const goodCandidates = ragFiltered.filter((a) => a.rag_results?.final_score >= 60 && a.rag_results?.final_score < 80).length;
 
   const toggleSelect = (id) => setSelected((prev) => {
     const next = new Set(prev);
@@ -209,11 +209,11 @@ export default function RAGAnalysisResults() {
                       </div>
 
                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                        {hasResults && a.rag_results?.match_score ? (
+                        {hasResults && a.rag_results?.final_score ? (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Match Score</p>
-                            <p className={`text-3xl font-bold ${a.rag_results.match_score >= 80 ? "text-green-600" : a.rag_results.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
-                              {a.rag_results.match_score}
+                            <p className={`text-3xl font-bold ${a.rag_results.final_score >= 80 ? "text-green-600" : a.rag_results.final_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
+                              {a.rag_results.final_score}
                             </p>
                           </div>
                         ) : null}
