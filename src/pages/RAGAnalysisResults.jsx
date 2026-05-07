@@ -26,11 +26,26 @@ export default function RAGAnalysisResults() {
   const jobId = urlParams.get("job_id");
   const jobTitle = urlParams.get("job") || "All Jobs";
 
+  const [startTime, setStartTime] = React.useState(null);
+  const [elapsedTime, setElapsedTime] = React.useState(0);
+
+  useEffect(() => {
+    setStartTime(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (!startTime) return;
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((new Date() - startTime) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
   useEffect(() => {
     const fetchApplications = async () => {
       const query = jobId
-        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST'
-        : 'SELECT * FROM applications ORDER BY match_score DESC NULLS LAST';
+        ? 'SELECT * FROM applications WHERE job_id = $1 AND match_score IS NOT NULL ORDER BY match_score DESC'
+        : 'SELECT * FROM applications WHERE match_score IS NOT NULL ORDER BY match_score DESC';
       const params = jobId ? [jobId] : [];
       const data = await pgQuery(query, params);
       setApplications(data || []);
@@ -83,6 +98,13 @@ export default function RAGAnalysisResults() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
+        {/* Timing Line */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <p className="text-sm text-blue-600">
+            <span className="font-semibold">RAG Pipeline Processing Time:</span> {elapsedTime} seconds elapsed
+          </p>
+        </div>
+
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
