@@ -116,22 +116,24 @@ export default function RecruiterApprovalTable() {
                       <td className="py-4 pr-6 text-xs text-muted-foreground">
                         {r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}
                       </td>
-                      <td className="py-4 flex gap-2">
-                        {r.status === "pending" && (
-                          <>
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "approve", name: r.full_name || r.email })}>
-                              Approve
+                      <td className="py-4">
+                        <div className="flex gap-2">
+                          {r.status === "pending" && (
+                            <>
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "approve", name: r.full_name || r.email })}>
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "block", name: r.full_name || r.email })}>
+                                Block
+                              </Button>
+                            </>
+                          )}
+                          {r.status === "approved" && (
+                            <Button size="sm" variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "block", name: r.full_name || r.email })}>
+                              Revoke
                             </Button>
-                            <Button size="sm" variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "block", name: r.full_name || r.email })}>
-                              Block
-                            </Button>
-                          </>
-                        )}
-                        {r.status === "approved" && (
-                          <Button size="sm" variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 rounded-lg h-8 px-3 text-xs" onClick={() => setConfirmDialog({ id: r.id, action: "block", name: r.full_name || r.email })}>
-                            Revoke
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
