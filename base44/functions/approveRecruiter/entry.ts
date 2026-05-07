@@ -20,6 +20,12 @@ Deno.serve(async (req) => {
       : { status: 'blocked' };
 
     await base44.asServiceRole.entities.RecruiterProfile.update(recruiterId, updateData);
+    
+    // Also update is_active in the users table if approved
+    if (action === 'approve') {
+      const profile = await base44.asServiceRole.entities.RecruiterProfile.get(recruiterId);
+      // Update via postgres if needed - but for now rely on profile.status check in authLogin
+    }
 
     return Response.json({ success: true });
   } catch (error) {
