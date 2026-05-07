@@ -159,7 +159,7 @@ export default function AdminDashboard() {
 
         {/* All Recruiters Table */}
         <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
               <div>
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                 <p className="text-sm text-muted-foreground">Manage all recruiter accounts</p>
               </div>
             </div>
-            <span className="bg-muted text-foreground text-sm font-semibold px-3 py-1 rounded-lg">{recruiters.length} total</span>
+            <span className="text-sm text-muted-foreground">{recruiters.length} total</span>
           </div>
 
           <div className="flex gap-2">
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                 key={status}
                 size="sm"
                 variant={recruiterFilter === status ? "default" : "outline"}
-                className="rounded-lg text-xs h-8 px-4"
+                className={`rounded-lg text-xs h-8 px-4 ${recruiterFilter === status ? "bg-primary text-white" : ""}`}
                 onClick={() => setRecruiterFilter(status)}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -216,21 +216,21 @@ export default function AdminDashboard() {
                       <td className="py-4 whitespace-nowrap">
                         {r.status === "pending" && (
                           <div className="flex items-center gap-2">
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-7 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
                               Approve
                             </Button>
-                            <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 rounded-lg h-8 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
+                            <Button size="sm" variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 rounded-lg h-7 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
                               Reject
                             </Button>
                           </div>
                         )}
                         {r.status === "approved" && (
-                          <Button size="sm" variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50 rounded-lg h-8 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
+                          <Button size="sm" variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50 rounded-lg h-7 px-3 text-xs" onClick={() => handleBlockRecruiter(r.id)}>
                             Revoke
                           </Button>
                         )}
                         {r.status === "blocked" && (
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-8 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white rounded-lg h-7 px-3 text-xs" onClick={() => handleApproveRecruiter(r.id)}>
                             Re-approve
                           </Button>
                         )}
