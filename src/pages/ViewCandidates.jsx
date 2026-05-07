@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square, Zap } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square, Zap, CalendarDays } from "lucide-react";
+import ProposeInterviewModal from "@/components/recruiter/ProposeInterviewModal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export default function ViewCandidates() {
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [ragProcessing, setRagProcessing] = useState(false);
   const [ragTriggered, setRagTriggered] = useState(false);
+  const [interviewModal, setInterviewModal] = useState(null); // application object
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -365,6 +367,9 @@ export default function ViewCandidates() {
                               Reject
                             </Button>
                           )}
+                          <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-accent gap-1.5" onClick={() => setInterviewModal(a)}>
+                            <CalendarDays className="w-3.5 h-3.5" /> Interview
+                          </Button>
                           <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50" onClick={() => deleteCandidate(a.id)}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -428,6 +433,16 @@ export default function ViewCandidates() {
           )}
         </div>
       </div>
+      {/* Propose Interview Modal */}
+      {interviewModal && (
+        <ProposeInterviewModal
+          application={interviewModal}
+          recruiterEmail={localStorage.getItem("recruiterEmail") || ""}
+          onClose={() => setInterviewModal(null)}
+          onSent={() => setInterviewModal(null)}
+        />
+      )}
+
       {/* Accept / Reject Email Modal */}
       {emailModal && (
         <>

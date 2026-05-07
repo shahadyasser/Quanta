@@ -1,0 +1,68 @@
+{
+  "name": "InterviewSlot",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string",
+      "description": "Reference to Application entity"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Reference to Job entity"
+    },
+    "job_title": {
+      "type": "string",
+      "description": "Job title (denormalized)"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name (denormalized)"
+    },
+    "candidate_email": {
+      "type": "string",
+      "description": "Candidate email"
+    },
+    "candidate_name": {
+      "type": "string",
+      "description": "Candidate name"
+    },
+    "recruiter_email": {
+      "type": "string",
+      "description": "Recruiter email"
+    },
+    "proposed_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "ISO datetime strings of proposed interview times"
+    },
+    "confirmed_slot": {
+      "type": "string",
+      "description": "ISO datetime string of confirmed slot"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "confirmed",
+        "declined",
+        "cancelled"
+      ],
+      "default": "proposed",
+      "description": "Slot status"
+    },
+    "meeting_link": {
+      "type": "string",
+      "description": "Optional video call link"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Recruiter notes for the interview"
+    }
+  },
+  "required": [
+    "candidate_email",
+    "job_id"
+  ]
+}

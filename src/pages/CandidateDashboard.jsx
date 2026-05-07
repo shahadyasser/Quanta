@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle } from "lucide-react";
+import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -31,6 +32,7 @@ export default function CandidateDashboard() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]); // { id, job_title, status }
+  const [invites, setInvites] = useState([]);
   const [emailVerified, setEmailVerified] = useState(false);
   const prevStatusesRef = useRef({});
 
@@ -85,11 +87,13 @@ export default function CandidateDashboard() {
       }
       setEmailVerified(true);
 
-      // Load candidate profile + applications in parallel
-      const [candidateRecords, apps] = await Promise.all([
+      // Load candidate profile, applications, and interview invites in parallel
+      const [candidateRecords, apps, interviewSlots] = await Promise.all([
         base44.entities.Candidate.filter({ email: candidateEmail }),
         base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date"),
+        base44.entities.InterviewSlot.filter({ candidate_email: candidateEmail }, "-created_date"),
       ]);
+      setInvites(interviewSlots);
 
       const candidateRecord = candidateRecords[0] || null;
       setUser({ email: candidateEmail, full_name: candidateRecord?.full_name || "" });
@@ -236,6 +240,17 @@ export default function CandidateDashboard() {
             </div>
           ))}
         </div>
+
+        {/* Interview Invitations */}
+        {invites.length > 0 && (
+          <InterviewInvites
+            invites={invites}
+            onUpdate={async () => {
+              const updated = await base44.entities.InterviewSlot.filter({ candidate_email: user.email }, "-created_date");
+              setInvites(updated);
+            }}
+          />
+        )}
 
         {/* Applications */}
         <div>
