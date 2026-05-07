@@ -338,10 +338,10 @@ export default function ViewCandidates() {
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">{a.candidate_email}</p>
                           <div className="flex flex-wrap gap-1.5">
-                            {(a.skills || []).slice(0, 5).map((s) => (
+                            {(Array.isArray(a.skills) ? a.skills : []).slice(0, 5).map((s) => (
                               <span key={s} className="text-xs bg-accent text-primary px-2.5 py-1 rounded-full">{s}</span>
                             ))}
-                            {(a.skills || []).length > 5 && <span className="text-xs text-muted-foreground">+{a.skills.length - 5} more</span>}
+                            {(Array.isArray(a.skills) ? a.skills : []).length > 5 && <span className="text-xs text-muted-foreground">+{(Array.isArray(a.skills) ? a.skills : []).length - 5} more</span>}
                           </div>
                         </div>
                       </div>
