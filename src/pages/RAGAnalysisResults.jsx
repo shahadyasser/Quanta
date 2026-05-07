@@ -54,6 +54,8 @@ export default function RAGAnalysisResults() {
     fetchApplications();
   }, [jobId]);
 
+  const hasResults = applications.some((a) => a.match_score);
+
   const filtered = applications.filter((a) => {
     const q = search.toLowerCase();
     return (
@@ -63,8 +65,6 @@ export default function RAGAnalysisResults() {
       (a.skills || []).some((s) => s.toLowerCase().includes(q))
     );
   });
-
-
 
   const topCandidates = filtered.filter((a) => a.match_score >= 80).length;
   const goodCandidates = filtered.filter((a) => a.match_score >= 60 && a.match_score < 80).length;
@@ -116,21 +116,23 @@ export default function RAGAnalysisResults() {
           />
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-white border border-border rounded-2xl p-5">
-            <p className="text-sm text-muted-foreground mb-2">Total Analyzed</p>
-            <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
+        {/* Stats Cards - Only show after pipeline completes */}
+        {hasResults && (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">Total Analyzed</p>
+              <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
+            </div>
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">Top Candidates (80+)</p>
+              <p className="text-2xl font-bold text-green-600">{topCandidates}</p>
+            </div>
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <p className="text-sm text-muted-foreground mb-2">Good Candidates (60-80)</p>
+              <p className="text-2xl font-bold text-orange-500">{goodCandidates}</p>
+            </div>
           </div>
-          <div className="bg-white border border-border rounded-2xl p-5">
-            <p className="text-sm text-muted-foreground mb-2">Top Candidates (80+)</p>
-            <p className="text-2xl font-bold text-green-600">{topCandidates}</p>
-          </div>
-          <div className="bg-white border border-border rounded-2xl p-5">
-            <p className="text-sm text-muted-foreground mb-2">Good Candidates (60-80)</p>
-            <p className="text-2xl font-bold text-orange-500">{goodCandidates}</p>
-          </div>
-        </div>
+        )}
 
         {/* Candidates List */}
         <div className="space-y-4">
@@ -189,7 +191,7 @@ export default function RAGAnalysisResults() {
                       </div>
 
                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                        {a.match_score ? (
+                        {hasResults && a.match_score ? (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Match Score</p>
                             <p className={`text-3xl font-bold ${a.match_score >= 80 ? "text-green-600" : a.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
