@@ -354,11 +354,6 @@ export default function ViewCandidates() {
                               {a.match_score}
                             </p>
                           </div>
-                        ) : ragTriggered ? (
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Match Score</p>
-                            <p className="text-sm text-muted-foreground">Pending</p>
-                          </div>
                         ) : null}
                         <div className="flex gap-2 flex-wrap justify-end">
                           {a.cv_url && (
