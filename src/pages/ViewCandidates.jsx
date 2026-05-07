@@ -95,9 +95,6 @@ export default function ViewCandidates() {
     });
 
   const processed = applications.filter((a) => a.status === "processed" || a.match_score);
-  const avgScore = processed.length
-    ? Math.round(processed.reduce((sum, a) => sum + (a.match_score || 0), 0) / processed.length)
-    : 0;
 
   const updateStatus = async (appId, status) => {
     await pgQuery('UPDATE applications SET status = $1, is_viewed = true WHERE id = $2', [status, appId]);
@@ -255,7 +252,7 @@ export default function ViewCandidates() {
          </div>
 
          {ragTriggered && applications.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-white border border-border rounded-2xl p-5">
               <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
               <p className="text-2xl font-bold text-foreground">{applications.length}</p>
@@ -263,10 +260,6 @@ export default function ViewCandidates() {
             <div className="bg-white border border-border rounded-2xl p-5">
               <p className="text-sm text-muted-foreground mb-2">CV Analyzed</p>
               <p className="text-2xl font-bold text-foreground">{processed.length}</p>
-            </div>
-            <div className="bg-white border border-border rounded-2xl p-5">
-              <p className="text-sm text-muted-foreground mb-2">Avg Match Score</p>
-              <p className="text-2xl font-bold text-foreground">{avgScore || "—"}</p>
             </div>
             <div className="bg-white border border-border rounded-2xl p-5">
               <p className="text-sm text-muted-foreground mb-2">AI Fairness</p>
