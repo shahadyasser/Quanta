@@ -48,17 +48,28 @@ function CopyId({ id }) {
 export default function JobsReference() {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
+  const [recruiters, setRecruiters] = useState({}); // email -> profile
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [approvedOnly, setApprovedOnly] = useState(false);
 
   useEffect(() => {
-    base44.entities.Job.list("-created_date", 100).then((data) => {
-      setJobs(data);
+    Promise.all([
+      base44.entities.Job.list("-created_date", 200),
+      base44.entities.RecruiterProfile.filter({ status: "approved" }, undefined, 200),
+    ]).then(([jobData, recruiterData]) => {
+      setJobs(jobData);
+      const map = {};
+      recruiterData.forEach(r => { map[r.email] = r; });
+      setRecruiters(map);
       setLoading(false);
     });
   }, []);
 
+  const approvedEmails = new Set(Object.keys(recruiters));
+
   const filtered = jobs.filter((j) => {
+    if (approvedOnly && !approvedEmails.has(j.recruiter_email)) return false;
     const q = search.toLowerCase();
     return (
       !q ||
@@ -85,7 +96,15 @@ export default function JobsReference() {
             <h1 className="text-2xl font-bold text-foreground">Jobs Reference Table</h1>
             <p className="text-sm text-muted-foreground">All job listings with IDs and full details — unified across all dashboards</p>
           </div>
-          <span className="bg-muted text-foreground text-sm font-semibold px-3 py-1.5 rounded-lg self-start">{jobs.length} total jobs</span>
+          <div className="flex items-center gap-3 self-start">
+            <button
+              onClick={() => setApprovedOnly(v => !v)}
+              className={`text-sm font-medium px-4 py-1.5 rounded-lg border transition-all ${approvedOnly ? "bg-green-50 text-green-700 border-green-300" : "bg-muted text-muted-foreground border-border hover:bg-accent"}`}
+            >
+              {approvedOnly ? "✓ Approved Recruiters Only" : "All Recruiters"}
+            </button>
+            <span className="bg-muted text-foreground text-sm font-semibold px-3 py-1.5 rounded-lg">{filtered.length} jobs</span>
+          </div>
         </div>
       </div>
 
@@ -189,10 +208,21 @@ export default function JobsReference() {
 
                       {/* Recruiter */}
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="w-3 h-3 shrink-0" />
-                          {job.recruiter_email || "—"}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="w-3 h-3 shrink-0" />
+                            {job.recruiter_email || "—"}
+                          </span>
+                          {job.recruiter_email && recruiters[job.recruiter_email] ? (
+                            <span className="text-xs bg-green-50 text-green-600 border border-green-200 rounded-md px-1.5 py-0.5 w-fit">
+                              ✓ Approved · {recruiters[job.recruiter_email].full_name || ""}
+                            </span>
+                          ) : job.recruiter_email ? (
+                            <span className="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded-md px-1.5 py-0.5 w-fit">
+                              Not approved
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
 
                       {/* Skills */}
@@ -223,9 +253,9 @@ export default function JobsReference() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: "Active Jobs", value: jobs.filter(j => j.status === "Active").length, color: "text-green-600" },
-            { label: "Inactive Jobs", value: jobs.filter(j => j.status === "Inactive").length, color: "text-muted-foreground" },
+            { label: "Approved Recruiters", value: Object.keys(recruiters).length, color: "text-primary" },
             { label: "Remote Jobs", value: jobs.filter(j => j.arrangement === "Remote").length, color: "text-teal-600" },
-            { label: "Unique Companies", value: new Set(jobs.map(j => j.company).filter(Boolean)).size, color: "text-primary" },
+            { label: "Unique Companies", value: new Set(jobs.map(j => j.company).filter(Boolean)).size, color: "text-purple-600" },
           ].map(({ label, value, color }) => (
             <div key={label} className="bg-white border border-border rounded-2xl p-4 text-center">
               <p className={`text-2xl font-bold ${color}`}>{value}</p>
