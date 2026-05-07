@@ -31,8 +31,8 @@ export default function RecruiterDashboard() {
         setRecruiterStatus(profiles[0].status);
       }
       const [jobsData, appsData] = await Promise.all([
-        base44.entities.Job.list("-created_date"),
-        base44.entities.Application.list("-created_date"),
+        base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date"),
+        base44.entities.Application.filter({ recruiter_email: recruiterEmail }, "-created_date"),
       ]);
       setJobs(jobsData);
       setApplications(appsData);
@@ -42,11 +42,12 @@ export default function RecruiterDashboard() {
   }, [navigate]);
 
   useEffect(() => {
+    if (!user?.email) return;
     const unsubscribe = base44.entities.Application.subscribe((event) => {
       setApplications((prev) => {
-        if (event.type === "create") {
+        if (event.type === "create" && event.data?.recruiter_email === user.email) {
           return [event.data, ...prev];
-        } else if (event.type === "update") {
+        } else if (event.type === "update" && event.data?.recruiter_email === user.email) {
           return prev.map(a => a.id === event.id ? event.data : a);
         } else if (event.type === "delete") {
           return prev.filter(a => a.id !== event.id);
@@ -55,7 +56,7 @@ export default function RecruiterDashboard() {
       });
     });
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const filteredJobs = jobs.filter((job) => {
     const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
@@ -112,7 +113,7 @@ export default function RecruiterDashboard() {
           <p className="text-xs text-muted-foreground">Recruiter Portal</p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">recruiter@quantahire.com</span>
+          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">{user?.email}</span>
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("recruiterEmail"); navigate("/"); }}>
             <LogOut className="w-4 h-4" />Logout
           </Button>

@@ -32,19 +32,27 @@ export default function AdminDashboard() {
   const [recruiters, setRecruiters] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [adminEmail, setAdminEmail] = useState("");
 
   useEffect(() => {
-    Promise.all([
-      base44.entities.RecruiterProfile.list(),
-      base44.entities.Job.list(),
-      base44.entities.Application.list("-created_date"),
-    ]).then(([r, j, a]) => {
+    const init = async () => {
+      const authed = await base44.auth.isAuthenticated();
+      if (!authed) { navigate("/admin-auth"); return; }
+      const me = await base44.auth.me();
+      if (me?.role !== "admin") { navigate("/"); return; }
+      setAdminEmail(me.email);
+      const [r, j, a] = await Promise.all([
+        base44.entities.RecruiterProfile.list(),
+        base44.entities.Job.list(),
+        base44.entities.Application.list("-created_date"),
+      ]);
       setRecruiters(r);
       setJobs(j);
       setApplications(a);
       setLoading(false);
-    });
-  }, []);
+    };
+    init();
+  }, [navigate]);
 
   const pendingRecruiters = recruiters.filter((r) => r.status === "pending");
   const activeRecruiters = recruiters.filter((r) => r.status === "approved");
@@ -64,7 +72,7 @@ export default function AdminDashboard() {
           </div>
           <div>
             <p className="font-bold text-sm text-foreground leading-none">QuantaHire Admin</p>
-            <p className="text-xs text-muted-foreground">admin@quantahire.com</p>
+            <p className="text-xs text-muted-foreground">{adminEmail}</p>
           </div>
         </div>
         <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>

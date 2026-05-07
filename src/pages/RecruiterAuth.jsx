@@ -41,6 +41,7 @@ export default function RecruiterAuth() {
       } else if (profiles[0].status === "suspended") {
         setWarning("suspended");
       } else if (profiles[0].status === "approved") {
+        localStorage.setItem("recruiterEmail", email);
         navigate("/recruiter-dashboard");
       }
     }
