@@ -23,6 +23,12 @@ async function getEmbedding(text) {
       input: text.slice(0, 8000)
     })
   });
+  console.log("OpenAI response status:", response.status);
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("OpenAI error:", errText);
+    throw new Error(`OpenAI API error: ${response.status} ${errText}`);
+  }
   const data = await response.json();
   return data.data[0].embedding; // 1536-dimensional vector
 }
@@ -240,26 +246,36 @@ Return only the JSON object with these fields.`,
 
     // Step 3: Stage 2 — Store CV chunks and embeddings
     const cvChunks = chunkText(cvText, 1500);
+    console.log("Chunks to store:", cvChunks.length);
     const pgClient = await pool.connect();
     try {
-      await Promise.all(cvChunks.map(async (chunk, idx) => {
-        const embedding = await getEmbedding(chunk);
-        // Write to Neon cv_embeddings table
-        await pgClient.query(
-          `INSERT INTO cv_embeddings (application_id, job_id, embedding, cv_text_chunk, chunk_index)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT DO NOTHING`,
-          [application_id, job_id || null, JSON.stringify(embedding), chunk.slice(0, 2000), idx]
-        );
-        // Also write to Base44 entity for backward compatibility
-        await base44.asServiceRole.entities.CVEmbedding.create({
-          application_id,
-          job_id: job_id || "",
-          embedding,
-          cv_text_chunk: chunk.slice(0, 2000),
-          chunk_index: idx
-        });
-      }));
+      try {
+        await Promise.all(cvChunks.map(async (chunk, idx) => {
+          console.log("Getting embedding for chunk", idx);
+          const embedding = await getEmbedding(chunk);
+          console.log("Storing chunk", idx, "embedding length:", embedding?.length);
+          // Write to Neon cv_embeddings table
+          await pgClient.query(
+            `INSERT INTO cv_embeddings (application_id, job_id, embedding, cv_text_chunk, chunk_index)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT DO NOTHING`,
+            [application_id, job_id || null, JSON.stringify(embedding), chunk.slice(0, 2000), idx]
+          );
+          console.log("Chunk", idx, "stored to Postgres");
+          // Also write to Base44 entity for backward compatibility
+          await base44.asServiceRole.entities.CVEmbedding.create({
+            application_id,
+            job_id: job_id || "",
+            embedding,
+            cv_text_chunk: chunk.slice(0, 2000),
+            chunk_index: idx
+          });
+          console.log("Chunk", idx, "stored successfully to Base44");
+        }));
+      } catch (err) {
+        console.error("EMBEDDING STORAGE FAILED:", err.message);
+        throw err;
+      }
     } finally {
       pgClient.release();
     }
