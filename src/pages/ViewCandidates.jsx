@@ -25,7 +25,7 @@ export default function ViewCandidates() {
   const [selected, setSelected] = useState(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
   const [ragProcessing, setRagProcessing] = useState(false);
-  const [ragTriggered, setRagTriggered] = useState(false);
+  const [ragTriggered, setRagTriggered] = useState(true); // Default true — show scores if already computed
   const [interviewModal, setInterviewModal] = useState(null); // application object
   const navigate = useNavigate();
 
@@ -79,9 +79,7 @@ export default function ViewCandidates() {
       );
     })
     .sort((a, b) => {
-      // Before RAG: show in application order
-      if (!ragTriggered) return 0;
-      // After RAG: ranked by match_score descending
+      // Always sort by match_score descending (unscored go to bottom)
       const scoreA = a.match_score ?? -1;
       const scoreB = b.match_score ?? -1;
       return scoreB - scoreA;
@@ -95,6 +93,14 @@ export default function ViewCandidates() {
   const updateStatus = async (appId, status) => {
     await base44.entities.Application.update(appId, { status });
     setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, status } : a));
+  };
+
+  const markViewed = async (appId) => {
+    const app = applications.find(a => a.id === appId);
+    if (app && !app.is_viewed) {
+      await base44.entities.Application.update(appId, { is_viewed: true });
+      setApplications((prev) => prev.map((a) => a.id === appId ? { ...a, is_viewed: true } : a));
+    }
   };
 
   const openEmailModal = async (app, type) => {
@@ -215,18 +221,18 @@ export default function ViewCandidates() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* Pre-RAG: Show button to start analysis */}
-        {!ragTriggered && (
+        {/* RAG button: Only show if there are pending (unprocessed) applications */}
+        {applications.some(a => a.status === "pending" && !a.match_score) && (
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 text-center space-y-4">
             <div>
-              <h3 className="font-semibold text-foreground text-lg mb-1">Ready to analyze candidates?</h3>
-              <p className="text-sm text-muted-foreground">Click the button below to run the AI RAG pipeline on all pending CVs. Candidates will be ranked by AI match score.</p>
+              <h3 className="font-semibold text-foreground text-lg mb-1">New CVs need analysis</h3>
+              <p className="text-sm text-muted-foreground">{applications.filter(a => a.status === "pending" && !a.match_score).length} pending application(s). Run AI RAG pipeline to score and rank all candidates.</p>
             </div>
             <Button
               size="lg"
               className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8 mx-auto"
               onClick={triggerRAGPipeline}
-              disabled={ragProcessing || applications.length <= 1}
+              disabled={ragProcessing}
             >
               {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               {ragProcessing ? "Analyzing All CVs..." : "Start RAG Analysis"}
@@ -234,8 +240,8 @@ export default function ViewCandidates() {
           </div>
         )}
 
-        {/* Stats (shown after RAG) */}
-        {ragTriggered && (
+        {/* Stats */}
+        {applications.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-border rounded-2xl p-5">
               <p className="text-sm text-muted-foreground mb-2">Total Applications</p>
@@ -314,7 +320,7 @@ export default function ViewCandidates() {
                         <button onClick={() => toggleSelect(a.id)} className="shrink-0">
                           {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
                         </button>
-                        {ragTriggered && <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>}
+                        {a.match_score && <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>}
                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">{initials}</span>
                         </div>
@@ -336,12 +342,17 @@ export default function ViewCandidates() {
                       </div>
 
                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                        {ragTriggered && (
+                        {a.match_score ? (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Match Score</p>
-                            <p className={`text-3xl font-bold ${(a.match_score || 0) >= 80 ? "text-green-600" : (a.match_score || 0) >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
-                              {a.match_score || "—"}
+                            <p className={`text-3xl font-bold ${a.match_score >= 80 ? "text-green-600" : a.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
+                              {a.match_score}
                             </p>
+                          </div>
+                        ) : (
+                          <div className="text-right">
+                            <p className="text-xs text-muted-foreground">Match Score</p>
+                            <p className="text-sm text-muted-foreground">Pending</p>
                           </div>
                         )}
                         <div className="flex gap-2 flex-wrap justify-end">
@@ -352,8 +363,8 @@ export default function ViewCandidates() {
                               </Button>
                             </a>
                           )}
-                          {a.status === "processed" && (
-                            <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => setExpanded(isExpanded ? null : a.id)}>
+                          {(a.status === "processed" || a.match_score) && (
+                            <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => { setExpanded(isExpanded ? null : a.id); if (!isExpanded) markViewed(a.id); }}>
                               {isExpanded ? "Hide" : "Details"}
                             </Button>
                           )}

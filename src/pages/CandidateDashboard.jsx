@@ -13,14 +13,15 @@ const QUICK_ACTIONS = [
 ];
 
 const STATUS_LABEL = {
-  pending: "In Progress",
-  processed: "In Progress",
+  pending: "Submitted",
+  processed: "Under Review",
   shortlisted: "Accepted",
   rejected: "Rejected",
 };
 
 const STATUS_STYLES = {
-  "In Progress": "bg-orange-50 text-orange-500 border-orange-200",
+  "Submitted": "bg-blue-50 text-blue-600 border-blue-200",
+  "Under Review": "bg-orange-50 text-orange-500 border-orange-200",
   "Accepted": "bg-green-50 text-green-600 border-green-200",
   "Rejected": "bg-red-50 text-red-500 border-red-200",
 };
@@ -248,7 +249,7 @@ export default function CandidateDashboard() {
           </div>
           <div className="bg-white border border-border rounded-2xl p-5 text-center">
             <p className="text-3xl font-bold text-orange-500">{applications.filter(a => a.status === "pending" || a.status === "processed").length}</p>
-            <p className="text-sm text-muted-foreground mt-1">Pending</p>
+            <p className="text-sm text-muted-foreground mt-1">In Review</p>
           </div>
         </div>
 

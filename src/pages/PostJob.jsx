@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, X, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,7 @@ export default function PostJob() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [recruiterCompany, setRecruiterCompany] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -66,6 +67,15 @@ export default function PostJob() {
   const [skills, setSkills] = useState([]);
   const [benefits, setBenefits] = useState([]);
   const [responsibilities, setResponsibilities] = useState([]);
+
+  React.useEffect(() => {
+    const recruiterEmail = localStorage.getItem("recruiterEmail");
+    if (recruiterEmail) {
+      base44.entities.RecruiterProfile.filter({ email: recruiterEmail }).then((profiles) => {
+        if (profiles.length > 0) setRecruiterCompany(profiles[0].company || "");
+      });
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -87,6 +97,7 @@ export default function PostJob() {
       benefits,
       responsibilities,
       recruiter_email: recruiterEmail,
+      company: recruiterCompany,
       status: "Active",
     });
     navigate("/recruiter-dashboard");

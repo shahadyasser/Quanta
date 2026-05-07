@@ -25,10 +25,15 @@ export default function NotificationBell({ recruiterEmail }) {
   const navigate = useNavigate();
 
   const load = async () => {
-    const filter = { status: "processed", is_viewed: false };
-    if (recruiterEmail) filter.recruiter_email = recruiterEmail;
-    const data = await base44.entities.Application.filter(filter, "-created_date", 20);
-    setNotifications(data);
+    if (recruiterEmail) {
+      // For recruiters: show unviewed applications for their jobs
+      const all = await base44.entities.Application.filter({ recruiter_email: recruiterEmail, is_viewed: false }, "-created_date", 30);
+      setNotifications(all);
+    } else {
+      // For admin: show all unviewed processed applications
+      const all = await base44.entities.Application.filter({ is_viewed: false }, "-created_date", 30);
+      setNotifications(all);
+    }
   };
 
   useEffect(() => {

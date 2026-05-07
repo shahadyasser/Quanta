@@ -35,7 +35,7 @@ export default function BrowseJobs() {
       const user = candidateEmail ? { email: candidateEmail, full_name: "" } : null;
       setCurrentUser(user);
       const [jobsData, apps] = await Promise.all([
-        base44.entities.Job.filter({ status: "Active" }),
+        base44.entities.Job.filter({ status: "Active" }, "-created_date"),
         candidateEmail ? base44.entities.Application.filter({ candidate_email: candidateEmail }) : Promise.resolve([])
       ]);
       setJobs(jobsData);

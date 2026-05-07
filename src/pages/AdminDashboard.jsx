@@ -168,9 +168,10 @@ export default function AdminDashboard() {
                           app.status === "shortlisted" ? "bg-blue-50 text-blue-600 border-blue-200" :
                           app.status === "rejected" ? "bg-red-50 text-red-500 border-red-200" :
                           app.status === "processed" ? "bg-green-50 text-green-600 border-green-200" :
-                          "bg-orange-50 text-orange-500 border-orange-200"
+                          app.status === "pending" ? "bg-orange-50 text-orange-500 border-orange-200" :
+                          "bg-muted text-muted-foreground"
                         }>
-                          {app.status === "processed" ? "CV Analyzed" : app.status || "pending"}
+                          {app.status === "processed" ? "CV Analyzed" : app.status === "shortlisted" ? "Shortlisted" : app.status === "rejected" ? "Rejected" : app.status || "Pending"}
                         </Badge>
                       </td>
                       <td className="py-3 pr-6 whitespace-nowrap">
