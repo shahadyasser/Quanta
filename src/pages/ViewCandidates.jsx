@@ -200,10 +200,11 @@ export default function ViewCandidates() {
       )
     );
     setRagProcessing(false);
-    setRagTriggered(true);
     // Refresh applications to show updated scores
     const updated = await pgQuery('SELECT * FROM applications WHERE job_id = $1 ORDER BY match_score DESC NULLS LAST', [jobId]);
     setApplications(updated || []);
+    // Navigate to results page
+    navigate(`/rag-analysis-results?job_id=${jobId}&job=${encodeURIComponent(jobTitle)}`);
   };
 
   return (
