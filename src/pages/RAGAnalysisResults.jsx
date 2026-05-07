@@ -44,8 +44,8 @@ export default function RAGAnalysisResults() {
   useEffect(() => {
     const fetchApplications = async () => {
       const query = jobId
-        ? 'SELECT * FROM applications WHERE job_id = $1 AND match_score IS NOT NULL ORDER BY match_score DESC'
-        : 'SELECT * FROM applications WHERE match_score IS NOT NULL ORDER BY match_score DESC';
+        ? 'SELECT * FROM applications WHERE job_id = $1 ORDER BY created_date DESC'
+        : 'SELECT * FROM applications ORDER BY created_date DESC';
       const params = jobId ? [jobId] : [];
       const data = await pgQuery(query, params);
       setApplications(data || []);
@@ -54,7 +54,7 @@ export default function RAGAnalysisResults() {
     fetchApplications();
   }, [jobId]);
 
-  const hasResults = applications.some((a) => a.match_score);
+  const hasResults = applications.some((a) => a.rag_results?.match_score);
 
   const filtered = applications.filter((a) => {
     const q = search.toLowerCase();
@@ -66,8 +66,9 @@ export default function RAGAnalysisResults() {
     );
   });
 
-  const topCandidates = filtered.filter((a) => a.match_score >= 80).length;
-  const goodCandidates = filtered.filter((a) => a.match_score >= 60 && a.match_score < 80).length;
+  const ragFiltered = filtered.filter((a) => a.rag_results?.match_score);
+  const topCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 80).length;
+  const goodCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 60 && a.rag_results?.match_score < 80).length;
 
   const toggleSelect = (id) => setSelected((prev) => {
     const next = new Set(prev);
@@ -191,11 +192,11 @@ export default function RAGAnalysisResults() {
                       </div>
 
                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                        {hasResults && a.match_score ? (
+                        {hasResults && a.rag_results?.match_score ? (
                           <div className="text-right">
                             <p className="text-xs text-muted-foreground">Match Score</p>
-                            <p className={`text-3xl font-bold ${a.match_score >= 80 ? "text-green-600" : a.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
-                              {a.match_score}
+                            <p className={`text-3xl font-bold ${a.rag_results.match_score >= 80 ? "text-green-600" : a.rag_results.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
+                              {a.rag_results.match_score}
                             </p>
                           </div>
                         ) : null}
