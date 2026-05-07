@@ -15,7 +15,8 @@ function formatSlot(iso) {
   return new Date(iso).toLocaleString("en-US", {
     weekday: "short", month: "short", day: "numeric",
     year: "numeric", hour: "2-digit", minute: "2-digit",
-  });
+    timeZone: "Asia/Riyadh",
+  }) + " (AST)";
 }
 
 export default function InterviewInvites({ invites, onUpdate }) {
