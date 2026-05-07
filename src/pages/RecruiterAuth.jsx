@@ -22,25 +22,20 @@ export default function RecruiterAuth() {
     setWarning(null);
     setLoading(true);
     if (tab === "register") {
-      await base44.entities.RecruiterProfile.create({
-        full_name: fullName,
-        company,
-        email,
-        role: "recruiter",
-        status: "pending",
-      });
+      await base44.functions.invoke("recruiterRegister", { full_name: fullName, company, email });
       setLoading(false);
       setWarning("registered");
     } else {
-      const profiles = await base44.entities.RecruiterProfile.filter({ email });
+      const res = await base44.functions.invoke("recruiterLogin", { email });
       setLoading(false);
-      if (profiles.length === 0) {
+      const { status } = res.data;
+      if (status === "not_found") {
         setWarning("no_access");
-      } else if (profiles[0].status === "pending") {
+      } else if (status === "pending") {
         setWarning("pending");
-      } else if (profiles[0].status === "suspended") {
+      } else if (status === "suspended") {
         setWarning("suspended");
-      } else if (profiles[0].status === "approved") {
+      } else if (status === "approved") {
         localStorage.setItem("recruiterEmail", email);
         navigate("/recruiter-dashboard");
       }

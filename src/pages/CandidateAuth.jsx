@@ -32,8 +32,8 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      const candidates = await base44.entities.Candidate.filter({ email: form.email });
-      if (candidates.length > 0) {
+      const res = await base44.functions.invoke("candidateLogin", { email: form.email });
+      if (res.data.found) {
         localStorage.setItem("candidateEmail", form.email);
         navigate("/candidate-dashboard");
       } else {
@@ -62,12 +62,12 @@ export default function CandidateAuth() {
     }
     setLoading(true);
     try {
-      // Create Candidate record in database
-      await base44.entities.Candidate.create({
-        email: form.email,
-        full_name: form.fullName
-      });
-      // Switch to login tab
+      const res = await base44.functions.invoke("candidateRegister", { email: form.email, full_name: form.fullName });
+      if (res.data.error) {
+        setError(res.data.error);
+        setLoading(false);
+        return;
+      }
       setSuccess("Account created successfully! Please login.");
       setForm({ fullName: "", email: "", password: "", confirm: "" });
       setTimeout(() => {
