@@ -154,7 +154,7 @@ export default function CandidateDashboard() {
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Navbar */}
-      <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center justify-between sticky top-0 z-10">
+      <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center justify-between sticky top-0 z-10 h-16 shrink-0">
         <span className="font-bold text-lg text-primary">QuantaHire</span>
         <div className="flex items-center gap-3">
           {/* Bell with notification dropdown */}
@@ -231,7 +231,7 @@ export default function CandidateDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-border rounded-2xl p-5 text-center">
             <p className="text-3xl font-bold text-foreground">{candidate?.total_applications ?? applications.length}</p>
             <p className="text-sm text-muted-foreground mt-1">Applications</p>
