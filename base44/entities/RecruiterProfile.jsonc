@@ -1,0 +1,49 @@
+{
+  "name": "RecruiterProfile",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Full name of the recruiter"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email address"
+    },
+    "company": {
+      "type": "string",
+      "description": "Company name"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Phone number"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Linked user ID"
+    },
+    "role": {
+      "type": "string",
+      "default": "recruiter",
+      "description": "User role"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "blocked"
+      ],
+      "default": "pending",
+      "description": "Recruiter approval status"
+    },
+    "is_approved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether recruiter is approved"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}

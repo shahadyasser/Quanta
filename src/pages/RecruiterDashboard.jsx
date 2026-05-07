@@ -30,6 +30,21 @@ export default function RecruiterDashboard() {
       }
       setUser({ email: recruiterEmail, id: recruiterId });
       try {
+        // Check recruiter status in RecruiterProfile
+        const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
+        const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+        
+        if (profile && profile.status === "pending") {
+          setRecruiterStatus("pending");
+          setLoading(false);
+          return;
+        }
+        if (profile && profile.status === "blocked") {
+          setRecruiterStatus("blocked");
+          setLoading(false);
+          return;
+        }
+        
         // My Jobs: fetch from Base44
         const jobsData = await base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date");
         const appsData = await base44.entities.Application.list();
@@ -106,8 +121,29 @@ export default function RecruiterDashboard() {
               Your recruiter account is being reviewed by our admin team. You will receive an email once your account is approved.
             </p>
           </div>
-          <Button variant="outline" className="rounded-xl" asChild>
-            <Link to="/">Back to Home</Link>
+          <Button variant="outline" className="rounded-xl" onClick={() => { localStorage.removeItem("recruiterEmail"); localStorage.removeItem("recruiterId"); navigate("/"); }}>
+            Back to Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!loading && recruiterStatus === "blocked") {
+    return (
+      <div className="min-h-screen bg-[#F8F7FF] flex items-center justify-center p-6">
+        <div className="bg-white border border-red-200 rounded-2xl p-10 max-w-md w-full text-center space-y-5">
+          <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+            <Clock className="w-8 h-8 text-red-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-red-600">Account Blocked</h2>
+            <p className="text-muted-foreground mt-2 leading-relaxed">
+              Your account has been blocked by our admin team. Please contact support for assistance.
+            </p>
+          </div>
+          <Button variant="outline" className="rounded-xl" onClick={() => { localStorage.removeItem("recruiterEmail"); localStorage.removeItem("recruiterId"); navigate("/"); }}>
+            Back to Home
           </Button>
         </div>
       </div>

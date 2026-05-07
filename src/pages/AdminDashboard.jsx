@@ -44,14 +44,14 @@ export default function AdminDashboard() {
       if (me?.role !== "admin") { navigate("/"); return; }
       setAdminEmail(me.email);
 
-      // All Users, All Jobs, All Applications from Base44
-      const [usersData, jobsData, appsData] = await Promise.all([
-        base44.entities.User.list(),
+      // Fetch from RecruiterProfile, Jobs, and Applications
+      const [recruitersData, jobsData, appsData] = await Promise.all([
+        base44.entities.RecruiterProfile.list(),
         base44.entities.Job.list(),
         base44.entities.Application.list(),
       ]);
 
-      setRecruiters(usersData.filter(u => u.role === 'recruiter') || []);
+      setRecruiters(recruitersData || []);
       setJobs(jobsData || []);
       setApplications(appsData || []);
       setLoading(false);
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                       <td className="py-4 pr-6 text-foreground whitespace-nowrap">{r.full_name || "—"}</td>
                       <td className="py-4">
                         <Button size="sm" className="rounded-lg bg-foreground hover:bg-foreground/80 text-white text-xs h-8 px-4" asChild>
-                          <Link to="/recruiter-approval">Review</Link>
+                          <Link to="/recruiter-approval-table">Review All</Link>
                         </Button>
                       </td>
                     </tr>

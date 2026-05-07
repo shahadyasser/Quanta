@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
         full_name: full_name,
         company: company || '',
         status: 'pending',
+        is_approved: false,
         role: 'recruiter',
       });
     }

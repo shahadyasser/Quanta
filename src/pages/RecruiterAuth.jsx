@@ -46,7 +46,9 @@ export default function RecruiterAuth() {
         // Map error messages to warnings
         if (res.data.error.includes('pending')) {
           setWarning("pending");
-        } else if (res.data.error.includes('suspended') || res.data.error.includes('active')) {
+        } else if (res.data.error.includes('blocked')) {
+          setWarning("suspended");
+        } else if (res.data.error.includes('active')) {
           setWarning("pending");
         } else {
           setWarning("no_access");

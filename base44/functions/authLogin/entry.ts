@@ -1,5 +1,6 @@
 import pg from 'npm:pg@8.11.3';
 import bcrypt from 'npm:bcryptjs@2.4.3';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const pool = new pg.Pool({
   host: Deno.env.get('POSTGRES_HOST'),
@@ -30,9 +31,19 @@ Deno.serve(async (req) => {
 
     const user = result.rows[0];
 
-    // Check account active status before password comparison
-    if (!user.is_active) {
-      return Response.json({ error: 'Account pending admin approval' }, { status: 403 });
+    // For recruiters, check RecruiterProfile status
+    if (user.role === 'recruiter') {
+      const base44 = createClientFromRequest(req);
+      const profiles = await base44.asServiceRole.entities.RecruiterProfile.filter({ email: user.email });
+      if (profiles && profiles.length > 0) {
+        const profile = profiles[0];
+        if (profile.status === 'pending') {
+          return Response.json({ error: 'Account pending admin approval' }, { status: 403 });
+        }
+        if (profile.status === 'blocked') {
+          return Response.json({ error: 'Your account has been blocked' }, { status: 403 });
+        }
+      }
     }
 
     const valid = await bcrypt.compare(password, user.password_hash);

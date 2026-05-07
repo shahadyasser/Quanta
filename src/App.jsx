@@ -21,6 +21,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import RecruiterManagement from './pages/RecruiterManagement';
 import SystemReports from './pages/SystemReports';
 import RecruiterApproval from './pages/RecruiterApproval';
+import RecruiterApprovalTable from './pages/RecruiterApprovalTable';
 import BrowseJobs from './pages/BrowseJobs';
 import PsychResults from './pages/PsychResults';
 import PsychAdmin from './pages/PsychAdmin';
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
       <Route path="/recruiter-management" element={<RecruiterManagement />} />
       <Route path="/system-reports" element={<SystemReports />} />
       <Route path="/recruiter-approval" element={<RecruiterApproval />} />
+      <Route path="/recruiter-approval-table" element={<RecruiterApprovalTable />} />
       <Route path="/browse-jobs" element={<BrowseJobs />} />
       <Route path="/psych-results" element={<PsychResults />} />
       <Route path="/psych-admin" element={<PsychAdmin />} />
