@@ -1,51 +1,70 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Mail, Star, CheckCircle, Clock, UserCheck, Brain, FileText, MessageSquare } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Mail, CheckCircle, UserCheck, Brain, FileText, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const CANDIDATE = {
-  rank: 1,
-  name: "Sarah Johnson",
-  initials: "SJ",
-  email: "sarah.j@email.com",
-  role: "Senior Developer",
-  status: "Interview Completed",
-  finalScore: 95,
-  cvScore: 88,
-  interviewScore: 97,
-  skills: ["React", "TypeScript", "Node.js", "GraphQL", "AWS"],
-  experience: "6 years",
-  education: "B.Sc. Computer Science, MIT",
-  summary: "Highly skilled full-stack developer with 6 years of experience building scalable web applications. Strong expertise in React and Node.js ecosystems.",
-  interviewAnswers: [
-    {
-      question: "Describe a challenging technical problem you solved.",
-      answer: "I architected a real-time collaboration feature for 10k+ concurrent users using WebSockets and Redis pub/sub, reducing latency by 60%.",
-      score: 98,
-    },
-    {
-      question: "How do you approach code reviews?",
-      answer: "I focus on maintainability, security, and performance. I always provide constructive feedback and suggest alternatives rather than just pointing out issues.",
-      score: 95,
-    },
-    {
-      question: "Tell me about your experience with TypeScript.",
-      answer: "I've used TypeScript for 4 years across multiple large-scale projects. I leverage advanced types, generics, and utility types to write safer, more maintainable code.",
-      score: 96,
-    },
-  ],
-  aiInsights: [
-    "Exceptionally strong technical background with hands-on experience in all required skills.",
-    "Communication and problem-solving answers indicate high seniority level.",
-    "No bias indicators detected — evaluation based purely on merit.",
-  ],
-};
+import { base44 } from "@/api/base44Client";
 
 const TABS = ["Overview", "Interview", "AI Insights"];
 
 export default function CandidateProfile() {
   const [tab, setTab] = useState("Overview");
+  const [candidate, setCandidate] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCandidate = async () => {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const appId = urlParams.get("app_id");
+        
+        if (!appId) {
+          setError("No candidate selected");
+          return;
+        }
+
+        const app = await base44.entities.Application.get(appId);
+        if (!app) {
+          setError("Candidate not found");
+          return;
+        }
+
+        setCandidate(app);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCandidate();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F7FF] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !candidate) {
+    return (
+      <div className="min-h-screen bg-[#F8F7FF]">
+        <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+          <Link to="/view-candidates" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Candidates
+          </Link>
+          <div className="bg-white rounded-2xl p-8 text-center text-muted-foreground">
+            {error || "Candidate not found"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
@@ -62,45 +81,46 @@ export default function CandidateProfile() {
         <div className="bg-white border border-border rounded-2xl p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-5">
             <div className="w-20 h-20 rounded-2xl bg-accent flex items-center justify-center shrink-0">
-              <span className="text-primary font-bold text-2xl">{CANDIDATE.initials}</span>
+              <span className="text-primary font-bold text-2xl">{(candidate.candidate_name || "?").substring(0, 2).toUpperCase()}</span>
             </div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold text-foreground">{CANDIDATE.name}</h1>
-                <Badge className="bg-green-50 text-green-600 border-green-200">{CANDIDATE.status}</Badge>
-                <span className="text-sm font-semibold text-primary">#{CANDIDATE.rank} Ranked</span>
+                <h1 className="text-2xl font-bold text-foreground">{candidate.candidate_name || "Unknown"}</h1>
+                <Badge className="bg-blue-50 text-blue-600 border-blue-200 capitalize">{candidate.status || "pending"}</Badge>
               </div>
               <p className="text-muted-foreground text-sm flex items-center gap-1.5 mb-3">
-                <Mail className="w-3.5 h-3.5" />{CANDIDATE.email}
+                <Mail className="w-3.5 h-3.5" />{candidate.candidate_email}
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {CANDIDATE.skills.map((s) => (
+                {(candidate.skills || []).map((s) => (
                   <span key={s} className="text-xs bg-accent text-primary px-2.5 py-1 rounded-full">{s}</span>
                 ))}
               </div>
             </div>
             {/* Score */}
-            <div className="text-center shrink-0">
-              <div className="w-20 h-20 rounded-full border-4 border-primary flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">{CANDIDATE.finalScore}</span>
+            {candidate.match_score && (
+              <div className="text-center shrink-0">
+                <div className="w-20 h-20 rounded-full border-4 border-primary flex items-center justify-center">
+                  <span className="text-2xl font-bold text-primary">{candidate.match_score.toFixed(0)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Match Score</p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Final Score</p>
-            </div>
+            )}
           </div>
 
           {/* Mini stats */}
           <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-border">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{CANDIDATE.cvScore}</p>
-              <p className="text-xs text-muted-foreground">CV Score</p>
+              <p className="text-lg font-bold text-foreground">{candidate.years_of_experience || "N/A"}</p>
+              <p className="text-xs text-muted-foreground">Years Experience</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{CANDIDATE.interviewScore}</p>
-              <p className="text-xs text-muted-foreground">Interview Score</p>
+              <p className="text-lg font-bold text-foreground">{(candidate.skills || []).length}</p>
+              <p className="text-xs text-muted-foreground">Skills</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{CANDIDATE.experience}</p>
-              <p className="text-xs text-muted-foreground">Experience</p>
+              <p className="text-sm font-bold text-foreground">{candidate.candidate_email.split("@")[1]}</p>
+              <p className="text-xs text-muted-foreground">Email Domain</p>
             </div>
           </div>
         </div>
@@ -123,69 +143,93 @@ export default function CandidateProfile() {
         {/* Tab content */}
         {tab === "Overview" && (
           <div className="space-y-4">
-            <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
-              <h2 className="font-semibold text-foreground flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Summary</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">{CANDIDATE.summary}</p>
-            </div>
+            {candidate.work_experience_summary && (
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
+                <h2 className="font-semibold text-foreground flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Work Experience</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">{candidate.work_experience_summary}</p>
+              </div>
+            )}
+            {candidate.education_summary && (
+              <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
+                <h2 className="font-semibold text-foreground flex items-center gap-2"><FileText className="w-4 h-4 text-primary" /> Education</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">{candidate.education_summary}</p>
+              </div>
+            )}
             <div className="bg-white border border-border rounded-2xl p-6 space-y-3">
               <h2 className="font-semibold text-foreground flex items-center gap-2"><UserCheck className="w-4 h-4 text-primary" /> Details</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Education: </span><span className="text-foreground font-medium">{CANDIDATE.education}</span></div>
-                <div><span className="text-muted-foreground">Experience: </span><span className="text-foreground font-medium">{CANDIDATE.experience}</span></div>
-                <div><span className="text-muted-foreground">Applied For: </span><span className="text-foreground font-medium">{CANDIDATE.role}</span></div>
-                <div><span className="text-muted-foreground">Status: </span><span className="text-foreground font-medium">{CANDIDATE.status}</span></div>
+                {candidate.years_of_experience && <div><span className="text-muted-foreground">Experience: </span><span className="text-foreground font-medium">{candidate.years_of_experience} years</span></div>}
+                <div><span className="text-muted-foreground">Applied For: </span><span className="text-foreground font-medium">{candidate.job_title}</span></div>
+                <div><span className="text-muted-foreground">Status: </span><span className="text-foreground font-medium capitalize">{candidate.status}</span></div>
+                {candidate.match_score && <div><span className="text-muted-foreground">Match Score: </span><span className="text-foreground font-medium">{candidate.match_score.toFixed(0)}%</span></div>}
               </div>
+              {(candidate.strengths || []).length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm font-medium text-foreground mb-2">Strengths</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {candidate.strengths.map((s, i) => <li key={i} className="text-sm text-muted-foreground">{s}</li>)}
+                  </ul>
+                </div>
+              )}
+              {(candidate.improvements || []).length > 0 && (
+                <div className="mt-4 pt-4 border-t">
+                  <p className="text-sm font-medium text-foreground mb-2">Areas for Improvement</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    {candidate.improvements.map((i, idx) => <li key={idx} className="text-sm text-muted-foreground">{i}</li>)}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {tab === "Interview" && (
-          <div className="space-y-4">
-            {CANDIDATE.interviewAnswers.map((qa, i) => (
-              <div key={i} className="bg-white border border-border rounded-2xl p-6">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <h3 className="font-semibold text-foreground flex items-start gap-2">
-                    <MessageSquare className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    {qa.question}
-                  </h3>
-                  <span className="text-xl font-bold text-primary shrink-0">{qa.score}</span>
+          <div className="bg-white border border-border rounded-2xl p-6">
+            {candidate.interview_date ? (
+              <div className="space-y-4">
+                <h2 className="font-semibold text-foreground">Interview Details</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div><span className="text-muted-foreground">Date: </span><span className="text-foreground font-medium">{candidate.interview_date}</span></div>
+                  {candidate.interview_time && <div><span className="text-muted-foreground">Time: </span><span className="text-foreground font-medium">{candidate.interview_time}</span></div>}
+                  {candidate.interview_type && <div><span className="text-muted-foreground">Type: </span><span className="text-foreground font-medium capitalize">{candidate.interview_type}</span></div>}
+                  {candidate.interview_duration && <div><span className="text-muted-foreground">Duration: </span><span className="text-foreground font-medium">{candidate.interview_duration}</span></div>}
+                  {candidate.interview_location && <div className="sm:col-span-2"><span className="text-muted-foreground">Location: </span><span className="text-foreground font-medium">{candidate.interview_location}</span></div>}
+                  {candidate.interviewer_name && <div className="sm:col-span-2"><span className="text-muted-foreground">Interviewer: </span><span className="text-foreground font-medium">{candidate.interviewer_name}</span></div>}
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed pl-6">{qa.answer}</p>
               </div>
-            ))}
+            ) : (
+              <p className="text-muted-foreground text-sm">No interview scheduled yet.</p>
+            )}
           </div>
         )}
 
         {tab === "AI Insights" && (
           <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
-            <h2 className="font-semibold text-foreground flex items-center gap-2"><Brain className="w-4 h-4 text-primary" /> AI-Generated Insights</h2>
-            <div className="space-y-3">
-              {CANDIDATE.aiInsights.map((insight, i) => (
-                <div key={i} className="flex items-start gap-3 p-4 bg-accent rounded-xl">
-                  <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-sm text-foreground">{insight}</p>
+            <h2 className="font-semibold text-foreground flex items-center gap-2"><Brain className="w-4 h-4 text-primary" /> AI Analysis</h2>
+            {candidate.rag_results?.construct_scores && (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Work Experience</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.work_experience || 0) * 20}%`}}></div>
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-              <p className="text-sm text-green-700 font-medium">Bias Check Passed — This evaluation meets our fairness standards.</p>
-            </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Skills Match</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.skills || 0) * 20}%`}}></div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Education</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.education || 0) * 20}%`}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 pb-6">
-          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2">
-            <CheckCircle className="w-4 h-4" /> Shortlist Candidate
-          </Button>
-          <Button variant="outline" className="rounded-xl gap-2 border-primary text-primary hover:bg-accent">
-            <Mail className="w-4 h-4" /> Send Email
-          </Button>
-          <Button variant="outline" className="rounded-xl gap-2 text-destructive border-destructive/30 hover:bg-destructive/5">
-            Reject
-          </Button>
-        </div>
       </div>
     </div>
   );
