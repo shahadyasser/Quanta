@@ -9,13 +9,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const profiles = await base44.asServiceRole.entities.RecruiterProfile.filter({ email });
+    // Case-insensitive: fetch all and match manually
+    const allProfiles = await base44.asServiceRole.entities.RecruiterProfile.list();
+    const profile = allProfiles.find(p => p.email?.toLowerCase() === email.toLowerCase());
 
-    if (profiles.length === 0) {
+    if (!profile) {
       return Response.json({ status: 'not_found' });
     }
 
-    const profile = profiles[0];
     return Response.json({ status: profile.status, profile });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

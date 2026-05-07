@@ -26,7 +26,7 @@ export default function RecruiterAuth() {
       setLoading(false);
       setWarning("registered");
     } else {
-      const res = await base44.functions.invoke("recruiterLogin", { email });
+      const res = await base44.functions.invoke("recruiterLogin", { email: email.trim() });
       setLoading(false);
       const { status } = res.data;
       if (status === "not_found") {
