@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle } from "lucide-react";
+import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X } from "lucide-react";
 import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,11 @@ export default function CandidateDashboard() {
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [alerts, setAlerts] = useState([]); // { id, job_title, status }
+  const [showNotifications, setShowNotifications] = useState(false);
   const [invites, setInvites] = useState([]);
   const [emailVerified, setEmailVerified] = useState(false);
   const prevStatusesRef = useRef({});
+  const bellRef = useRef(null);
 
   // Dismiss an alert
   const dismissAlert = (id) => setAlerts((prev) => prev.filter((a) => a.id !== id));
@@ -118,6 +120,17 @@ export default function CandidateDashboard() {
     init();
   }, [navigate]);
 
+  // Close notification dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (bellRef.current && !bellRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   // Real-time subscription for application status changes
   useEffect(() => {
     if (!user?.email) return;
@@ -146,48 +159,65 @@ export default function CandidateDashboard() {
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm w-full">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id + alert.status}
-              className={`flex items-start gap-3 rounded-2xl shadow-lg p-4 border ${
-                alert.status === "shortlisted"
-                  ? "bg-green-50 border-green-200"
-                  : "bg-red-50 border-red-200"
-              }`}
-            >
-              {alert.status === "shortlisted" ? (
-                <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              )}
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${alert.status === "shortlisted" ? "text-green-700" : "text-red-600"}`}>
-                  {alert.status === "shortlisted" ? "🎉 Congratulations!" : "Application Update"}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Your application for <strong>{alert.job_title}</strong> at <strong>{alert.company}</strong>{" "}
-                  {alert.status === "shortlisted" ? "has been accepted!" : "was not selected."}
-                </p>
-              </div>
-              <button onClick={() => dismissAlert(alert.id)} className="text-muted-foreground hover:text-foreground text-lg leading-none">×</button>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* Navbar */}
       <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center justify-between sticky top-0 z-10">
         <span className="font-bold text-lg text-primary">QuantaHire</span>
         <div className="flex items-center gap-3">
-          {alerts.length > 0 && (
-            <div className="relative">
+          {/* Bell with notification dropdown */}
+          <div className="relative" ref={bellRef}>
+            <button
+              onClick={() => setShowNotifications((v) => !v)}
+              className="relative p-1.5 rounded-lg hover:bg-accent transition-colors"
+            >
               <Bell className="w-5 h-5 text-primary" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{alerts.length}</span>
-            </div>
-          )}
+              {alerts.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {alerts.length}
+                </span>
+              )}
+            </button>
+
+            {/* Dropdown */}
+            {showNotifications && (
+              <div className="absolute right-0 top-10 w-80 bg-white border border-border rounded-2xl shadow-xl z-50 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <p className="font-semibold text-sm text-foreground">Notifications</p>
+                  {alerts.length > 0 && (
+                    <button onClick={() => setAlerts([])} className="text-xs text-muted-foreground hover:text-foreground">
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                {alerts.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-sm text-muted-foreground">No new notifications</div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto divide-y divide-border">
+                    {alerts.map((alert) => (
+                      <div key={alert.id + alert.status} className="flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                        {alert.status === "shortlisted" ? (
+                          <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs font-semibold ${alert.status === "shortlisted" ? "text-green-700" : "text-red-600"}`}>
+                            {alert.status === "shortlisted" ? "🎉 Application Accepted!" : "Application Update"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                            <strong>{alert.job_title}</strong> at <strong>{alert.company}</strong> —{" "}
+                            {alert.status === "shortlisted" ? "you've been shortlisted!" : "not selected this time."}
+                          </p>
+                        </div>
+                        <button onClick={() => dismissAlert(alert.id)} className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">
             {user?.email || ""}
           </span>
