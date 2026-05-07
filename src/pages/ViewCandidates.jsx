@@ -280,7 +280,7 @@ export default function ViewCandidates() {
            <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
              <div>
                <h2 className="font-semibold text-foreground text-lg">Applicants</h2>
-               <p className="text-sm text-muted-foreground">All candidates and their match scores before analysis</p>
+               <p className="text-sm text-muted-foreground">All candidates before analysis</p>
              </div>
              {filtered.length > 0 && (
                <div className="flex items-center gap-2 flex-wrap">
