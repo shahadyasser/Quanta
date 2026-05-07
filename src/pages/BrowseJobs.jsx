@@ -4,7 +4,7 @@ import { ArrowLeft, Search, MapPin, Clock, Star, Sparkles, Building2, X, CheckCi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
-import { pgQuery, pgPublicQuery } from "@/lib/neonDb";
+
 
 const ARRANGEMENTS = ["On-site", "Remote", "Hybrid"];
 const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Freelance", "Internship"];
@@ -39,16 +39,14 @@ export default function BrowseJobs() {
         const user = candidateEmail ? { email: candidateEmail, id: candidateId, full_name: "" } : null;
         setCurrentUser(user);
 
-        // Fetch open jobs from Postgres
-        const jobsData = await pgQuery('SELECT * FROM jobs WHERE status = $1 ORDER BY created_at DESC', ['open']);
-        setJobs(jobsData || []);
+        // Fetch open jobs from Base44
+        const allJobs = await base44.entities.Job.list();
+        const openJobs = (allJobs || []).filter(j => j.status === 'open');
+        setJobs(openJobs);
 
         // Check already applied
-        if (candidateId) {
-          const apps = await pgQuery(
-            'SELECT job_id FROM applications WHERE candidate_id = $1',
-            [candidateId]
-          );
+        if (candidateEmail) {
+          const apps = await base44.entities.Application.filter({ candidate_email: candidateEmail });
           setAppliedJobIds(new Set((apps || []).map((a) => a.job_id)));
         }
         setLoading(false);
@@ -89,15 +87,15 @@ export default function BrowseJobs() {
     // 1. Upload CV
     const { file_url } = await base44.integrations.Core.UploadFile({ file: applyFile });
 
-    // 2. INSERT INTO applications (candidate_id, job_id, cv_url, status) VALUES (...)
-    const candidateId = currentUser?.id;
-    const rows = await pgQuery(
-      `INSERT INTO applications (candidate_id, job_id, cv_url, status)
-       VALUES ($1, $2, $3, 'submitted')
-       RETURNING id`,
-      [candidateId, applyJob.id, file_url]
-    );
-    const applicationId = rows[0]?.id;
+    // 2. Create application record in Base44
+    const appData = await base44.entities.Application.create({
+      job_id: applyJob.id,
+      candidate_email: currentUser.email,
+      candidate_name: currentUser?.full_name || currentUser.email,
+      cv_url: file_url,
+      status: 'pending'
+    });
+    const applicationId = appData.id;
 
     // 3. Show success immediately — AI processing runs in the background
     setApplyUploading(false);

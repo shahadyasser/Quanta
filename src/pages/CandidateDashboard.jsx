@@ -5,7 +5,7 @@ import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { pgQuery } from "@/lib/neonDb";
+
 import CandidateEmailGate from "@/components/CandidateEmailGate";
 
 const QUICK_ACTIONS = [
@@ -92,17 +92,14 @@ export default function CandidateDashboard() {
       }
       setEmailVerified(true);
 
-      // My Applications: SELECT * FROM applications_detail_view WHERE candidate_id = :currentUserId ORDER BY applied_at DESC
+      // My Applications: fetch from Base44
       const [apps, interviewSlots] = await Promise.all([
-        pgQuery(
-          'SELECT * FROM applications_detail_view WHERE candidate_id = $1 ORDER BY applied_at DESC',
-          [candidateId]
-        ),
+        base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date"),
         base44.entities.InterviewSlot.filter({ candidate_email: candidateEmail }, "-created_date"),
       ]);
       setInvites(interviewSlots);
 
-      setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || "" });
+      setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || candidateEmail });
 
       // Initialize prev statuses on first load (no alerts)
       (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });

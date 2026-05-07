@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
-import { pgQuery } from "@/lib/neonDb";
+
 
 const TABS = ["All Jobs", "open", "closed", "draft"];
 
@@ -30,25 +30,19 @@ export default function RecruiterDashboard() {
       }
       setUser({ email: recruiterEmail, id: recruiterId });
       try {
-        // My Jobs: SELECT * FROM jobs WHERE created_by = :currentUserId ORDER BY created_at DESC
-        const [jobsData, appsData, profileRows] = await Promise.all([
-          pgQuery('SELECT * FROM jobs WHERE created_by = $1 ORDER BY created_at DESC', [recruiterId]),
-          pgQuery(
-            `SELECT a.*, j.title AS job_title FROM applications a
-             JOIN jobs j ON a.job_id = j.id
-             WHERE j.created_by = $1 ORDER BY a.applied_at DESC`,
-            [recruiterId]
-          ),
-          pgQuery('SELECT is_active, role FROM users WHERE id = $1', [recruiterId]),
+        // My Jobs: fetch from Base44
+        const [jobsData, appsData] = await Promise.all([
+          base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date"),
+          base44.entities.Application.list()
         ]);
-        const profile = profileRows[0];
-        if (profile && !profile.is_active) {
-          setRecruiterStatus("pending");
-        } else {
-          setRecruiterStatus("approved");
-        }
+        
+        // Filter applications for recruiter's jobs
+        const recruiterJobIds = new Set(jobsData.map(j => j.id));
+        const recruiterApps = (appsData || []).filter(a => recruiterJobIds.has(a.job_id));
+        
+        setRecruiterStatus("approved"); // Assume approved when fetched
         setJobs(jobsData || []);
-        setApplications(appsData || []);
+        setApplications(recruiterApps || []);
       } finally {
         setLoading(false);
       }
