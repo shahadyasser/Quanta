@@ -1,8 +1,13 @@
-import React from "react";
-import { Mail, Phone, FileText, RotateCw, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
+import { Mail, Phone, FileText, RotateCw, Loader2, CheckCircle, AlertCircle, ThumbsUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
+import { useToast } from "@/components/ui/use-toast";
 
-export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isReprocessing }) {
+export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isReprocessing, onStatusChange }) {
+  const [updating, setUpdating] = useState(null);
+  const [confirmReject, setConfirmReject] = useState(false);
+  const { toast } = useToast();
   return (
     <div className="space-y-6">
       {/* Contact Info */}
@@ -95,34 +100,115 @@ export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isR
       )}
 
       {/* Actions */}
-      <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
-        {app.cv_url && (
-          <a href={app.cv_url} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-              <FileText className="w-3.5 h-3.5" />
-              Download CV
-            </Button>
-          </a>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-xl gap-1.5"
-          onClick={onReprocess}
-          disabled={isReprocessing}
-        >
-          {isReprocessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
-          {isReprocessing ? "Reprocessing..." : "Reprocess"}
-        </Button>
-        <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 gap-1.5 ml-auto">
-          <CheckCircle className="w-3.5 h-3.5" />
-          Interview
-        </Button>
-        <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-500 hover:bg-red-50 gap-1.5">
-          <AlertCircle className="w-3.5 h-3.5" />
-          Reject
-        </Button>
-      </div>
-    </div>
-  );
-}
+       <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+         {app.cv_url && (
+           <a href={app.cv_url} target="_blank" rel="noopener noreferrer">
+             <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+               <FileText className="w-3.5 h-3.5" />
+               Download CV
+             </Button>
+           </a>
+         )}
+         <Button
+           variant="outline"
+           size="sm"
+           className="rounded-xl gap-1.5"
+           onClick={onReprocess}
+           disabled={isReprocessing}
+         >
+           {isReprocessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
+           {isReprocessing ? "Reprocessing..." : "Reprocess"}
+         </Button>
+         <div className="ml-auto flex gap-2">
+           {!["accepted", "rejected"].includes(app.status) && (
+             <>
+               <Button
+                 size="sm"
+                 className="rounded-xl bg-blue-600 hover:bg-blue-700 gap-1.5"
+                 onClick={() => handleStatusChange("accepted")}
+                 disabled={updating === "accepted"}
+               >
+                 {updating === "accepted" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ThumbsUp className="w-3.5 h-3.5" />}
+                 {updating === "accepted" ? "Accepting..." : "Accept"}
+               </Button>
+               <Button
+                 size="sm"
+                 className="rounded-xl bg-green-600 hover:bg-green-700 gap-1.5"
+                 onClick={() => handleStatusChange("interview")}
+                 disabled={updating === "interview"}
+               >
+                 {updating === "interview" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                 {updating === "interview" ? "Moving..." : "Interview"}
+               </Button>
+               <Button
+                 size="sm"
+                 variant="outline"
+                 className="rounded-xl border-red-200 text-red-500 hover:bg-red-50 gap-1.5"
+                 onClick={() => setConfirmReject(true)}
+                 disabled={updating === "rejected"}
+               >
+                 {updating === "rejected" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                 {updating === "rejected" ? "Rejecting..." : "Reject"}
+               </Button>
+             </>
+           )}
+         </div>
+       </div>
+
+       {/* Reject Confirmation Modal */}
+       {confirmReject && (
+         <>
+           <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setConfirmReject(false)} />
+           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+               <h2 className="font-bold text-lg text-foreground">Confirm Rejection</h2>
+               <p className="text-sm text-muted-foreground">
+                 Are you sure you want to reject <strong>{app.candidate_name}</strong>? The candidate will be notified.
+               </p>
+               <div className="flex gap-3">
+                 <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setConfirmReject(false)}>
+                   Cancel
+                 </Button>
+                 <Button
+                   className="flex-1 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+                   onClick={() => { handleStatusChange("rejected"); setConfirmReject(false); }}
+                 >
+                   Confirm Reject
+                 </Button>
+               </div>
+             </div>
+           </div>
+         </>
+       )}
+       </div>
+       </div>
+       );
+
+       async function handleStatusChange(newStatus) {
+       try {
+       setUpdating(newStatus);
+       await base44.entities.Application.update(app.id, {
+        status: newStatus,
+        is_viewed: true,
+        updated_date: new Date().toISOString()
+       });
+
+       // Call the status change callback to refresh parent list
+       if (onStatusChange) {
+        await onStatusChange(app.id, newStatus);
+       }
+
+       const messages = {
+        accepted: "Candidate has been accepted!",
+        interview: "Candidate moved to Interview stage",
+        rejected: "Candidate has been rejected"
+       };
+       toast({ description: messages[newStatus] || "Status updated" });
+       } catch (error) {
+       toast({ description: `Failed to update status: ${error.message}` });
+       console.error("Status update error:", error);
+       } finally {
+       setUpdating(null);
+       }
+       }
+       }

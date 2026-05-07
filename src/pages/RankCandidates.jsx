@@ -245,7 +245,15 @@ export default function RankCandidates() {
         </div>
 
         {/* Ranked Table */}
-        <RankedCandidatesTable candidates={filteredAndSorted} onReprocess={reprocessCandidate} jobId={jobId} job={job} />
+        <RankedCandidatesTable
+          candidates={filteredAndSorted}
+          onReprocess={reprocessCandidate}
+          jobId={jobId}
+          job={job}
+          onStatusChange={async () => {
+            await fetchJobAndCandidates();
+          }}
+        />
       </div>
 
       {/* Progress Modal */}

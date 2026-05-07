@@ -28,7 +28,7 @@ function getScoreLabel(score) {
   return "Poor Match";
 }
 
-export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores }) {
+export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores, onStatusChange: onParentStatusChange }) {
   const [expanded, setExpanded] = useState(null);
   const [reprocessing, setReprocessing] = useState(null);
 
@@ -36,6 +36,18 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
     setReprocessing(appId);
     await onReprocess(appId);
     setReprocessing(null);
+  };
+
+  const handleStatusChange = async (appId, newStatus) => {
+    if (onParentStatusChange) {
+      await onParentStatusChange(appId, newStatus);
+    }
+    // Update local candidate state
+    const updatedCandidate = candidates.find((c) => c.id === appId);
+    if (updatedCandidate) {
+      updatedCandidate.status = newStatus;
+      updatedCandidate.updated_date = new Date().toISOString();
+    }
   };
 
   return (
@@ -129,15 +141,16 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                       </td>
                     </tr>
                     {isExpanded && (
-                      <tr className="bg-muted/10">
-                        <td colSpan={showScores ? "9" : "4"} className="px-6 py-6">
-                          <CandidateExpandedRow
-                            app={app}
-                            jobId={jobId}
-                            job={job}
-                            onReprocess={() => handleReprocess(app.id)}
-                            isReprocessing={reprocessing === app.id}
-                          />
+                       <tr className="bg-muted/10">
+                         <td colSpan={showScores ? "9" : "4"} className="px-6 py-6">
+                           <CandidateExpandedRow
+                             app={app}
+                             jobId={jobId}
+                             job={job}
+                             onReprocess={() => handleReprocess(app.id)}
+                             isReprocessing={reprocessing === app.id}
+                             onStatusChange={handleStatusChange}
+                           />
                         </td>
                       </tr>
                     )}
