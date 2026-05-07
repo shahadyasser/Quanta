@@ -12,6 +12,7 @@ const pool = new pg.Pool({
 });
 
 Deno.serve(async (req) => {
+  const client = await pool.connect();
   try {
     const { email, password, full_name, role, company } = await req.json();
 
@@ -24,49 +25,64 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid role' }, { status: 400 });
     }
 
-    const client = await pool.connect();
-    try {
-      const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.trim().toLowerCase()]);
-      if (existing.rows.length > 0) {
-        return Response.json({ error: 'Email already registered.' }, { status: 409 });
-      }
-
-      const password_hash = await bcrypt.hash(password, 10);
-      // Candidates are active immediately; recruiters require admin approval
-      const is_active = role === 'candidate';
-
-      const result = await client.query(
-        `INSERT INTO users (email, password_hash, full_name, role, is_active)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, role, is_active`,
-        [email.trim().toLowerCase(), password_hash, full_name, role, is_active]
-      );
-      const newUser = result.rows[0];
-
-      // Keep Base44 entities in sync
-      const base44 = createClientFromRequest(req);
-      if (role === 'candidate') {
-        await base44.asServiceRole.entities.Candidate.create({
-          user_id: newUser.id,
-          email: newUser.email,
-          full_name: full_name,
-        });
-      } else if (role === 'recruiter') {
-        await base44.asServiceRole.entities.RecruiterProfile.create({
-          user_id: newUser.id,
-          email: newUser.email,
-          full_name: full_name,
-          company: company || '',
-          status: 'pending',
-          role: 'recruiter',
-        });
-      }
-
-      return Response.json({ success: true, user: newUser });
-    } finally {
-      client.release();
+    // Check for duplicate email — return friendly message, not 500
+    const existing = await client.query('SELECT id FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    if (existing.rows.length > 0) {
+      return Response.json({ error: 'Already registered, please log in' }, { status: 409 });
     }
+
+    const password_hash = await bcrypt.hash(password, 10);
+    // Candidates active immediately; recruiters need admin approval
+    const is_active = role === 'candidate';
+
+    const result = await client.query(
+      `INSERT INTO users (email, password_hash, full_name, role, is_active)
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, email, full_name, role, is_active`,
+      [email.trim().toLowerCase(), password_hash, full_name, role, is_active]
+    );
+    const newUser = result.rows[0];
+
+    // Sync to role-specific table (id must be supplied — no serial/uuid default)
+    const newId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    if (role === 'candidate') {
+      await client.query(
+        `INSERT INTO candidates (id, user_id, email, full_name, created_date, updated_date)
+         VALUES ($1, $2, $3, $4, $5, $5)`,
+        [newId, newUser.id, newUser.email, full_name, now]
+      );
+    } else if (role === 'recruiter') {
+      await client.query(
+        `INSERT INTO recruiter_profiles (id, user_id, email, full_name, company, status, created_date, updated_date)
+         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $6)`,
+        [newId, newUser.id, newUser.email, full_name, company || '', now]
+      );
+    }
+
+    // Also sync Base44 entities
+    const base44 = createClientFromRequest(req);
+    if (role === 'candidate') {
+      await base44.asServiceRole.entities.Candidate.create({
+        user_id: newUser.id,
+        email: newUser.email,
+        full_name: full_name,
+      });
+    } else if (role === 'recruiter') {
+      await base44.asServiceRole.entities.RecruiterProfile.create({
+        user_id: newUser.id,
+        email: newUser.email,
+        full_name: full_name,
+        company: company || '',
+        status: 'pending',
+        role: 'recruiter',
+      });
+    }
+
+    return Response.json({ success: true, user: newUser });
   } catch (error) {
     console.error('authRegister error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
+  } finally {
+    client.release();
   }
 });

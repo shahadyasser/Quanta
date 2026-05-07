@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Users, Eye, EyeOff, Loader2, AlertCircle, ArrowLeft, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,11 @@ import { base44 } from "@/api/base44Client";
 
 export default function Portal() {
   const [tab, setTab] = useState("login");
+
+  // Ensure default admin exists on first load
+  useEffect(() => {
+    base44.functions.invoke("ensureAdmin", {}).catch(() => {});
+  }, []);
   const [role, setRole] = useState("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -62,7 +67,16 @@ export default function Portal() {
       company: form.company || null,
     });
     setLoading(false);
-    if (res.data.error) { setError(res.data.error); return; }
+    if (res.data.error) {
+      // If already registered, nudge them to log in
+      if (res.data.error.toLowerCase().includes("already registered")) {
+        setError(res.data.error);
+        setTimeout(() => { setTab("login"); setError(""); }, 2000);
+      } else {
+        setError(res.data.error);
+      }
+      return;
+    }
     if (role === "recruiter") {
       setSuccess("Registration submitted! Your account is pending admin approval. You'll be notified by email once approved.");
     } else {
