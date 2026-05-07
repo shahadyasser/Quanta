@@ -159,30 +159,20 @@ export default function RecruiterManagement() {
                       </Badge>
                     </td>
                     <td className="py-3.5 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className={`rounded-lg text-xs h-8 px-3 ${
-                            r.status === "approved"
-                              ? "border-orange-300 text-orange-500 hover:bg-orange-50"
-                              : "border-green-300 text-green-600 hover:bg-green-50"
-                          }`}
-                          onClick={() => confirmToggle(r.id)}
-                        >
-                          {r.status === "approved" ? "Suspend" : "Approve"}
-                        </Button>
-                        {r.status === "pending" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-lg text-xs h-8 px-3 border-destructive/40 text-destructive hover:bg-destructive/5"
-                            onClick={() => confirmToggle(r.id)}
-                          >
-                            Block
-                          </Button>
-                        )}
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`rounded-lg text-xs h-8 px-3 ${
+                          r.status === "approved"
+                            ? "border-orange-300 text-orange-500 hover:bg-orange-50"
+                            : r.status === "pending"
+                            ? "border-green-300 text-green-600 hover:bg-green-50"
+                            : "border-green-300 text-green-600 hover:bg-green-50"
+                        }`}
+                        onClick={() => confirmToggle(r.id)}
+                      >
+                        {r.status === "approved" ? "Suspend" : "Approve"}
+                      </Button>
                     </td>
                   </tr>
                 ))}
