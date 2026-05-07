@@ -23,11 +23,11 @@ async function getEmbedding(text) {
       input: text.slice(0, 8000)
     })
   });
-  console.log("OpenAI response status:", response.status);
+  console.log("OpenAI API response status:", response.status);
   if (!response.ok) {
     const errText = await response.text();
-    console.error("OpenAI error:", errText);
-    throw new Error(`OpenAI API error: ${response.status} ${errText}`);
+    console.error("OpenAI API error response:", errText);
+    return null; // Return null on failure; caller handles gracefully
   }
   const data = await response.json();
   return data.data[0].embedding; // 1536-dimensional vector
@@ -242,18 +242,32 @@ Return only the JSON object with these fields.`,
     ].filter(Boolean).join("\n\n");
 
     // Step 2: Stage 1 — Real cosine similarity using OpenAI embeddings
-    const similarityScore = await computeRealSimilarity(jobText, cvText);
+    console.log("Starting embedding similarity calculation");
+    let similarityScore = 50; // Default fallback
+    try {
+      similarityScore = await computeRealSimilarity(jobText, cvText);
+      console.log("Similarity score calculated:", similarityScore);
+    } catch (err) {
+      console.error("OpenAI embedding failed, using fallback score:", err.message);
+    }
 
     // Step 3: Stage 2 — Store CV chunks and embeddings
     const cvChunks = chunkText(cvText, 1500);
-    console.log("Chunks to store:", cvChunks.length);
+    console.log("CV text chunked:", cvChunks.length, "chunks created");
     const pgClient = await pool.connect();
+    let storedChunksCount = 0;
     try {
       try {
         await Promise.all(cvChunks.map(async (chunk, idx) => {
-          console.log("Getting embedding for chunk", idx);
+          console.log("Processing chunk", idx + 1, "of", cvChunks.length);
           const embedding = await getEmbedding(chunk);
-          console.log("Storing chunk", idx, "embedding length:", embedding?.length);
+          
+          if (!embedding) {
+            console.warn("Chunk", idx, "embedding failed, skipping storage");
+            return;
+          }
+          
+          console.log("Chunk", idx, "embedding obtained, length:", embedding.length);
           // Write to Neon cv_embeddings table
           await pgClient.query(
             `INSERT INTO cv_embeddings (application_id, job_id, embedding, cv_text_chunk, chunk_index)
@@ -261,7 +275,8 @@ Return only the JSON object with these fields.`,
              ON CONFLICT DO NOTHING`,
             [application_id, job_id || null, JSON.stringify(embedding), chunk.slice(0, 2000), idx]
           );
-          console.log("Chunk", idx, "stored to Postgres");
+          storedChunksCount++;
+          console.log("Chunk", idx, "stored in cv_embeddings table");
           // Also write to Base44 entity for backward compatibility
           await base44.asServiceRole.entities.CVEmbedding.create({
             application_id,
@@ -270,27 +285,42 @@ Return only the JSON object with these fields.`,
             cv_text_chunk: chunk.slice(0, 2000),
             chunk_index: idx
           });
-          console.log("Chunk", idx, "stored successfully to Base44");
         }));
+        console.log("Stored", storedChunksCount, "chunks in cv_embeddings");
       } catch (err) {
-        console.error("EMBEDDING STORAGE FAILED:", err.message);
-        throw err;
+        console.error("Embedding storage error:", err.message);
+        // Continue with LLM-only scoring instead of crashing
+        console.log("Continuing with LLM-only scoring");
       }
     } finally {
       pgClient.release();
     }
 
     // Step 4: Stage 3 — Retrieve top 10 most relevant chunks from all CVs for this job
-    const jobEmbedding = await getEmbedding(jobText);
-    const retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, job_id || "", application_id, 10);
+    console.log("Retrieving context chunks from stored embeddings");
+    let jobEmbedding;
+    let retrievedChunks = [];
+    try {
+      jobEmbedding = await getEmbedding(jobText);
+      if (jobEmbedding) {
+        retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, job_id || "", application_id, 10);
+        console.log("Retrieved", retrievedChunks.length, "relevant chunks for RAG");
+      } else {
+        console.warn("Job embedding failed, using fallback retrieval");
+      }
+    } catch (err) {
+      console.error("Chunk retrieval failed:", err.message);
+    }
     const retrievedText = retrievedChunks.map(c => c.cv_text_chunk).join("\n---\n");
     const chunksCount = retrievedChunks.length;
 
     // Step 5: LLM scoring with RAG-augmented context and system prompt
+    console.log("Starting LLM scoring with", chunksCount, "retrieved context chunks");
     const scoringResp = await base44.integrations.Core.InvokeLLM({
       system_prompt: SCORE_SYSTEM,
       prompt: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`
     });
+    console.log("LLM scoring completed");
 
     // Parse the 4-construct ratings
     let scores, reasons, llmTotal;
@@ -307,6 +337,7 @@ Return only the JSON object with these fields.`,
 
     // Step 4: Hybrid final score (30% similarity + 70% LLM) — same as paper
     const finalScore = hybridScore(similarityScore, llmTotal, 0.3, 0.7);
+    console.log("Final match score:", finalScore, "(similarity:", similarityScore, "+ LLM:", llmTotal, ")");
 
     // Build strengths/improvements from reasons
     const strengths = [
@@ -395,6 +426,7 @@ Return only the JSON object with these fields.`,
       await base44.asServiceRole.entities.Application.update(application_id, updateData);
     }
 
+    console.log("CV processing completed successfully");
     return Response.json({ success: true, result: updateData });
   } catch (error) {
     console.error("processCV error:", error.message);

@@ -43,23 +43,7 @@ Deno.serve(async (req) => {
     const newUser = result.rows[0];
 
     // Sync to role-specific table (id must be supplied — no serial/uuid default)
-    const newId = crypto.randomUUID();
-    const now = new Date().toISOString();
-    if (role === 'candidate') {
-      await client.query(
-        `INSERT INTO candidates (id, user_id, email, full_name, created_date, updated_date)
-         VALUES ($1, $2, $3, $4, $5, $5)`,
-        [newId, newUser.id, newUser.email, full_name, now]
-      );
-    } else if (role === 'recruiter') {
-      await client.query(
-        `INSERT INTO recruiter_profiles (id, user_id, email, full_name, company, status, created_date, updated_date)
-         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $6)`,
-        [newId, newUser.id, newUser.email, full_name, company || '', now]
-      );
-    }
-
-    // Also sync Base44 entities
+    // Sync Base44 entities
     const base44 = createClientFromRequest(req);
     if (role === 'candidate') {
       await base44.asServiceRole.entities.Candidate.create({
