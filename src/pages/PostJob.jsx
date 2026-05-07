@@ -98,7 +98,7 @@ export default function PostJob() {
       responsibilities,
       recruiter_email: recruiterEmail,
       company: recruiterCompany,
-      status: "Active",
+      status: "open",
     });
     navigate("/recruiter-dashboard");
   };

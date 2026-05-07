@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
 import { pgQuery } from "@/lib/neonDb";
 
-const TABS = ["All Jobs", "Active", "Inactive"];
+const TABS = ["All Jobs", "open", "closed", "draft"];
 
 export default function RecruiterDashboard() {
   const navigate = useNavigate();
@@ -210,8 +210,8 @@ export default function RecruiterDashboard() {
                       <div>
                         <div className="flex items-center gap-2 mb-0.5">
                           <h3 className="font-semibold text-foreground">{job.title}</h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "Active" ? "bg-green-50 text-green-600" : "bg-muted text-muted-foreground"}`}>
-                            {job.status}
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "open" ? "bg-green-50 text-green-600" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`}>
+                            {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
