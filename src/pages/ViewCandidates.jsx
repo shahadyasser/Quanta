@@ -455,9 +455,10 @@ export default function ViewCandidates() {
               )}
             </div>
            </>
-          )}
-         {/* Propose Interview Modal */}
-      {interviewModal && (
+           )}
+           </div>
+           {/* Propose Interview Modal */}
+           {interviewModal && (
         <ProposeInterviewModal
           application={interviewModal}
           recruiterEmail={localStorage.getItem("recruiterEmail") || ""}
