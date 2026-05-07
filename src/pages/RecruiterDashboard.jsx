@@ -17,6 +17,7 @@ export default function RecruiterDashboard() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [recruiterStatus, setRecruiterStatus] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -54,13 +55,15 @@ export default function RecruiterDashboard() {
         const recruiterApps = (appsData || []).filter(a => recruiterJobIds.has(a.job_id));
         
         setRecruiterStatus("approved");
-        setJobs(jobsData || []);
-        setApplications(recruiterApps || []);
-        setLoading(false);
-      } catch (err) {
-        console.error("Failed to load recruiter data:", err);
-        setLoading(false);
-      }
+         setJobs(jobsData || []);
+         setApplications(recruiterApps || []);
+         setLoading(false);
+         setChecking(false);
+        } catch (err) {
+          console.error("Failed to load recruiter data:", err);
+          setLoading(false);
+          setChecking(false);
+        }
     };
     init();
   }, [navigate]);
@@ -138,6 +141,14 @@ export default function RecruiterDashboard() {
             Back to Home
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (checking) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );
   }

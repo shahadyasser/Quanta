@@ -16,13 +16,6 @@ export default function CandidateAuth() {
   const [form, setForm] = useState({ fullName: "", email: "", password: "", confirm: "" });
   const navigate = useNavigate();
 
-  // If already logged in, redirect to dashboard
-  useEffect(() => {
-    base44.auth.isAuthenticated().then((authed) => {
-      if (authed) navigate("/candidate-dashboard");
-    });
-  }, []);
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");

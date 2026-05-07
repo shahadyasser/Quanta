@@ -1,18 +1,15 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowLeft, Shield, Loader2 } from "lucide-react";
+import { Sparkles, ArrowLeft, Shield } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function AdminAuth() {
-  useEffect(() => {
-    // Check if already logged in; if so, go straight to admin dashboard
-    base44.auth.isAuthenticated().then((authed) => {
-      if (authed) {
-        window.location.href = "/admin-dashboard";
-      } else {
-        base44.auth.redirectToLogin("/admin-dashboard");
-      }
-    });
+  const handleLogin = () => {
+    base44.auth.redirectToLogin("/admin-dashboard");
+  };
+
+  React.useEffect(() => {
+    handleLogin();
   }, []);
 
   return (
@@ -25,7 +22,6 @@ export default function AdminAuth() {
         <h1 className="text-2xl font-bold text-foreground">QuantaHire</h1>
         <p className="text-muted-foreground mt-1 text-sm">Redirecting to login…</p>
       </div>
-      <Loader2 className="w-5 h-5 animate-spin text-primary" />
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mt-2">
         <ArrowLeft className="w-4 h-4" /> Back to Home
       </Link>

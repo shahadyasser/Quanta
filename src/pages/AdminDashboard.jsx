@@ -33,6 +33,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [recruiters, setRecruiters] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -42,9 +43,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     const init = async () => {
       const authed = await base44.auth.isAuthenticated();
-      if (!authed) { navigate("/admin-auth"); return; }
+      if (!authed) { navigate("/admin-auth"); setChecking(false); return; }
       const me = await base44.auth.me();
-      if (me?.role !== "admin") { navigate("/"); return; }
+      if (me?.role !== "admin") { navigate("/"); setChecking(false); return; }
       setAdminEmail(me.email);
 
       // Fetch from RecruiterProfile, Jobs, and Applications
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
       setJobs(jobsData || []);
       setApplications(appsData || []);
       setLoading(false);
+      setChecking(false);
     };
     init();
   }, [navigate]);
@@ -98,6 +100,14 @@ export default function AdminDashboard() {
       console.error(err);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F3FF]">

@@ -33,6 +33,7 @@ export default function CandidateDashboard() {
   const [user, setUser] = useState(null);
   const [candidate, setCandidate] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [checking, setChecking] = useState(true);
   const [alerts, setAlerts] = useState([]); // { id, job_title, status }
   const [showNotifications, setShowNotifications] = useState(false);
   const [invites, setInvites] = useState([]);
@@ -88,6 +89,7 @@ export default function CandidateDashboard() {
       const candidateId = localStorage.getItem("candidateId");
       if (!candidateEmail || !candidateId) {
         navigate("/candidate-auth");
+        setChecking(false);
         return;
       }
       setEmailVerified(true);
@@ -110,6 +112,7 @@ export default function CandidateDashboard() {
       setCandidate({ email: candidateEmail, full_name: apps[0]?.candidate_name || "", total_applications: (apps || []).length, accepted_count: accepted, rejected_count: rejected });
 
       setLoading(false);
+      setChecking(false);
     };
     init();
   }, [navigate]);
@@ -150,6 +153,14 @@ export default function CandidateDashboard() {
   }, [user]);
 
 
+
+  if (checking) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
