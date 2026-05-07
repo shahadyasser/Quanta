@@ -19,6 +19,7 @@ export default function RankCandidates() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("score");
+  const [rankingStarted, setRankingStarted] = useState(false);
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -54,6 +55,7 @@ export default function RankCandidates() {
       return;
     }
 
+    setRankingStarted(true);
     setProcessing(true);
     setProgress({ current: 0, total: appsWithCV.length, currentName: "" });
 
@@ -250,7 +252,7 @@ export default function RankCandidates() {
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={processedCount > 0}
+          showScores={rankingStarted || processedCount > 0}
           onStatusChange={async () => {
             await fetchJobAndCandidates();
           }}
