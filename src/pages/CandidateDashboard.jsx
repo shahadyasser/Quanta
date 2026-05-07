@@ -84,20 +84,31 @@ export default function CandidateDashboard() {
         return;
       }
       setEmailVerified(true);
-      setUser({ email: candidateEmail, full_name: "" });
-      const apps = await base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date");
+
+      // Load candidate profile + applications in parallel
+      const [candidateRecords, apps] = await Promise.all([
+        base44.entities.Candidate.filter({ email: candidateEmail }),
+        base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date"),
+      ]);
+
+      const candidateRecord = candidateRecords[0] || null;
+      setUser({ email: candidateEmail, full_name: candidateRecord?.full_name || "" });
+
       // Initialize prev statuses on first load (no alerts)
       apps.forEach(a => { prevStatusesRef.current[a.id] = a.status; });
       setApplications(apps);
-      // Build candidate stats directly from applications (source of truth)
+
+      // Build stats from applications (source of truth)
       const accepted = apps.filter(a => a.status === "shortlisted").length;
       const rejected = apps.filter(a => a.status === "rejected").length;
-      setCandidate({
-        email: candidateEmail,
-        total_applications: apps.length,
-        accepted_count: accepted,
-        rejected_count: rejected,
-      });
+      const stats = { email: candidateEmail, full_name: candidateRecord?.full_name || "", total_applications: apps.length, accepted_count: accepted, rejected_count: rejected };
+      setCandidate(stats);
+
+      // Persist updated stats back to Candidate entity
+      if (candidateRecord) {
+        base44.entities.Candidate.update(candidateRecord.id, { total_applications: apps.length, accepted_count: accepted, rejected_count: rejected });
+      }
+
       setLoading(false);
     };
     init();
@@ -176,7 +187,7 @@ export default function CandidateDashboard() {
           <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">
             {user?.email || ""}
           </span>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => base44.auth.logout("/")}>
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("candidateEmail"); window.location.href = "/"; }}>
             <LogOut className="w-4 h-4" />
             Logout
           </Button>
