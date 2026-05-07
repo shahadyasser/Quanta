@@ -1,16 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import pg from 'npm:pg@8.11.3';
+import { Client } from 'npm:pg';
 
-const pool = new pg.Pool({
-  host: Deno.env.get('POSTGRES_HOST'),
-  port: parseInt(Deno.env.get('POSTGRES_PORT') || '5432'),
-  database: Deno.env.get('POSTGRES_DATABASE'),
-  user: Deno.env.get('POSTGRES_USER'),
-  password: Deno.env.get('POSTGRES_PASSWORD'),
-  ssl: { rejectUnauthorized: false },
-});
+const connectionString = Deno.env.get('DATABASE_URL');
+if (!connectionString) {
+  console.error('DATABASE_URL environment variable is not set');
+}
 
 Deno.serve(async (req) => {
+  const client = new Client(connectionString);
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -23,15 +20,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'query is required' }, { status: 400 });
     }
 
-    const client = await pool.connect();
-    try {
-      const result = await client.query(query, params || []);
-      return Response.json({ rows: result.rows, rowCount: result.rowCount });
-    } finally {
-      client.release();
-    }
+    await client.connect();
+    const result = await client.query(query, params || []);
+    return Response.json({ rows: result.rows, rowCount: result.rowCount });
   } catch (error) {
     console.error('pgQuery error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
+  } finally {
+    await client.end();
   }
 });
