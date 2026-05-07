@@ -276,172 +276,170 @@ export default function ViewCandidates() {
           )}
 
          {/* Candidates list */}
-         <div>
-              <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-semibold text-foreground text-lg">Ranked Applicants</h2>
-                  <p className="text-sm text-muted-foreground">Ranked by AI match score from CV analysis</p>
-                </div>
-            {filtered.length > 0 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
-                  {selected.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
-                </button>
-                {selected.size > 0 && (
-                  <>
-                    <span className="text-sm text-muted-foreground">{selected.size} selected</span>
-                    <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50 gap-1.5" onClick={handleBulkDelete} disabled={bulkProcessing}>
-                      <Trash2 className="w-3.5 h-3.5" /> Delete Selected
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
-              </div>
+         <div className="space-y-4">
+           <div className="mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+             <div>
+               <h2 className="font-semibold text-foreground text-lg">Applicants</h2>
+               <p className="text-sm text-muted-foreground">All candidates and their match scores after analysis</p>
+             </div>
+             {filtered.length > 0 && (
+               <div className="flex items-center gap-2 flex-wrap">
+                 <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                   {selected.size === filtered.length && filtered.length > 0 ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4" />}
+                   {selected.size === filtered.length && filtered.length > 0 ? "Deselect All" : "Select All"}
+                 </button>
+                 {selected.size > 0 && (
+                   <>
+                     <span className="text-sm text-muted-foreground">{selected.size} selected</span>
+                     <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50 gap-1.5" onClick={handleBulkDelete} disabled={bulkProcessing}>
+                       <Trash2 className="w-3.5 h-3.5" /> Delete Selected
+                     </Button>
+                   </>
+                 )}
+               </div>
+             )}
+           </div>
 
-              {loading ? (
-              <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
-              No applications yet. Candidates will appear here after applying.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((a, i) => {
-                const initials = (a.candidate_name || a.candidate_email || "?").split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
-                const isExpanded = expanded === a.id;
-                const rankColors = ["text-yellow-500", "text-slate-400", "text-amber-600"];
-                const rankColor = a.match_score && i < 3 ? rankColors[i] : "text-muted-foreground";
-                return (
-                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${selected.has(a.id) ? "border-primary/50 bg-accent/10" : "border-border"}`}>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                      <div className="flex items-center gap-4 flex-1">
-                        <button onClick={() => toggleSelect(a.id)} className="shrink-0">
-                          {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
-                        </button>
-                        {ragTriggered && a.match_score && <span className={`text-sm font-bold w-6 ${["text-yellow-500", "text-slate-400", "text-amber-600"][i] || "text-muted-foreground"}`}>#{i + 1}</span>}
-                        <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
-                          <span className="text-primary font-semibold text-sm">{initials}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                            <h3 className="font-semibold text-foreground">{a.candidate_name || "Unknown"}</h3>
-                            {ragTriggered && (
-                              <Badge className={`text-xs ${STATUS_STYLES[a.status] || "bg-muted text-muted-foreground"}`}>
-                                {a.status === "processed" ? "CV Analyzed" : a.status === "shortlisted" ? "Shortlisted" : a.status === "rejected" ? "Rejected" : "Pending"}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">{a.candidate_email}</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {(Array.isArray(a.skills) ? a.skills : []).slice(0, 5).map((s) => (
-                              <span key={s} className="text-xs bg-accent text-primary px-2.5 py-1 rounded-full">{s}</span>
-                            ))}
-                            {(Array.isArray(a.skills) ? a.skills : []).length > 5 && <span className="text-xs text-muted-foreground">+{(Array.isArray(a.skills) ? a.skills : []).length - 5} more</span>}
-                          </div>
-                        </div>
-                      </div>
+           {loading ? (
+             <div className="flex items-center justify-center py-16">
+               <Loader2 className="w-6 h-6 animate-spin text-primary" />
+             </div>
+           ) : filtered.length === 0 ? (
+             <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
+               No applications yet. Candidates will appear here after applying.
+             </div>
+           ) : (
+             <div className="space-y-3">
+               {filtered.map((a, i) => {
+                 const initials = (a.candidate_name || a.candidate_email || "?").split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase();
+                 const isExpanded = expanded === a.id;
+                 return (
+                   <div key={a.id} className={`bg-white border rounded-2xl p-5 ${selected.has(a.id) ? "border-primary/50 bg-accent/10" : "border-border"}`}>
+                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                       <div className="flex items-center gap-4 flex-1">
+                         <button onClick={() => toggleSelect(a.id)} className="shrink-0">
+                           {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
+                         </button>
+                         {ragTriggered && a.match_score && <span className={`text-sm font-bold w-6 text-yellow-500`}>#{i + 1}</span>}
+                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
+                           <span className="text-primary font-semibold text-sm">{initials}</span>
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                             <h3 className="font-semibold text-foreground">{a.candidate_name || "Unknown"}</h3>
+                             {ragTriggered && (
+                               <Badge className={`text-xs ${STATUS_STYLES[a.status] || "bg-muted text-muted-foreground"}`}>
+                                 {a.status === "processed" ? "CV Analyzed" : a.status === "shortlisted" ? "Shortlisted" : a.status === "rejected" ? "Rejected" : "Pending"}
+                               </Badge>
+                             )}
+                           </div>
+                           <p className="text-sm text-muted-foreground mb-2">{a.candidate_email}</p>
+                           <div className="flex flex-wrap gap-1.5">
+                             {(Array.isArray(a.skills) ? a.skills : []).slice(0, 5).map((s) => (
+                               <span key={s} className="text-xs bg-accent text-primary px-2.5 py-1 rounded-full">{s}</span>
+                             ))}
+                             {(Array.isArray(a.skills) ? a.skills : []).length > 5 && <span className="text-xs text-muted-foreground">+{(Array.isArray(a.skills) ? a.skills : []).length - 5} more</span>}
+                           </div>
+                         </div>
+                       </div>
 
-                      <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-                        {ragTriggered && a.match_score ? (
-                          <div className="text-right">
-                            <p className="text-xs text-muted-foreground">Match Score</p>
-                            <p className={`text-3xl font-bold ${a.match_score >= 80 ? "text-green-600" : a.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
-                              {a.match_score}
-                            </p>
-                          </div>
-                        ) : null}
-                        <div className="flex gap-2 flex-wrap justify-end">
-                          {a.cv_url && (
-                            <a href={a.cv_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
-                                <FileText className="w-3.5 h-3.5" /> CV
-                              </Button>
-                            </a>
-                          )}
-                          {ragTriggered && (a.status === "processed" || a.match_score) && (
-                            <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => { setExpanded(isExpanded ? null : a.id); if (!isExpanded) markViewed(a.id); }}>
-                              {isExpanded ? "Hide" : "Details"}
-                            </Button>
-                          )}
-                          {a.status !== "shortlisted" && a.status !== "rejected" && (
-                            <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => openEmailModal(a, "accept")}>
-                              Accept
-                            </Button>
-                          )}
-                          {a.status !== "rejected" && a.status !== "shortlisted" && (
-                            <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openEmailModal(a, "reject")}>
-                              Reject
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-accent gap-1.5" onClick={() => setInterviewModal(a)}>
-                            <CalendarDays className="w-3.5 h-3.5" /> Interview
-                          </Button>
-                          <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50" onClick={() => deleteCandidate(a.id)}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                       <div className="flex items-center gap-4 sm:flex-col sm:items-end">
+                         {ragTriggered && a.match_score ? (
+                           <div className="text-right">
+                             <p className="text-xs text-muted-foreground">Match Score</p>
+                             <p className={`text-3xl font-bold ${a.match_score >= 80 ? "text-green-600" : a.match_score >= 60 ? "text-orange-500" : "text-muted-foreground"}`}>
+                               {a.match_score}
+                             </p>
+                           </div>
+                         ) : null}
+                         <div className="flex gap-2 flex-wrap justify-end">
+                           {a.cv_url && (
+                             <a href={a.cv_url} target="_blank" rel="noopener noreferrer">
+                               <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
+                                 <FileText className="w-3.5 h-3.5" /> CV
+                               </Button>
+                             </a>
+                           )}
+                           {ragTriggered && (a.status === "processed" || a.match_score) && (
+                             <Button variant="outline" size="sm" className="rounded-xl border-primary text-primary hover:bg-accent" onClick={() => { setExpanded(isExpanded ? null : a.id); if (!isExpanded) markViewed(a.id); }}>
+                               {isExpanded ? "Hide" : "Details"}
+                             </Button>
+                           )}
+                           {a.status !== "shortlisted" && a.status !== "rejected" && (
+                             <Button size="sm" className="rounded-xl bg-green-600 hover:bg-green-700 text-white" onClick={() => openEmailModal(a, "accept")}>
+                               Accept
+                             </Button>
+                           )}
+                           {a.status !== "rejected" && a.status !== "shortlisted" && (
+                             <Button size="sm" variant="outline" className="rounded-xl border-red-300 text-red-500 hover:bg-red-50" onClick={() => openEmailModal(a, "reject")}>
+                               Reject
+                             </Button>
+                           )}
+                           <Button size="sm" variant="outline" className="rounded-xl border-primary/30 text-primary hover:bg-accent gap-1.5" onClick={() => setInterviewModal(a)}>
+                             <CalendarDays className="w-3.5 h-3.5" /> Interview
+                           </Button>
+                           <Button size="sm" variant="outline" className="rounded-xl border-red-200 text-red-400 hover:bg-red-50" onClick={() => deleteCandidate(a.id)}>
+                             <Trash2 className="w-3.5 h-3.5" />
+                           </Button>
+                         </div>
+                       </div>
+                     </div>
 
-                    {/* Expanded RAG Results */}
-                    {isExpanded && (
-                      <div className="mt-5 pt-5 border-t border-border space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-muted/50 rounded-xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <TrendingUp className="w-4 h-4 text-primary" />
-                              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Experience</p>
-                            </div>
-                            <p className="text-2xl font-bold text-foreground">{a.years_of_experience || 0} <span className="text-sm font-normal text-muted-foreground">years</span></p>
-                          </div>
-                          <div className="bg-green-50 rounded-xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Brain className="w-4 h-4 text-green-600" />
-                              <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Strengths</p>
-                            </div>
-                            <ul className="space-y-1">{(a.strengths || []).map((s, idx) => <li key={idx} className="text-xs text-green-700">• {s}</li>)}</ul>
-                          </div>
-                          <div className="bg-orange-50 rounded-xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <BookOpen className="w-4 h-4 text-orange-500" />
-                              <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Areas to Improve</p>
-                            </div>
-                            <ul className="space-y-1">{(a.improvements || []).map((s, idx) => <li key={idx} className="text-xs text-orange-600">• {s}</li>)}</ul>
-                          </div>
-                        </div>
-                        {(a.education_summary || a.work_experience_summary) && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {a.education_summary && (
-                              <div className="bg-muted/30 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Education</p>
-                                <p className="text-sm text-muted-foreground">{a.education_summary}</p>
-                              </div>
-                            )}
-                            {a.work_experience_summary && (
-                              <div className="bg-muted/30 rounded-xl p-4">
-                                <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Work Experience</p>
-                                <p className="text-sm text-muted-foreground">{a.work_experience_summary}</p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {a.cv_url && (
-                          <a href={a.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
-                            <FileText className="w-4 h-4" /> View CV
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-              </div>
-              )}
-              </div>
+                     {/* Expanded RAG Results */}
+                     {isExpanded && (
+                       <div className="mt-5 pt-5 border-t border-border space-y-4">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                           <div className="bg-muted/50 rounded-xl p-4">
+                             <div className="flex items-center gap-2 mb-2">
+                               <TrendingUp className="w-4 h-4 text-primary" />
+                               <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Experience</p>
+                             </div>
+                             <p className="text-2xl font-bold text-foreground">{a.years_of_experience || 0} <span className="text-sm font-normal text-muted-foreground">years</span></p>
+                           </div>
+                           <div className="bg-green-50 rounded-xl p-4">
+                             <div className="flex items-center gap-2 mb-2">
+                               <Brain className="w-4 h-4 text-green-600" />
+                               <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Strengths</p>
+                             </div>
+                             <ul className="space-y-1">{(a.strengths || []).map((s, idx) => <li key={idx} className="text-xs text-green-700">• {s}</li>)}</ul>
+                           </div>
+                           <div className="bg-orange-50 rounded-xl p-4">
+                             <div className="flex items-center gap-2 mb-2">
+                               <BookOpen className="w-4 h-4 text-orange-500" />
+                               <p className="text-xs font-semibold text-orange-600 uppercase tracking-wide">Areas to Improve</p>
+                             </div>
+                             <ul className="space-y-1">{(a.improvements || []).map((s, idx) => <li key={idx} className="text-xs text-orange-600">• {s}</li>)}</ul>
+                           </div>
+                         </div>
+                         {(a.education_summary || a.work_experience_summary) && (
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             {a.education_summary && (
+                               <div className="bg-muted/30 rounded-xl p-4">
+                                 <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Education</p>
+                                 <p className="text-sm text-muted-foreground">{a.education_summary}</p>
+                               </div>
+                             )}
+                             {a.work_experience_summary && (
+                               <div className="bg-muted/30 rounded-xl p-4">
+                                 <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Work Experience</p>
+                                 <p className="text-sm text-muted-foreground">{a.work_experience_summary}</p>
+                               </div>
+                             )}
+                           </div>
+                         )}
+                         {a.cv_url && (
+                           <a href={a.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm text-primary hover:underline">
+                             <FileText className="w-4 h-4" /> View CV
+                           </a>
+                         )}
+                       </div>
+                     )}
+                   </div>
+                 );
+               })}
+             </div>
+           )}
+         </div>
 
           {/* Propose Interview Modal */}
            {interviewModal && (
