@@ -82,6 +82,10 @@
       "type": "boolean",
       "default": false,
       "description": "Whether the recruiter/admin has viewed this notification"
+    },
+    "rag_results": {
+      "type": "object",
+      "description": "Full RAG pipeline results including construct scores, similarity, and LLM scoring details"
     }
   },
   "required": [
