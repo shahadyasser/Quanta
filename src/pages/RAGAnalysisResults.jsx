@@ -66,6 +66,9 @@ export default function RAGAnalysisResults() {
     );
   });
 
+  const processedCount = applications.filter((a) => a.rag_results?.match_score).length;
+  const totalCount = applications.length;
+  const progressPercent = totalCount > 0 ? Math.round((processedCount / totalCount) * 100) : 0;
   const ragFiltered = filtered.filter((a) => a.rag_results?.match_score);
   const topCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 80).length;
   const goodCandidates = ragFiltered.filter((a) => a.rag_results?.match_score >= 60 && a.rag_results?.match_score < 80).length;
@@ -99,10 +102,20 @@ export default function RAGAnalysisResults() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* Timing Line */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-          <p className="text-sm text-blue-600">
-            <span className="font-semibold">RAG Pipeline Processing Time:</span> {elapsedTime} seconds elapsed
+        {/* Progress Bar */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-2">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-blue-600">RAG Pipeline Progress</p>
+            <p className="text-sm text-blue-600">{processedCount} / {totalCount} CVs analyzed</p>
+          </div>
+          <div className="w-full bg-blue-100 rounded-full h-2.5 overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <p className="text-xs text-blue-600">
+            <span className="font-semibold">{progressPercent}%</span> • {elapsedTime} seconds elapsed
           </p>
         </div>
 
