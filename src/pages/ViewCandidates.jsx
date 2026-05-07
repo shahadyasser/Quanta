@@ -303,10 +303,6 @@ export default function ViewCandidates() {
               <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
-          ) : !ragTriggered ? (
-            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
-              Click "Start RAG Analysis" button above to analyze CVs and see applicants.
-            </div>
           ) : filtered.length === 0 ? (
             <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">
               No applications yet. Candidates will appear here after applying.
@@ -319,13 +315,13 @@ export default function ViewCandidates() {
                 const rankColors = ["text-yellow-500", "text-slate-400", "text-amber-600"];
                 const rankColor = a.match_score && i < 3 ? rankColors[i] : "text-muted-foreground";
                 return (
-                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${selected.has(a.id) ? "border-primary/50 bg-accent/10" : ragTriggered && i === 0 && a.match_score ? "border-yellow-300 shadow-sm" : "border-border"}`}>
+                  <div key={a.id} className={`bg-white border rounded-2xl p-5 ${selected.has(a.id) ? "border-primary/50 bg-accent/10" : "border-border"}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                       <div className="flex items-center gap-4 flex-1">
                         <button onClick={() => toggleSelect(a.id)} className="shrink-0">
                           {selected.has(a.id) ? <CheckSquare className="w-4 h-4 text-primary" /> : <Square className="w-4 h-4 text-muted-foreground" />}
                         </button>
-                        {ragTriggered && a.match_score && <span className={`text-sm font-bold w-6 ${rankColor}`}>#{i + 1}</span>}
+                        {ragTriggered && a.match_score && <span className={`text-sm font-bold w-6 ${["text-yellow-500", "text-slate-400", "text-amber-600"][i] || "text-muted-foreground"}`}>#{i + 1}</span>}
                         <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shrink-0">
                           <span className="text-primary font-semibold text-sm">{initials}</span>
                         </div>
