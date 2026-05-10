@@ -18,15 +18,10 @@
       "type": "string",
       "default": "admin",
       "description": "User role"
-    },
-    "password": {
-      "type": "string",
-      "description": "Password for the admin account"
     }
   },
   "required": [
-    "email",
-    "password"
+    "email"
   ],
   "rls": {
     "create": {

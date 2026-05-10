@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 
 import CandidateEmailGate from "@/components/CandidateEmailGate";
+import BigFiveResultCard from "@/components/candidate/BigFiveResultCard";
 
 const QUICK_ACTIONS = [
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
@@ -38,6 +39,7 @@ export default function CandidateDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [invites, setInvites] = useState([]);
   const [emailVerified, setEmailVerified] = useState(false);
+  const [psychResult, setPsychResult] = useState(null);
   const prevStatusesRef = useRef({});
   const bellRef = useRef(null);
 
@@ -102,6 +104,10 @@ export default function CandidateDashboard() {
       setInvites(interviewSlots);
 
       setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || candidateEmail });
+
+      // Fetch latest Big Five result
+      const psychResults = await base44.entities.AssessmentResult.filter({ candidate_email: candidateEmail }, "-created_date", 1);
+      if (psychResults.length > 0) setPsychResult(psychResults[0]);
 
       // Initialize prev statuses on first load (no alerts)
       (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });
@@ -287,6 +293,13 @@ export default function CandidateDashboard() {
           />
         )}
 
+        {/* Big Five Personality Results */}
+        {psychResult && (
+          <div className="bg-white border border-border rounded-2xl p-6">
+            <BigFiveResultCard result={psychResult} showLink={true} />
+          </div>
+        )}
+
         {/* Applications */}
         <div>
           <div className="mb-4">
@@ -333,6 +346,20 @@ export default function CandidateDashboard() {
                             ))}
                             {app.skills.length > 4 && <span className="text-xs text-muted-foreground">+{app.skills.length - 4} more</span>}
                           </div>
+                        )}
+                        {/* Feedback: match score + decision message */}
+                        {app.match_score > 0 && (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-xs bg-muted text-foreground px-2 py-0.5 rounded-md font-medium">
+                              AI Match: <span className={`font-bold ${app.match_score >= 80 ? "text-green-600" : app.match_score >= 60 ? "text-orange-500" : "text-red-500"}`}>{app.match_score.toFixed(0)}%</span>
+                            </span>
+                          </div>
+                        )}
+                        {app.status === "shortlisted" && app.status_email_sent && (
+                          <p className="mt-2 text-xs text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-1.5 leading-relaxed line-clamp-2">{app.status_email_sent}</p>
+                        )}
+                        {app.status === "rejected" && app.status_email_sent && (
+                          <p className="mt-2 text-xs text-muted-foreground bg-muted rounded-lg px-3 py-1.5 leading-relaxed line-clamp-2">{app.status_email_sent}</p>
                         )}
                       </div>
                     </div>
