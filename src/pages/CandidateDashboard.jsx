@@ -294,11 +294,22 @@ export default function CandidateDashboard() {
         )}
 
         {/* Big Five Personality Results */}
-        {psychResult && (
-          <div className="bg-white border border-border rounded-2xl p-6">
-            <BigFiveResultCard result={psychResult} showLink={true} />
-          </div>
-        )}
+        <div className="bg-white border border-border rounded-2xl p-6">
+          {psychResult ? (
+            <BigFiveResultCard result={psychResult} showLink={true} candidateName={user?.full_name || candidate?.full_name || ""} />
+          ) : (
+            <div className="text-center py-6 space-y-3">
+              <p className="text-base font-semibold text-foreground">Big Five Personality Assessment</p>
+              <p className="text-sm text-muted-foreground">You haven't completed your personality assessment yet.</p>
+              <button
+                onClick={() => navigate("/assessment")}
+                className="inline-flex items-center gap-2 bg-primary text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors"
+              >
+                Take Assessment
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Applications */}
         <div>

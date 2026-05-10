@@ -27,9 +27,10 @@ function getTraitColor(score) {
   return "text-red-500";
 }
 
-export default function BigFiveResultCard({ result, showLink = false }) {
+export default function BigFiveResultCard({ result, showLink = false, candidateName = "" }) {
   if (!result) return null;
 
+  const firstName = candidateName ? candidateName.split(" ")[0] : "";
   const scores = TRAITS.map(t => ({ trait: t, score: result[`score_${t}`] || 0 }));
   const radarData = scores.map(s => ({
     trait: TRAIT_LABELS[s.trait].slice(0, 5),
@@ -44,7 +45,9 @@ export default function BigFiveResultCard({ result, showLink = false }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest">Big Five Personality</p>
+          <p className="text-lg font-bold text-foreground">
+            {firstName ? `${firstName}'s` : "Your"} Big Five Personality Assessment
+          </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Completed {new Date(result.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
           </p>
