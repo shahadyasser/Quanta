@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Zap, Loader2, Search, Filter, Download, RotateCw, Sparkles } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { ArrowLeft, Zap, Loader2, Download, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
 import { pgQuery } from "@/lib/neonDb";
 import RankSummaryCards from "@/components/recruiter/RankSummaryCards";
@@ -16,10 +14,7 @@ export default function RankCandidates() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0, currentName: "" });
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sortBy, setSortBy] = useState("score");
-  const [rankingStarted, setRankingStarted] = useState(false);
+
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -55,7 +50,6 @@ export default function RankCandidates() {
       return;
     }
 
-    setRankingStarted(true);
     setProcessing(true);
     setProgress({ current: 0, total: appsWithCV.length, currentName: "" });
 
@@ -116,7 +110,7 @@ export default function RankCandidates() {
 
   const exportCSV = () => {
     const headers = ["Rank", "Candidate", "Email", "Match Score", "Work Exp", "Skills", "Education", "Certs", "Status"];
-    const rows = filteredAndSorted.map((app, idx) => [
+    const rows = candidates.map((app, idx) => [
       idx + 1,
       app.candidate_name || "Unknown",
       app.candidate_email || "",
@@ -136,27 +130,6 @@ export default function RankCandidates() {
     a.download = `ranked-candidates-${job?.title || "job"}.csv`;
     a.click();
   };
-
-  const filteredAndSorted = candidates
-    .filter((a) => {
-      const q = search.toLowerCase();
-      return !q || (a.candidate_name || "").toLowerCase().includes(q) || (a.candidate_email || "").toLowerCase().includes(q);
-    })
-    .filter((a) => {
-      if (filterStatus === "all") return true;
-      const score = a.match_score || 0;
-      if (filterStatus === "strong") return score >= 80;
-      if (filterStatus === "moderate") return score >= 60 && score < 80;
-      if (filterStatus === "weak") return score >= 40 && score < 60;
-      if (filterStatus === "poor") return score < 40;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === "score") return (b.match_score || 0) - (a.match_score || 0);
-      if (sortBy === "name") return (a.candidate_name || "").localeCompare(b.candidate_name || "");
-      if (sortBy === "date") return new Date(b.created_date) - new Date(a.created_date);
-      return 0;
-    });
 
   const processedCount = candidates.filter((a) => a.status === "processed" && a.match_score).length;
   const strongMatches = candidates.filter((a) => a.match_score >= 80).length;
@@ -211,48 +184,12 @@ export default function RankCandidates() {
            strongMatches={strongMatches}
          />
 
-        {/* Filters and Search */}
-        <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10 rounded-xl"
-              />
-            </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 h-10 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="all">All Candidates</option>
-              <option value="strong">Strong Match (80+)</option>
-              <option value="moderate">Moderate (60-79)</option>
-              <option value="weak">Weak (40-59)</option>
-              <option value="poor">Poor (&lt;40)</option>
-            </select>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 h-10 rounded-xl border border-input bg-white text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="score">Sort by Score</option>
-              <option value="name">Sort by Name</option>
-              <option value="date">Sort by Date Applied</option>
-            </select>
-          </div>
-        </div>
-
         {/* Ranked Table */}
         <RankedCandidatesTable
-          candidates={filteredAndSorted}
+          candidates={candidates}
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={rankingStarted}
           onStatusChange={async () => {
             await fetchJobAndCandidates();
           }}

@@ -28,7 +28,7 @@ function getScoreLabel(score) {
   return "Poor Match";
 }
 
-export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores, onStatusChange: onParentStatusChange }) {
+export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, onStatusChange: onParentStatusChange }) {
   const [expanded, setExpanded] = useState(null);
   const [reprocessing, setReprocessing] = useState(null);
 
@@ -58,11 +58,11 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
             <tr className="border-b border-border bg-muted/30">
               <th className="px-6 py-4 text-left font-semibold text-foreground w-16">Rank</th>
               <th className="px-6 py-4 text-left font-semibold text-foreground">Candidate</th>
-              {showScores && <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Score</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Work Exp</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Skills</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Education</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Certs</th>}
+              <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Score</th>
+              <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Work Exp</th>
+              <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Skills</th>
+              <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Education</th>
+              <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Certs</th>
               <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Status</th>
               <th className="px-6 py-4 text-right font-semibold text-foreground w-24">Actions</th>
             </tr>
@@ -70,8 +70,8 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
           <tbody>
             {candidates.length === 0 ? (
               <tr>
-                <td colSpan={showScores ? "9" : "4"} className="px-6 py-12 text-center text-muted-foreground">
-                  {showScores ? "No candidates with scores yet. Process all CVs first." : "Click 'Rank All Candidates' to start analyzing CVs."}
+                <td colSpan="9" className="px-6 py-12 text-center text-muted-foreground">
+                  No candidates found.
                 </td>
               </tr>
             ) : (
@@ -93,34 +93,26 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                           <p className="text-xs text-muted-foreground">{app.candidate_email}</p>
                         </div>
                       </td>
-                      {showScores && (
-                        <td className="px-6 py-4">
+                      <td className="px-6 py-4">
+                        {score > 0 ? (
                           <div className={`inline-flex flex-col items-center px-3 py-2 rounded-xl border ${getScoreColor(score)}`}>
                             <p className="text-lg font-bold">{score.toFixed(1)}</p>
                             <p className="text-xs">{getScoreLabel(score)}</p>
                           </div>
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.work_experience || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.skills || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.education || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.certifications || 0} />
-                        </td>
-                      )}
+                        ) : <span className="text-xs text-muted-foreground">Pending</span>}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <RatingStars rating={constructs.work_experience || 0} />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <RatingStars rating={constructs.skills || 0} />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <RatingStars rating={constructs.education || 0} />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <RatingStars rating={constructs.certifications || 0} />
+                      </td>
                       <td className="px-6 py-4">
                         <Badge
                           className={`text-xs ${
@@ -142,7 +134,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                     </tr>
                     {isExpanded && (
                        <tr className="bg-muted/10">
-                         <td colSpan={showScores ? "9" : "4"} className="px-6 py-6">
+                         <td colSpan="9" className="px-6 py-6">
                            <CandidateExpandedRow
                              app={app}
                              jobId={jobId}
