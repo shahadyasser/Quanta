@@ -4,14 +4,12 @@ import { ArrowLeft, Mail, CheckCircle, UserCheck, Brain, FileText, MessageSquare
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import BigFiveResultCard from "@/components/candidate/BigFiveResultCard";
 
-const TABS = ["Overview", "Interview", "AI Insights", "Personality"];
+const TABS = ["Overview", "Interview", "AI Insights"];
 
 export default function CandidateProfile() {
   const [tab, setTab] = useState("Overview");
   const [candidate, setCandidate] = useState(null);
-  const [psychResult, setPsychResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -34,12 +32,6 @@ export default function CandidateProfile() {
         }
 
         setCandidate(app);
-
-        // Fetch Big Five result for this candidate
-        if (app.candidate_email) {
-          const psychRes = await base44.entities.AssessmentResult.filter({ candidate_email: app.candidate_email }, "-created_date", 1);
-          if (psychRes.length > 0) setPsychResult(psychRes[0]);
-        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -216,32 +208,24 @@ export default function CandidateProfile() {
             <h2 className="font-semibold text-foreground flex items-center gap-2"><Brain className="w-4 h-4 text-primary" /> AI Analysis</h2>
             {candidate.rag_results?.construct_scores && (
               <div className="space-y-3">
-                {[["Work Experience", "work_experience"], ["Skills Match", "skills"], ["Education", "education"], ["Certifications", "certifications"]].map(([label, key]) => (
-                  <div key={key}>
-                    <div className="flex justify-between mb-1">
-                      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                      <p className="text-xs font-semibold text-foreground">{candidate.rag_results.construct_scores[key] || 0}/5</p>
-                    </div>
-                    <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                      <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores[key] || 0) * 20}%`}}></div>
-                    </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Work Experience</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.work_experience || 0) * 20}%`}}></div>
                   </div>
-                ))}
-              </div>
-            )}
-            {!candidate.rag_results?.construct_scores && (
-              <p className="text-sm text-muted-foreground">No AI analysis available yet. Process this CV from the Rank Candidates page.</p>
-            )}
-          </div>
-        )}
-
-        {tab === "Personality" && (
-          <div className="bg-white border border-border rounded-2xl p-6">
-            {psychResult ? (
-              <BigFiveResultCard result={psychResult} showLink={false} />
-            ) : (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                This candidate has not completed the Big Five personality assessment yet.
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Skills Match</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.skills || 0) * 20}%`}}></div>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Education</p>
+                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                    <div className="bg-primary h-full" style={{width: `${(candidate.rag_results.construct_scores.education || 0) * 20}%`}}></div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
