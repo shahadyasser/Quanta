@@ -19,7 +19,7 @@ export default function RankCandidates() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("score");
-  const [rankingStarted, setRankingStarted] = useState(true);
+  const [rankingStarted, setRankingStarted] = useState(false);
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
