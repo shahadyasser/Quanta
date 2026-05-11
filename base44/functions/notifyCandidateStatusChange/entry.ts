@@ -1,26 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const GMAIL_APP_PASSWORD = Deno.env.get("GMAIL_APP_PASSWORD");
+const GMAIL_USER = "shahadym0@gmail.com";
 
 async function sendEmail({ to, subject, body, from_name = "QuantaHire" }) {
-  const res = await fetch("https://api.resend.com/emails", {
+  const auth = btoa(`${GMAIL_USER}:${GMAIL_APP_PASSWORD}`);
+  const message = `From: ${from_name} <${GMAIL_USER}>\nTo: ${to}\nSubject: ${subject}\nContent-Type: text/plain; charset=utf-8\n\n${body}`;
+  
+  const res = await fetch("https://www.googleapis.com/gmail/v1/users/me/messages/send", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Authorization": `Basic ${auth}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `${from_name} <onboarding@resend.dev>`,
-      to: [to],
-      subject,
-      text: body,
+      raw: btoa(message).replace(/\+/g, "-").replace(/\//g, "_"),
     }),
   });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Resend error: ${err}`);
-  }
-  return res.json();
+  
+  if (!res.ok) throw new Error(`Gmail API error: ${res.statusText}`);
 }
 
 Deno.serve(async (req) => {
