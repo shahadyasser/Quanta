@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, Loader2, Save, CheckCircle, X, FileText, Trophy } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, Save, CheckCircle, X, FileText, Trophy, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +76,7 @@ export default function CandidateProfilePage() {
   const [cvUploading, setCvUploading] = useState(false);
   const [candidateRecord, setCandidateRecord] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [assessmentResult, setAssessmentResult] = useState(null);
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "", location: "",
     linkedin_url: "", portfolio_url: "", years_of_experience: "",
@@ -89,10 +90,12 @@ export default function CandidateProfilePage() {
       const id = localStorage.getItem("candidateId");
       if (!email || !id) { navigate("/candidate-auth"); return; }
 
-      const [candidates, apps] = await Promise.all([
+      const [candidates, apps, assessments] = await Promise.all([
         base44.entities.Candidate.filter({ email }),
         base44.entities.Application.filter({ candidate_email: email }, "-created_date"),
+        base44.entities.AssessmentResult.filter({ candidate_email: email, job_profile_id: "personality" }, "-created_date", 1),
       ]);
+      if (assessments && assessments.length > 0) setAssessmentResult(assessments[0]);
 
       const c = candidates[0] || {};
       setCandidateRecord(c);
@@ -282,6 +285,61 @@ export default function CandidateProfilePage() {
             {saved ? "Saved!" : "Save Changes"}
           </Button>
         </div>
+
+        {/* Personality Assessment Results */}
+        {assessmentResult ? (
+          <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
+            <h2 className="font-semibold text-foreground text-lg flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />Personality Assessment
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+              {[
+                { label: "Openness", value: assessmentResult.score_openness },
+                { label: "Conscientiousness", value: assessmentResult.score_conscientiousness },
+                { label: "Extraversion", value: assessmentResult.score_extraversion },
+                { label: "Agreeableness", value: assessmentResult.score_agreeableness },
+                { label: "Stability", value: assessmentResult.score_stability },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#F8F7FF] rounded-xl px-3 py-3 text-center">
+                  <p className="text-xs text-muted-foreground mb-1">{label}</p>
+                  <p className="text-xl font-bold text-primary">{value?.toFixed(1) || "—"}</p>
+                  <div className="w-full bg-muted rounded-full h-1.5 mt-2">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${((value || 0) / 5) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {assessmentResult.recommended_jobs?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Recommended Career Paths</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {assessmentResult.recommended_jobs.map((job) => (
+                    <span key={job} className="text-xs bg-accent text-primary px-2.5 py-1 rounded-lg font-medium">{job}</span>
+                  ))}
+                </div>
+                {assessmentResult.recommended_reason && (
+                  <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{assessmentResult.recommended_reason}</p>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Taken on {new Date(assessmentResult.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white border border-border rounded-2xl p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Brain className="w-5 h-5 text-primary" />
+              <div>
+                <p className="font-semibold text-foreground text-sm">Personality Assessment</p>
+                <p className="text-xs text-muted-foreground">Take the Big Five test to discover your career matches</p>
+              </div>
+            </div>
+            <Button variant="outline" className="rounded-xl text-xs shrink-0" onClick={() => navigate("/assessment")}>
+              Take Test
+            </Button>
+          </div>
+        )}
 
         {/* Job Matches */}
         {rankedApps.length > 0 && (
