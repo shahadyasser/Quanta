@@ -10,10 +10,6 @@
       "type": "string",
       "description": "Candidate email address"
     },
-    "password": {
-      "type": "string",
-      "description": "Password for the admin account"
-    },
     "full_name": {
       "type": "string",
       "description": "Full name"
@@ -47,7 +43,6 @@
     }
   },
   "required": [
-    "email",
-    "password"
+    "email"
   ]
 }

@@ -18,36 +18,9 @@
       "type": "string",
       "default": "admin",
       "description": "User role"
-    },
-    "password": {
-      "type": "string",
-      "description": "Password for the admin account"
     }
   },
   "required": [
-    "email",
-    "password"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+    "email"
+  ]
 }

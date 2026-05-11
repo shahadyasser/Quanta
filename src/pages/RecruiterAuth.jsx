@@ -40,24 +40,33 @@ export default function RecruiterAuth() {
         setWarning("registered");
       }
     } else {
-      try {
-        const res = await base44.functions.invoke("authLogin", { email: email.trim().toLowerCase(), password });
-        setLoading(false);
-        const user = res.data.user;
-        if (!user) { setWarning("no_access"); return; }
-        if (user.role !== 'recruiter') { setWarning("denied"); return; }
-        if (!user.is_active) { setWarning("pending"); return; }
-        localStorage.setItem("recruiterEmail", user.email);
-        localStorage.setItem("recruiterId", user.id);
-        navigate("/recruiter-dashboard");
-      } catch (err) {
-        setLoading(false);
-        const msg = err?.response?.data?.error || "";
-        if (msg.includes('pending')) setWarning("pending");
-        else if (msg.includes('blocked')) setWarning("suspended");
-        else if (msg.includes('active')) setWarning("pending");
-        else setWarning("no_access");
+      const res = await base44.functions.invoke("authLogin", { email: email.trim().toLowerCase(), password });
+      setLoading(false);
+      if (res.data.error) {
+        // Map error messages to warnings
+        if (res.data.error.includes('pending')) {
+          setWarning("pending");
+        } else if (res.data.error.includes('blocked')) {
+          setWarning("suspended");
+        } else if (res.data.error.includes('active')) {
+          setWarning("pending");
+        } else {
+          setWarning("no_access");
+        }
+        return;
       }
+      const user = res.data.user;
+      if (user.role !== 'recruiter') {
+        setWarning("denied");
+        return;
+      }
+      if (!user.is_active) {
+        setWarning("pending");
+        return;
+      }
+      localStorage.setItem("recruiterEmail", user.email);
+      localStorage.setItem("recruiterId", user.id);
+      navigate("/recruiter-dashboard");
     }
   };
 

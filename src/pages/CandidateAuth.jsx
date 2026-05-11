@@ -26,15 +26,22 @@ export default function CandidateAuth() {
     setLoading(true);
     try {
       const res = await base44.functions.invoke("authLogin", { email: form.email.trim().toLowerCase(), password: form.password });
+      if (res.data.error) {
+        setError(res.data.error);
+        setLoading(false);
+        return;
+      }
       const user = res.data.user;
-      if (!user) { setError("Login failed. Please try again."); setLoading(false); return; }
-      if (user.role !== 'candidate') { setError("No candidate account found. Please register first."); setLoading(false); return; }
+      if (user.role !== 'candidate') {
+        setError("No candidate account found. Please register first.");
+        setLoading(false);
+        return;
+      }
       localStorage.setItem("candidateEmail", user.email);
       localStorage.setItem("candidateId", user.id);
       navigate("/candidate-dashboard");
     } catch (err) {
-      const msg = err?.response?.data?.error || "";
-      setError(msg || "Incorrect email or password.");
+      setError("Login failed. Please try again.");
     }
     setLoading(false);
   };

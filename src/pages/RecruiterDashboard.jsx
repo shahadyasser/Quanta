@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, Loader2, Clock, Sparkles } from "lucide-react";
+import { Plus, Search, LogOut, Loader2, Clock, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
-import AccountDropdown from "@/components/AccountDropdown";
 
 
 const TABS = ["All Jobs", "open", "closed", "draft"];
@@ -21,7 +20,6 @@ export default function RecruiterDashboard() {
   const [checking, setChecking] = useState(true);
   const [recruiterStatus, setRecruiterStatus] = useState(null);
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     const init = async () => {
@@ -36,7 +34,6 @@ export default function RecruiterDashboard() {
         // Check recruiter status in RecruiterProfile
         const profiles = await base44.entities.RecruiterProfile.filter({ email: recruiterEmail });
         const profile = profiles && profiles.length > 0 ? profiles[0] : null;
-        if (profile) setProfile(profile);
         
         if (profile && profile.status === "pending") {
           setRecruiterStatus("pending");
@@ -165,11 +162,10 @@ export default function RecruiterDashboard() {
           <p className="text-xs text-muted-foreground">Recruiter Portal</p>
         </div>
         <div className="flex items-center gap-3">
-          <AccountDropdown
-            user={{ ...user, full_name: profile?.full_name || user?.email }}
-            profile={profile}
-            onLogout={() => { localStorage.removeItem("recruiterEmail"); localStorage.removeItem("recruiterId"); navigate("/"); }}
-          />
+          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">{user?.email}</span>
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("recruiterEmail"); navigate("/"); }}>
+            <LogOut className="w-4 h-4" />Logout
+          </Button>
         </div>
       </nav>
 
