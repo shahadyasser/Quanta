@@ -103,7 +103,8 @@ export default function CandidateDashboard() {
       ]);
       setInvites(interviewSlots);
 
-      setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || candidateEmail });
+      const candidateName = apps[0]?.candidate_name || "";
+      setUser({ email: candidateEmail, id: candidateId, full_name: candidateName });
 
       // Initialize prev statuses on first load (no alerts)
       (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });
@@ -227,7 +228,7 @@ export default function CandidateDashboard() {
           </div>
           <AccountDropdown
             email={user?.email}
-            fullName={user?.full_name}
+            fullName={user?.full_name || user?.email}
             role="Candidate"
             onLogout={() => { localStorage.removeItem("candidateEmail"); localStorage.removeItem("candidateId"); window.location.href = "/"; }}
           />
@@ -238,7 +239,7 @@ export default function CandidateDashboard() {
         {/* Header */}
         <div>
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Candidate Portal</p>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back, {user?.full_name || "Candidate"}!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome, {user?.full_name?.split(" ")[0] || "Candidate"}!</h1>
           <p className="text-muted-foreground mt-1">Track your job applications and status updates.</p>
         </div>
 
