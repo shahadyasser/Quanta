@@ -41,7 +41,7 @@ export default function BrowseJobs() {
 
         // Fetch open jobs from Base44
         const allJobs = await base44.entities.Job.list();
-        const openJobs = (allJobs || []).filter(j => j.status === 'open' || j.status === 'Active');
+        const openJobs = (allJobs || []).filter(j => j.status === 'Open' || j.status === 'Reopened');
         setJobs(openJobs);
 
         // Check already applied
