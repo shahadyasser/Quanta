@@ -39,10 +39,9 @@ export default function BrowseJobs() {
         const user = candidateEmail ? { email: candidateEmail, id: candidateId, full_name: "" } : null;
         setCurrentUser(user);
 
-        // Fetch open jobs from Base44
-        const allJobs = await base44.entities.Job.list();
-        const openJobs = (allJobs || []).filter(j => j.status === 'Open');
-        setJobs(openJobs);
+        // Fetch only open jobs from Base44
+        const openJobs = await base44.entities.Job.filter({ status: 'Open' });
+        setJobs(openJobs || []);
 
         // Check already applied
         if (candidateEmail) {
