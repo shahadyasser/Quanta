@@ -97,14 +97,15 @@ export default function CandidateDashboard() {
       setEmailVerified(true);
 
       // My Applications: fetch from Base44
-      const [apps, interviewSlots] = await Promise.all([
+      const [apps, interviewSlots, candidates] = await Promise.all([
         base44.entities.Application.filter({ candidate_email: candidateEmail }, "-created_date"),
         base44.entities.InterviewSlot.filter({ candidate_email: candidateEmail }, "-created_date"),
+        base44.entities.Candidate.filter({ email: candidateEmail }),
       ]);
       setInvites(interviewSlots);
 
-      const candidateName = apps[0]?.candidate_name || "";
-      setUser({ email: candidateEmail, id: candidateId, full_name: candidateName });
+      const fullName = candidates[0]?.full_name || apps[0]?.candidate_name || "";
+      setUser({ email: candidateEmail, id: candidateId, full_name: fullName });
 
       // Initialize prev statuses on first load (no alerts)
       (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });
@@ -112,7 +113,7 @@ export default function CandidateDashboard() {
 
       const accepted = (apps || []).filter(a => a.status === "shortlisted" || a.status === "accepted").length;
       const rejected = (apps || []).filter(a => a.status === "rejected").length;
-      setCandidate({ email: candidateEmail, full_name: apps[0]?.candidate_name || "", total_applications: (apps || []).length, accepted_count: accepted, rejected_count: rejected });
+      setCandidate({ email: candidateEmail, full_name: fullName, total_applications: (apps || []).length, accepted_count: accepted, rejected_count: rejected });
 
       setLoading(false);
       setChecking(false);
@@ -228,7 +229,7 @@ export default function CandidateDashboard() {
           </div>
           <AccountDropdown
             email={user?.email}
-            fullName={user?.full_name || user?.email}
+            fullName={user?.full_name ? user.full_name.split(" ")[0] : user?.email}
             role="Candidate"
             onLogout={() => { localStorage.removeItem("candidateEmail"); localStorage.removeItem("candidateId"); window.location.href = "/"; }}
           />
