@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, Loader2, Save, CheckCircle, X, FileText, Trophy, Brain } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Save, CheckCircle, X, FileText, Trophy, Brain, Briefcase, BarChart2, Calendar, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ function SkillsInput({ skills, onChange }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSkill(); } }}
-          placeholder="e.g. Python, React, Java — press Enter to add"
+          placeholder="e.g. Python, React — press Enter to add"
           className="rounded-xl flex-1"
         />
         <Button type="button" variant="outline" onClick={addSkill} className="rounded-xl shrink-0">Add</Button>
@@ -42,37 +42,14 @@ function SkillsInput({ skills, onChange }) {
   );
 }
 
-function ProfileProgress({ form }) {
-  const fields = [
-    form.full_name, form.phone, form.location, form.linkedin_url,
-    form.portfolio_url, form.years_of_experience !== "", form.education_level,
-    form.field_of_study, form.current_job_title, form.skills?.length > 0,
-  ];
-  const filled = fields.filter(Boolean).length;
-  const pct = Math.round((filled / fields.length) * 100);
-  return (
-    <div className="bg-white border border-border rounded-2xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="font-semibold text-foreground text-sm">Profile Completeness</p>
-        <span className={`text-sm font-bold ${pct >= 80 ? "text-green-600" : pct >= 50 ? "text-orange-500" : "text-red-500"}`}>{pct}%</span>
-      </div>
-      <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${pct >= 80 ? "bg-green-500" : pct >= 50 ? "bg-orange-400" : "bg-red-400"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <p className="text-xs text-muted-foreground">{filled} of {fields.length} fields filled</p>
-    </div>
-  );
-}
-
 export default function CandidateProfilePage() {
   const navigate = useNavigate();
+  const photoRef = useRef(null);
   const cvRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [cvUploading, setCvUploading] = useState(false);
   const [candidateRecord, setCandidateRecord] = useState(null);
   const [applications, setApplications] = useState([]);
@@ -82,6 +59,7 @@ export default function CandidateProfilePage() {
     linkedin_url: "", portfolio_url: "", years_of_experience: "",
     education_level: "", field_of_study: "", current_job_title: "",
     skills: [], cv_url: "", cv_filename: "", cv_uploaded_at: "",
+    photo_url: "",
   });
 
   useEffect(() => {
@@ -95,14 +73,14 @@ export default function CandidateProfilePage() {
         base44.entities.Application.filter({ candidate_email: email }, "-created_date"),
         base44.entities.AssessmentResult.filter({ candidate_email: email }, "-created_date", 1),
       ]);
-      if (assessments && assessments.length > 0) setAssessmentResult(assessments[0]);
+      if (assessments?.length > 0) setAssessmentResult(assessments[0]);
 
       const c = candidates[0] || {};
       setCandidateRecord(c);
       setApplications(apps || []);
       setForm({
         full_name: c.full_name || "",
-        email: email,
+        email,
         phone: c.phone || "",
         location: c.location || "",
         linkedin_url: c.linkedin_url || "",
@@ -115,11 +93,21 @@ export default function CandidateProfilePage() {
         cv_url: c.cv_url || "",
         cv_filename: c.cv_filename || "",
         cv_uploaded_at: c.cv_uploaded_at || "",
+        photo_url: c.photo_url || "",
       });
       setLoading(false);
     };
     init();
   }, [navigate]);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, photo_url: file_url }));
+    setPhotoUploading(false);
+  };
 
   const handleCvUpload = async (e) => {
     const file = e.target.files[0];
@@ -144,6 +132,7 @@ export default function CandidateProfilePage() {
     setSaving(false);
   };
 
+  const initials = (form.full_name || form.email || "C").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
   const rankedApps = applications.filter(a => a.match_score);
 
   if (loading) {
@@ -166,17 +155,112 @@ export default function CandidateProfilePage() {
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-6">
+        {/* Page Header */}
         <div>
           <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-1">Candidate Portal</p>
           <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-          <p className="text-muted-foreground mt-1">Keep your profile updated to improve your job matches.</p>
+          <p className="text-muted-foreground mt-1">Manage your personal and professional information.</p>
         </div>
 
-        <ProfileProgress form={form} />
+        {/* Main Card — Photo + Form */}
+        <div className="bg-white border border-border rounded-2xl p-6 md:p-8">
+          <div className="flex flex-col md:flex-row gap-8">
+            {/* Left: Photo */}
+            <div className="flex flex-col items-center gap-3 shrink-0">
+              <div className="relative">
+                {form.photo_url ? (
+                  <img src={form.photo_url} alt="Profile" className="w-28 h-28 rounded-2xl object-cover border-2 border-border" />
+                ) : (
+                  <div className="w-28 h-28 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-border">
+                    <span className="text-primary font-bold text-3xl">{initials}</span>
+                  </div>
+                )}
+                <button
+                  onClick={() => photoRef.current?.click()}
+                  disabled={photoUploading}
+                  className="absolute -bottom-2 -right-2 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:bg-primary/90 transition-colors"
+                >
+                  {photoUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                </button>
+                <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">Click camera to update photo</p>
+            </div>
+
+            {/* Right: Form */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Full Name</Label>
+                <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Jane Smith" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input value={form.email} disabled className="rounded-xl bg-muted/40 cursor-not-allowed" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Phone Number</Label>
+                <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+966 5X XXX XXXX" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Location / City</Label>
+                <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Riyadh, Saudi Arabia" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Current Job Title</Label>
+                <Input value={form.current_job_title} onChange={e => setForm(f => ({ ...f, current_job_title: e.target.value }))} placeholder="Software Engineer" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Years of Experience</Label>
+                <select
+                  value={form.years_of_experience}
+                  onChange={e => setForm(f => ({ ...f, years_of_experience: e.target.value }))}
+                  className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Select years</option>
+                  {EXP_OPTIONS.map(v => <option key={v} value={v}>{v} {v === "20+" ? "years" : v === "1" ? "year" : "years"}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Education Level</Label>
+                <select
+                  value={form.education_level}
+                  onChange={e => setForm(f => ({ ...f, education_level: e.target.value }))}
+                  className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Select level</option>
+                  {EDU_LEVELS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Field of Study</Label>
+                <Input value={form.field_of_study} onChange={e => setForm(f => ({ ...f, field_of_study: e.target.value }))} placeholder="Computer Science" className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>LinkedIn URL</Label>
+                <Input value={form.linkedin_url} onChange={e => setForm(f => ({ ...f, linkedin_url: e.target.value }))} placeholder="https://linkedin.com/in/..." className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>GitHub / Portfolio URL</Label>
+                <Input value={form.portfolio_url} onChange={e => setForm(f => ({ ...f, portfolio_url: e.target.value }))} placeholder="https://github.com/..." className="rounded-xl" />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Skills</Label>
+                <SkillsInput skills={form.skills} onChange={skills => setForm(f => ({ ...f, skills }))} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-6 pt-6 border-t border-border">
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-6">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {saved ? "Saved!" : "Save Changes"}
+            </Button>
+          </div>
+        </div>
 
         {/* CV Section */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
-          <h2 className="font-semibold text-foreground text-lg flex items-center gap-2"><FileText className="w-5 h-5 text-primary" />My CV</h2>
+        <div className="bg-white border border-border rounded-2xl p-6">
+          <h2 className="font-semibold text-foreground text-lg flex items-center gap-2 mb-4"><FileText className="w-5 h-5 text-primary" />My CV</h2>
           {form.cv_url ? (
             <div className="flex items-center justify-between bg-[#F8F7FF] rounded-xl px-4 py-3">
               <div>
@@ -205,88 +289,45 @@ export default function CandidateProfilePage() {
           <input ref={cvRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleCvUpload} />
         </div>
 
-        {/* Profile Form */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <h2 className="font-semibold text-foreground text-lg">Personal Information</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Full Name</Label>
-              <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Jane Smith" className="rounded-xl" />
+        {/* Activity Stats */}
+        <div className="bg-white border border-border rounded-2xl p-6">
+          <h2 className="font-semibold text-foreground text-lg mb-4">Activity Stats</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#F8F7FF] rounded-xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Briefcase className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{applications.length}</p>
+                <p className="text-xs text-muted-foreground">Applications</p>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input value={form.email} disabled className="rounded-xl bg-muted/40 cursor-not-allowed" />
+            <div className="bg-[#F8F7FF] rounded-xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                <BarChart2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{applications.filter(a => a.status === "shortlisted").length}</p>
+                <p className="text-xs text-muted-foreground">Accepted</p>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Phone Number</Label>
-              <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+966 5X XXX XXXX" className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Location / City</Label>
-              <Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Riyadh, Saudi Arabia" className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>LinkedIn URL</Label>
-              <Input value={form.linkedin_url} onChange={e => setForm(f => ({ ...f, linkedin_url: e.target.value }))} placeholder="https://linkedin.com/in/..." className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>GitHub / Portfolio URL</Label>
-              <Input value={form.portfolio_url} onChange={e => setForm(f => ({ ...f, portfolio_url: e.target.value }))} placeholder="https://github.com/..." className="rounded-xl" />
+            <div className="bg-[#F8F7FF] rounded-xl p-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">
+                  {candidateRecord?.created_date
+                    ? new Date(candidateRecord.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+                    : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Member Since</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Professional Info */}
-        <div className="bg-white border border-border rounded-2xl p-6 space-y-5">
-          <h2 className="font-semibold text-foreground text-lg">Professional Background</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Current Job Title</Label>
-              <Input value={form.current_job_title} onChange={e => setForm(f => ({ ...f, current_job_title: e.target.value }))} placeholder="Software Engineer" className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Years of Experience</Label>
-              <select
-                value={form.years_of_experience}
-                onChange={e => setForm(f => ({ ...f, years_of_experience: e.target.value }))}
-                className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Select years</option>
-                {EXP_OPTIONS.map(v => <option key={v} value={v}>{v} {v === "20+" ? "years" : v === "1" ? "year" : "years"}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Education Level</Label>
-              <select
-                value={form.education_level}
-                onChange={e => setForm(f => ({ ...f, education_level: e.target.value }))}
-                className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Select level</option>
-                {EDU_LEVELS.map(v => <option key={v} value={v}>{v}</option>)}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Field of Study</Label>
-              <Input value={form.field_of_study} onChange={e => setForm(f => ({ ...f, field_of_study: e.target.value }))} placeholder="Computer Science" className="rounded-xl" />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Skills</Label>
-            <SkillsInput skills={form.skills} onChange={skills => setForm(f => ({ ...f, skills }))} />
-          </div>
-        </div>
-
-        {/* Save */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 rounded-xl gap-2 h-11 px-6">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saved ? "Saved!" : "Save Changes"}
-          </Button>
-        </div>
-
-        {/* Personality Assessment Results */}
+        {/* Personality Assessment */}
         {assessmentResult ? (
           <div className="bg-white border border-border rounded-2xl p-6 space-y-4">
             <h2 className="font-semibold text-foreground text-lg flex items-center gap-2">
