@@ -17,7 +17,7 @@ export default function RankProgressModal({ progress }) {
             <p className="text-sm text-muted-foreground mt-2">
               {progress.current} of {progress.total}
             </p>
-            <p className="text-sm font-medium text-primary mt-1">{progress.currentName}</p>
+            <p className="text-sm font-medium text-primary mt-1">Processing CV {progress.current} of {progress.total}</p>
           </div>
 
           <div className="space-y-3">
