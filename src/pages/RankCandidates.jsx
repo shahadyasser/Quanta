@@ -138,7 +138,7 @@ export default function RankCandidates() {
   };
 
   const filteredAndSorted = candidates
-    .filter((a) => a.status !== "rejected")
+    .filter((a) => a.status !== "rejected" && a.status !== "accepted")
     .filter((a) => {
       const q = search.toLowerCase();
       return !q || (a.candidate_name || "").toLowerCase().includes(q) || (a.candidate_email || "").toLowerCase().includes(q);
