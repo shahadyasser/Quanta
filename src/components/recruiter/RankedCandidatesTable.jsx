@@ -59,10 +59,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
               <th className="px-6 py-4 text-left font-semibold text-foreground w-16">Rank</th>
               <th className="px-6 py-4 text-left font-semibold text-foreground">Candidate</th>
               {showScores && <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Score</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Work Exp</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Skills</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Education</th>}
-              {showScores && <th className="px-6 py-4 text-center font-semibold text-foreground w-24">Certs</th>}
+
               <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Status</th>
               <th className="px-6 py-4 text-right font-semibold text-foreground w-24">Actions</th>
             </tr>
@@ -101,26 +98,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                           </div>
                         </td>
                       )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.work_experience || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.skills || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.education || 0} />
-                        </td>
-                      )}
-                      {showScores && (
-                        <td className="px-6 py-4 text-center">
-                          <RatingStars rating={constructs.certifications || 0} />
-                        </td>
-                      )}
+
                       <td className="px-6 py-4">
                         <Badge
                           className={`text-xs ${
