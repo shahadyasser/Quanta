@@ -54,15 +54,28 @@ const TRAITS = ["openness", "conscientiousness", "extraversion", "agreeableness"
 export default function PsychResults() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentUserName, setCurrentUserName] = useState(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
-    if (!id) { setLoading(false); return; }
-    base44.entities.AssessmentResult.filter({ id }).then(res => {
-      if (res.length > 0) setResult(res[0]);
+
+    const candidateEmail = localStorage.getItem("candidateEmail");
+
+    const fetchAll = async () => {
+      const promises = [];
+      if (id) promises.push(base44.entities.AssessmentResult.filter({ id }));
+      else promises.push(Promise.resolve([]));
+      if (candidateEmail) promises.push(base44.entities.Candidate.filter({ email: candidateEmail }));
+      else promises.push(Promise.resolve([]));
+
+      const [results, candidates] = await Promise.all(promises);
+      if (results.length > 0) setResult(results[0]);
+      if (candidates.length > 0 && candidates[0].full_name) setCurrentUserName(candidates[0].full_name);
       setLoading(false);
-    });
+    };
+
+    fetchAll();
   }, []);
 
   if (loading) return (
@@ -104,7 +117,7 @@ export default function PsychResults() {
         {/* Header */}
         <div className="bg-white border border-border rounded-2xl p-6">
           <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Personality Profile</p>
-          <h1 className="text-2xl font-bold text-foreground">{result.candidate_name || result.candidate_email}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{currentUserName || result.candidate_name || result.candidate_email}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Big Five Personality Assessment</p>
           <p className="text-xs text-muted-foreground mt-2">
             Completed {new Date(result.created_date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
