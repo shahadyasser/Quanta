@@ -93,7 +93,7 @@ export default function CandidateProfilePage() {
       const [candidates, apps, assessments] = await Promise.all([
         base44.entities.Candidate.filter({ email }),
         base44.entities.Application.filter({ candidate_email: email }, "-created_date"),
-        base44.entities.AssessmentResult.filter({ candidate_email: email, job_profile_id: "personality" }, "-created_date", 1),
+        base44.entities.AssessmentResult.filter({ candidate_email: email }, "-created_date", 1),
       ]);
       if (assessments && assessments.length > 0) setAssessmentResult(assessments[0]);
 
@@ -322,9 +322,14 @@ export default function CandidateProfilePage() {
                 )}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Taken on {new Date(assessmentResult.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Taken on {new Date(assessmentResult.created_date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              </p>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs gap-1.5" onClick={() => navigate(`/psych-results?id=${assessmentResult.id}`)}>
+                View Full Results
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="bg-white border border-border rounded-2xl p-6 flex items-center justify-between">

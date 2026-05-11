@@ -82,6 +82,12 @@ export default function Assessment() {
     const init = async () => {
       let me = null;
       try { me = await base44.auth.me(); } catch (_) {}
+      // Prefer localStorage candidate session
+      const localEmail = localStorage.getItem("candidateEmail");
+      const localName = localStorage.getItem("candidateName");
+      if (localEmail) {
+        me = { email: localEmail, full_name: localName || me?.full_name || "" };
+      }
       setUser(me);
       const qs = await base44.entities.PsychQuestion.list("order_index", 50);
       setQuestions(qs.sort((a, b) => a.order_index - b.order_index));
