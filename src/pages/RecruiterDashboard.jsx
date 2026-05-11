@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, Loader2, Clock, Sparkles, UserCircle } from "lucide-react";
+import { Plus, Search, Loader2, Clock, UserCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import StatsCard from "../components/recruiter/StatsCard";
 import AccountDropdown from "../components/AccountDropdown";
+import JobCard from "../components/recruiter/JobCard";
 
-
-const TABS = ["All Jobs", "open", "closed", "draft"];
+const TABS = ["All Jobs", "Open", "Closed", "Reopened", "Draft"];
 
 export default function RecruiterDashboard() {
   const navigate = useNavigate();
@@ -88,6 +88,16 @@ export default function RecruiterDashboard() {
     });
     return () => unsubscribe();
   }, [user, jobs]);
+
+  const reloadJobs = async () => {
+    const recruiterEmail = localStorage.getItem("recruiterEmail");
+    const jobsData = await base44.entities.Job.filter({ recruiter_email: recruiterEmail }, "-created_date");
+    const appsData = await base44.entities.Application.list();
+    const recruiterJobIds = new Set((jobsData || []).map(j => j.id));
+    const recruiterApps = (appsData || []).filter(a => recruiterJobIds.has(a.job_id));
+    setJobs(jobsData || []);
+    setApplications(recruiterApps || []);
+  };
 
   const filteredJobs = jobs.filter((job) => {
     const matchesTab = activeTab === "All Jobs" || job.status === activeTab;
@@ -218,8 +228,8 @@ export default function RecruiterDashboard() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex gap-2 mb-4">
+          {/* Status Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mb-4">
             {TABS.map((tab) => {
               const count = tab === "All Jobs" ? jobs.length : jobs.filter((j) => j.status === tab).length;
               return (
@@ -237,41 +247,19 @@ export default function RecruiterDashboard() {
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
           ) : filteredJobs.length === 0 ? (
-            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">No jobs found. Post your first job!</div>
+            <div className="bg-white border border-border rounded-2xl p-10 text-center text-muted-foreground">No jobs found.</div>
           ) : (
             <div className="space-y-3">
-              {filteredJobs.map((job) => {
-                 const appCount = getJobAppCount(job.id);
-                 return (
-                   <div key={job.id} className="bg-white border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                     <div className="flex items-center gap-4 flex-1">
-                       <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                         <span className="text-primary font-bold text-sm">{(job.title || "J")[0]}</span>
-                       </div>
-                       <div>
-                         <div className="flex items-center gap-2 mb-0.5">
-                           <h3 className="font-semibold text-foreground">{job.title}</h3>
-                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${job.status === "open" ? "bg-green-50 text-green-600" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-600"}`}>
-                             {job.status === "open" ? "Open" : job.status === "closed" ? "Closed" : "Draft"}
-                           </span>
-                         </div>
-                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                           <span>{appCount} applicants</span>
-                           <span>{job.location}</span>
-                         </div>
-                       </div>
-                     </div>
-                    <Button
-                       size="sm"
-                       className="rounded-xl bg-primary hover:bg-primary/90 gap-1.5 shrink-0"
-                       onClick={() => navigate(`/rank-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}`)}
-                     >
-                       <Sparkles className="w-3.5 h-3.5" />
-                       Rank All
-                     </Button>
-                  </div>
-                );
-              })}
+              {filteredJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  appCount={getJobAppCount(job.id)}
+                  recruiterEmail={user?.email}
+                  onJobUpdated={reloadJobs}
+                  onNavigateRank={() => navigate(`/rank-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title)}`)}
+                />
+              ))}
             </div>
           )}
         </div>

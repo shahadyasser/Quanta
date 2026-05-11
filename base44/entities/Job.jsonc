@@ -76,15 +76,35 @@
     "status": {
       "type": "string",
       "enum": [
-        "Active",
-        "Inactive"
+        "Open",
+        "Closed",
+        "Reopened",
+        "Draft"
       ],
-      "default": "Active",
+      "default": "Open",
       "description": "Job status"
     },
     "recruiter_email": {
       "type": "string",
       "description": "Recruiter who posted the job"
+    },
+    "status_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "changed_by": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Log of status changes with timestamps"
     }
   },
   "required": [
