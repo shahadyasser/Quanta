@@ -96,13 +96,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Demo Accounts */}
-          <div className="mt-8 text-center space-y-1">
-            <p className="text-sm text-muted-foreground font-medium">Demo Accounts:</p>
-            <p className="text-xs text-muted-foreground">Recruiter: recruiter@quantahire.com / recruiter123</p>
-            <p className="text-xs text-muted-foreground">Candidate: candidate@quantahire.com / candidate123</p>
-            <p className="text-xs text-muted-foreground">Admin: admin@quantahire.com / admin123</p>
-          </div>
+
         </div>
       </div>
     </div>
