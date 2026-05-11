@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Search, Loader2, Clock, Sparkles } from "lucide-react";
+import { Plus, Search, Loader2, Clock, Sparkles, UserCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,6 +165,9 @@ export default function RecruiterDashboard() {
           <p className="text-xs text-muted-foreground">Recruiter Portal</p>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground hidden sm:flex" onClick={() => navigate("/recruiter-profile")}>
+            <UserCircle className="w-4 h-4" />My Profile
+          </Button>
           <AccountDropdown
             email={user?.email}
             fullName={recruiterProfile?.full_name}

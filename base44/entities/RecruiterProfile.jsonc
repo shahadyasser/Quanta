@@ -18,6 +18,18 @@
       "type": "string",
       "description": "Phone number"
     },
+    "job_title": {
+      "type": "string",
+      "description": "Job title / position"
+    },
+    "bio": {
+      "type": "string",
+      "description": "Short bio"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Profile photo URL"
+    },
     "user_id": {
       "type": "string",
       "description": "Linked user ID"

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X } from "lucide-react";
+import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X, UserCircle } from "lucide-react";
 import AccountDropdown from "@/components/AccountDropdown";
 import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import CandidateEmailGate from "@/components/CandidateEmailGate";
 const QUICK_ACTIONS = [
   { icon: ClipboardList, label: "Take Assessment", description: "Complete your psychometric test", href: "/assessment" },
   { icon: Briefcase, label: "Browse Jobs", description: "Find jobs and apply with your CV", href: "/browse-jobs" },
+  { icon: UserCircle, label: "My Profile", description: "Update your profile and CV", href: "/candidate-profile-page" },
 ];
 
 const STATUS_LABEL = {
@@ -258,7 +259,7 @@ export default function CandidateDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {QUICK_ACTIONS.map(({ icon: Icon, label, description, href }) => (
             <div
               key={label}

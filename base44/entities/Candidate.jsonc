@@ -18,6 +18,59 @@
       "type": "string",
       "description": "Phone number"
     },
+    "location": {
+      "type": "string",
+      "description": "City / location"
+    },
+    "linkedin_url": {
+      "type": "string",
+      "description": "LinkedIn profile URL"
+    },
+    "portfolio_url": {
+      "type": "string",
+      "description": "GitHub or portfolio URL"
+    },
+    "years_of_experience": {
+      "type": "string",
+      "description": "Years of experience"
+    },
+    "education_level": {
+      "type": "string",
+      "enum": [
+        "High School",
+        "Bachelor",
+        "Master",
+        "PhD"
+      ],
+      "description": "Highest education level"
+    },
+    "field_of_study": {
+      "type": "string",
+      "description": "Field of study"
+    },
+    "current_job_title": {
+      "type": "string",
+      "description": "Current or most recent job title"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Candidate skills"
+    },
+    "cv_url": {
+      "type": "string",
+      "description": "Latest uploaded CV URL"
+    },
+    "cv_filename": {
+      "type": "string",
+      "description": "Original filename of uploaded CV"
+    },
+    "cv_uploaded_at": {
+      "type": "string",
+      "description": "ISO timestamp of CV upload"
+    },
     "total_applications": {
       "type": "number",
       "default": 0,
@@ -36,10 +89,6 @@
     "last_seen_statuses": {
       "type": "object",
       "description": "Map of application_id to last seen status for alert tracking"
-    },
-    "cv_url": {
-      "type": "string",
-      "description": "Latest uploaded CV URL"
     }
   },
   "required": [
