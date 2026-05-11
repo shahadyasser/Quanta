@@ -1,5 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+async function sendEmailWithResend({ to, subject, body, from_name = "QuantaHire" }) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: `${from_name} <onboarding@resend.dev>`,
+      to: [to],
+      subject,
+      text: body,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Resend error: ${err}`);
+  }
+  return res.json();
+}
+
 Deno.serve(async (req) => {
   try {
     const payload = await req.json();
@@ -21,8 +44,8 @@ Deno.serve(async (req) => {
       ? `Dear ${data.candidate_name || "Candidate"},\n\nWe are delighted to inform you that your application for the ${data.job_title} position at ${data.company} has been accepted!\n\nOur team will be in touch shortly with the next steps.\n\nBest regards,\nThe QuantaHire Team`
       : `Dear ${data.candidate_name || "Candidate"},\n\nThank you for applying for the ${data.job_title} position at ${data.company}. After careful review, we will not be moving forward with your application at this time.\n\nWe encourage you to continue exploring other opportunities on QuantaHire.\n\nBest regards,\nThe QuantaHire Team`;
 
-    // Email sending via integration
-    await base44.integrations.Core.SendEmail({ to: data.candidate_email, subject, body, from_name: "QuantaHire" });
+    // Send email via Resend (test mode: send to your email, CC candidate in subject)
+    await sendEmailWithResend({ to: "shahadym0@gmail.com", subject: `[TO: ${data.candidate_email}] ${subject}`, body });
 
     // Update candidate stats
     const candidates = await base44.asServiceRole.entities.Candidate.filter({ email: data.candidate_email });
