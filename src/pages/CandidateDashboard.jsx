@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X } from "lucide-react";
+import { ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X } from "lucide-react";
+import AccountDropdown from "@/components/AccountDropdown";
 import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ export default function CandidateDashboard() {
   const [applications, setApplications] = useState([]);
   const [user, setUser] = useState(null);
   const [candidate, setCandidate] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(true);
   const [alerts, setAlerts] = useState([]); // { id, job_title, status }
@@ -101,7 +103,11 @@ export default function CandidateDashboard() {
       ]);
       setInvites(interviewSlots);
 
-      setUser({ email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || candidateEmail });
+      const userObj = { email: candidateEmail, id: candidateId, full_name: apps[0]?.candidate_name || candidateEmail };
+      setUser(userObj);
+      // Fetch candidate profile for account dropdown
+      const profiles = await base44.entities.CandidateProfile.filter({ email: candidateEmail });
+      if (profiles && profiles.length > 0) setProfile(profiles[0]);
 
       // Initialize prev statuses on first load (no alerts)
       (apps || []).forEach(a => { prevStatusesRef.current[a.id] = a.status; });
@@ -223,13 +229,11 @@ export default function CandidateDashboard() {
               </div>
             )}
           </div>
-          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">
-            {user?.email || ""}
-          </span>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("candidateEmail"); window.location.href = "/"; }}>
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <AccountDropdown
+            user={user}
+            profile={profile}
+            onLogout={() => { localStorage.removeItem("candidateEmail"); localStorage.removeItem("candidateId"); window.location.href = "/"; }}
+          />
         </div>
       </nav>
 
