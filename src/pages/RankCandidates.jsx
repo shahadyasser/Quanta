@@ -196,7 +196,7 @@ export default function RankCandidates() {
             disabled={processing}
           >
             {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {processing ? "Processing..." : "Rank All Candidates"}
+            {processing ? "Processing..." : "Get All Candidates Match Score"}
           </Button>
           <Button variant="outline" className="rounded-xl gap-2" onClick={exportCSV} disabled={processing}>
             <Download className="w-4 h-4" />
