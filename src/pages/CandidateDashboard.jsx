@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, ClipboardList, Briefcase, Loader2, Bell, CheckCircle, XCircle, X } from "lucide-react";
+import AccountDropdown from "@/components/AccountDropdown";
 import InterviewInvites from "@/components/candidate/InterviewInvites";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -223,13 +224,12 @@ export default function CandidateDashboard() {
               </div>
             )}
           </div>
-          <span className="text-sm bg-primary/10 text-primary px-3 py-1.5 rounded-lg font-medium hidden sm:block">
-            {user?.email || ""}
-          </span>
-          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" onClick={() => { localStorage.removeItem("candidateEmail"); window.location.href = "/"; }}>
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
+          <AccountDropdown
+            email={user?.email}
+            fullName={user?.full_name}
+            role="Candidate"
+            onLogout={() => { localStorage.removeItem("candidateEmail"); localStorage.removeItem("candidateId"); window.location.href = "/"; }}
+          />
         </div>
       </nav>
 
