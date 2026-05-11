@@ -31,7 +31,7 @@ export default function Home() {
         <div className="absolute bottom-0 right-0 w-[28rem] h-[28rem] rounded-full bg-pink-500/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
         <div className="absolute top-1/2 right-1/3 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
 
-        <div className="relative max-w-xl">
+        <div className="relative max-w-xl pt-16 lg:pt-0">
           {/* Pill */}
           <div className="inline-flex items-center gap-2 bg-white/60 backdrop-blur-md border border-white/40 rounded-full px-4 py-1.5 shadow-lg hover:bg-white/70 transition-all">
             <Sparkles className="w-4 h-4 text-purple-600 animate-spin" style={{ animationDuration: '3s' }} />
