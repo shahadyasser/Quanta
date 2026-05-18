@@ -106,7 +106,7 @@ export default function CandidateAuth() {
           </div>
           <h1 className="text-5xl font-bold text-primary tracking-tight mb-4">QuantaHire</h1>
           <p className="text-lg text-muted-foreground leading-relaxed max-w-sm">
-            Transform your hiring process with intelligent candidate matching, AI-powered interviews, and unbiased screening.
+            Transform your hiring process with intelligent candidate matching and unbiased screening.
           </p>
         </div>
 
