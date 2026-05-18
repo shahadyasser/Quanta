@@ -14,7 +14,7 @@ const pool = new pg.Pool({
 Deno.serve(async (req) => {
   const client = await pool.connect();
   try {
-    const { email, password, full_name, role, company } = await req.json();
+    const { email, password, full_name, role, company, cv_url, certificate_url } = await req.json();
 
     if (!email || !password || !full_name || !role) {
       return Response.json({ error: 'Email, password, full_name, and role are required' }, { status: 400 });
@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
         status: 'pending',
         is_approved: false,
         role: 'recruiter',
+        cv_url: cv_url || null,
+        certificate_url: certificate_url || null,
       });
     }
 

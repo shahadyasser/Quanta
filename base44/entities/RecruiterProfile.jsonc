@@ -53,6 +53,14 @@
       "type": "boolean",
       "default": false,
       "description": "Whether recruiter is approved"
+    },
+    "cv_url": {
+      "type": "string",
+      "description": "Uploaded CV file URL (PDF or DOC)"
+    },
+    "certificate_url": {
+      "type": "string",
+      "description": "Uploaded certificate file URL (PDF or DOC)"
     }
   },
   "required": [

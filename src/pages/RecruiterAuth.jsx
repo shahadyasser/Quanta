@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, ArrowLeft, Briefcase, Eye, EyeOff, Clock, CheckCircle } from "lucide-react";
+import { Sparkles, ArrowLeft, Briefcase, Eye, EyeOff, Clock, Upload, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,8 @@ export default function RecruiterAuth() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [cvFile, setCvFile] = useState(null);
+  const [certFile, setCertFile] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,12 +28,27 @@ export default function RecruiterAuth() {
     setLoading(true);
     if (tab === "register") {
       if (password !== confirm) { setWarning("no_access"); setLoading(false); return; }
+
+      // Upload CV and certificate first
+      let cvUrl = null;
+      let certUrl = null;
+      if (cvFile) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: cvFile });
+        cvUrl = file_url;
+      }
+      if (certFile) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: certFile });
+        certUrl = file_url;
+      }
+
       const res = await base44.functions.invoke("authRegister", {
         email: email.trim().toLowerCase(),
         password,
         full_name: fullName,
         role: "recruiter",
-        company
+        company,
+        cv_url: cvUrl,
+        certificate_url: certUrl
       });
       setLoading(false);
       if (res.data.error) {
@@ -199,15 +216,43 @@ export default function RecruiterAuth() {
                   </div>
 
                   {tab === "register" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="confirm">Confirm Password</Label>
-                      <div className="relative">
-                        <Input id="confirm" type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-                        <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                          {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
+                    <>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="confirm">Confirm Password</Label>
+                        <div className="relative">
+                          <Input id="confirm" type={showConfirm ? "text" : "password"} placeholder="••••••••" className="h-12 rounded-xl border-border pr-11" value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+                          <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                            {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                       </div>
-                    </div>
+
+                      {/* CV Upload */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cv">CV / Resume <span className="text-muted-foreground font-normal">(PDF or DOC)</span></Label>
+                        <label htmlFor="cv" className="flex items-center gap-3 h-12 rounded-xl border border-border bg-background px-3 cursor-pointer hover:bg-muted/40 transition-colors">
+                          <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm text-muted-foreground truncate flex-1">
+                            {cvFile ? cvFile.name : "Upload your CV"}
+                          </span>
+                          {cvFile && <FileText className="w-4 h-4 text-primary shrink-0" />}
+                        </label>
+                        <input id="cv" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setCvFile(e.target.files[0] || null)} />
+                      </div>
+
+                      {/* Certificate Upload */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cert">Certificate <span className="text-muted-foreground font-normal">(PDF or DOC)</span></Label>
+                        <label htmlFor="cert" className="flex items-center gap-3 h-12 rounded-xl border border-border bg-background px-3 cursor-pointer hover:bg-muted/40 transition-colors">
+                          <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm text-muted-foreground truncate flex-1">
+                            {certFile ? certFile.name : "Upload your certificate"}
+                          </span>
+                          {certFile && <FileText className="w-4 h-4 text-primary shrink-0" />}
+                        </label>
+                        <input id="cert" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setCertFile(e.target.files[0] || null)} />
+                      </div>
+                    </>
                   )}
 
                   {/* Inline warning/status messages (login tab only) */}
