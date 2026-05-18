@@ -25,7 +25,6 @@ import PsychResults from './pages/PsychResults';
 import PsychAdmin from './pages/PsychAdmin';
 import JobsReference from './pages/JobsReference';
 import Portal from './pages/Portal';
-import RAGAnalysisResults from './pages/RAGAnalysisResults';
 import RankCandidates from './pages/RankCandidates';
 import RecruiterProfilePage from './pages/RecruiterProfilePage';
 import CandidateProfilePage from './pages/CandidateProfilePage';
@@ -79,7 +78,6 @@ const AuthenticatedApp = () => {
       <Route path="/psych-admin" element={<PsychAdmin />} />
       <Route path="/jobs-reference" element={<JobsReference />} />
       <Route path="/portal" element={<Portal />} />
-      <Route path="/rag-analysis-results" element={<RAGAnalysisResults />} />
       <Route path="/rank-candidates" element={<RankCandidates />} />
       <Route path="/recruiter-profile" element={<RecruiterProfilePage />} />
       <Route path="/candidate-profile-page" element={<CandidateProfilePage />} />
