@@ -1,63 +1,111 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Download, Users, Briefcase, FileText, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Users, Briefcase, FileText, UserCheck, Loader2 } from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer
 } from "recharts";
+import { base44 } from "@/api/base44Client";
 
-const STATS = [
-  { label: "Total Recruiters", value: "47", change: "+12%", sub: "vs last month", icon: Users },
-  { label: "Total Jobs Posted", value: "156", change: "+8%", sub: "vs last month", icon: Briefcase },
-  { label: "Total Applications", value: "892", change: "+15%", sub: "vs last month", icon: FileText },
-  { label: "Avg Time to Hire", value: "18 days", change: "-3 days", sub: "vs last month", icon: Clock },
-];
-
-const RECRUITER_DATA = [
-  { month: "Jul", value: 22 },
-  { month: "Aug", value: 28 },
-  { month: "Sep", value: 33 },
-  { month: "Oct", value: 38 },
-  { month: "Nov", value: 44 },
-  { month: "Dec", value: 47 },
-];
-
-const JOB_DATA = [
-  { month: "Jul", value: 55 },
-  { month: "Aug", value: 78 },
-  { month: "Sep", value: 95 },
-  { month: "Oct", value: 112 },
-  { month: "Nov", value: 138 },
-  { month: "Dec", value: 156 },
-];
-
-const PIE_DATA = [
-  { name: "Shortlisted", value: 198, color: "#7C3AED" },
-  { name: "Pending", value: 245, color: "#A78BFA" },
-  { name: "Interviewed", value: 156, color: "#60A5FA" },
-  { name: "Hired", value: 89, color: "#34D399" },
-  { name: "Rejected", value: 204, color: "#F87171" },
-];
-
-const PERCENT_LABELS = {
-  Shortlisted: "22%",
-  Pending: "27%",
-  Interviewed: "17%",
-  Hired: "10%",
-  Rejected: "23%",
+const STATUS_COLORS = {
+  pending: "#A78BFA",
+  processed: "#60A5FA",
+  shortlisted: "#34D399",
+  accepted: "#10B981",
+  interview: "#FBBF24",
+  rejected: "#F87171",
 };
 
+const STATUS_LABELS = {
+  pending: "Pending",
+  processed: "Under Review",
+  shortlisted: "Shortlisted",
+  accepted: "Accepted",
+  interview: "Interview",
+  rejected: "Rejected",
+};
+
+function groupByMonth(items, dateField = "created_date") {
+  const counts = {};
+  items.forEach(item => {
+    const d = new Date(item[dateField]);
+    if (!isNaN(d)) {
+      const key = d.toLocaleString("en-US", { month: "short" });
+      counts[key] = (counts[key] || 0) + 1;
+    }
+  });
+  const monthOrder = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = Object.keys(counts).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+  return months.slice(-6).map(m => ({ month: m, value: counts[m] }));
+}
+
 export default function SystemReports() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ recruiters: 0, jobs: 0, applications: 0, candidates: 0 });
+  const [recruiterGrowth, setRecruiterGrowth] = useState([]);
+  const [jobTrend, setJobTrend] = useState([]);
+  const [pieData, setPieData] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const [recruiters, jobs, applications, candidates] = await Promise.all([
+        base44.entities.RecruiterProfile.list(),
+        base44.entities.Job.list(),
+        base44.entities.Application.list(),
+        base44.entities.Candidate.list(),
+      ]);
+
+      setStats({
+        recruiters: recruiters.length,
+        jobs: jobs.length,
+        applications: applications.length,
+        candidates: candidates.length,
+      });
+
+      setRecruiterGrowth(groupByMonth(recruiters));
+      setJobTrend(groupByMonth(jobs));
+
+      // Status distribution
+      const statusCounts = {};
+      applications.forEach(a => {
+        const s = a.status || "pending";
+        statusCounts[s] = (statusCounts[s] || 0) + 1;
+      });
+      setPieData(
+        Object.entries(statusCounts).map(([status, value]) => ({
+          name: STATUS_LABELS[status] || status,
+          value,
+          color: STATUS_COLORS[status] || "#9CA3AF",
+        }))
+      );
+
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const STAT_CARDS = [
+    { label: "Total Recruiters", value: stats.recruiters, icon: Users },
+    { label: "Total Jobs Posted", value: stats.jobs, icon: Briefcase },
+    { label: "Total Applications", value: stats.applications, icon: FileText },
+    { label: "Total Candidates", value: stats.candidates, icon: UserCheck },
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F7FF] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
-      {/* Navbar */}
       <nav className="bg-white border-b border-border px-6 md:px-10 py-3 flex items-center sticky top-0 z-10">
         <span className="font-bold text-lg text-primary">QuantaHire Admin</span>
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-8 space-y-6">
-        {/* Back */}
         <Link
           to="/admin-dashboard"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -66,21 +114,14 @@ export default function SystemReports() {
           Back to Dashboard
         </Link>
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">System Reports</h1>
-            <p className="text-muted-foreground mt-1">Recruiter usage analytics and platform statistics</p>
-          </div>
-          <Button className="bg-primary hover:bg-primary/90 rounded-xl gap-2 self-start">
-            <Download className="w-4 h-4" />
-            Export Report
-          </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">System Reports</h1>
+          <p className="text-muted-foreground mt-1">Live platform statistics and analytics</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {STATS.map(({ label, value, change, sub, icon: Icon }) => (
+          {STAT_CARDS.map(({ label, value, icon: Icon }) => (
             <div key={label} className="bg-white border border-border rounded-2xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground font-medium">{label}</p>
@@ -89,56 +130,44 @@ export default function SystemReports() {
                 </div>
               </div>
               <p className="text-3xl font-bold text-foreground">{value}</p>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  change.startsWith("-") ? "bg-green-50 text-green-600" : "bg-green-50 text-green-600"
-                }`}>{change}</span>
-                <span className="text-xs text-muted-foreground">{sub}</span>
-              </div>
             </div>
           ))}
         </div>
 
-        {/* Charts Row */}
+        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recruiter Growth */}
           <div className="bg-white border border-border rounded-2xl p-6">
-            <h2 className="font-semibold text-foreground mb-1">Recruiter Growth</h2>
-            <p className="text-sm text-muted-foreground mb-5">Active recruiters over the last 6 months</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={RECRUITER_DATA} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="recruiterGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7C3AED" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#7C3AED" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }}
-                  labelStyle={{ fontWeight: 600 }}
-                />
-                <Area type="monotone" dataKey="value" stroke="#7C3AED" strokeWidth={2} fill="url(#recruiterGrad)" name="Active Recruiters" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <h2 className="font-semibold text-foreground mb-1">Recruiter Registrations</h2>
+            <p className="text-sm text-muted-foreground mb-5">By month (last 6 months)</p>
+            {recruiterGrowth.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">No data yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={recruiterGrowth} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }} />
+                  <Bar dataKey="value" fill="#7C3AED" radius={[4, 4, 0, 0]} name="Recruiters" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
-          {/* Job Postings Trend */}
           <div className="bg-white border border-border rounded-2xl p-6">
             <h2 className="font-semibold text-foreground mb-1">Job Postings Trend</h2>
-            <p className="text-sm text-muted-foreground mb-5">Total job postings over the last 6 months</p>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={JOB_DATA} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }}
-                  labelStyle={{ fontWeight: 600 }}
-                />
-                <Bar dataKey="value" fill="#7C3AED" radius={[4, 4, 0, 0]} name="Job Postings" />
-              </BarChart>
-            </ResponsiveContainer>
+            <p className="text-sm text-muted-foreground mb-5">By month (last 6 months)</p>
+            {jobTrend.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-10">No data yet</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={jobTrend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: "#9CA3AF" }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }} />
+                  <Bar dataKey="value" fill="#A78BFA" radius={[4, 4, 0, 0]} name="Job Postings" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -146,57 +175,63 @@ export default function SystemReports() {
         <div className="bg-white border border-border rounded-2xl p-6">
           <h2 className="font-semibold text-foreground mb-1">Application Status Distribution</h2>
           <p className="text-sm text-muted-foreground mb-6">Current status of all applications in the system</p>
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            {/* Legend list */}
-            <div className="space-y-3 min-w-[160px]">
-              {PIE_DATA.map(({ name, value, color }) => (
-                <div key={name} className="flex items-center justify-between gap-6">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
-                    <span className="text-sm text-muted-foreground">{name}</span>
+          {pieData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-10">No applications yet</p>
+          ) : (
+            <div className="flex flex-col md:flex-row items-center gap-8">
+              <div className="space-y-3 min-w-[180px]">
+                {pieData.map(({ name, value, color }) => (
+                  <div key={name} className="flex items-center justify-between gap-6">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-sm text-muted-foreground">{name}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">{value}</span>
                   </div>
-                  <span className="text-sm font-semibold text-foreground">{value}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            {/* Pie */}
-            <div className="flex-1 flex justify-center">
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={PIE_DATA}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={100}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {PIE_DATA.map(({ name, color }) => (
-                      <Cell key={name} fill={color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }}
-                    formatter={(value, name) => [`${value} (${PERCENT_LABELS[name]})`, name]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+              <div className="flex-1 flex justify-center">
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={65}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {pieData.map(({ name, color }) => (
+                        <Cell key={name} fill={color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: "8px", border: "1px solid #E5E7EB", fontSize: "12px" }}
+                      formatter={(value, name) => {
+                        const total = pieData.reduce((s, d) => s + d.value, 0);
+                        return [`${value} (${Math.round((value / total) * 100)}%)`, name];
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-            {/* Percent badges */}
-            <div className="space-y-3 min-w-[160px]">
-              {PIE_DATA.map(({ name, color }) => (
-                <div key={name} className="flex items-center justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">{name}</span>
-                  <span className="text-sm font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}20`, color }}>
-                    {PERCENT_LABELS[name]}
-                  </span>
-                </div>
-              ))}
+              <div className="space-y-3 min-w-[120px]">
+                {pieData.map(({ name, value, color }) => {
+                  const total = pieData.reduce((s, d) => s + d.value, 0);
+                  return (
+                    <div key={name} className="flex items-center justify-end">
+                      <span className="text-sm font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}20`, color }}>
+                        {Math.round((value / total) * 100)}%
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
