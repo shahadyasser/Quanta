@@ -156,7 +156,7 @@ export default function AdminDashboard() {
           <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" asChild>
             <Link to="/system-reports"><FileText className="w-4 h-4" />View Reports</Link>
           </Button>
-          <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/view-candidates")}>
+          <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/view-candidates?from=admin")}>
             <FileText className="w-4 h-4" />All Applications
           </Button>
           <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/jobs-reference")}>
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
                         ) : <span className="text-muted-foreground text-xs">—</span>}
                       </td>
                       <td className="py-3">
-                        <Button size="sm" variant="outline" className="rounded-lg text-xs h-7 px-3" onClick={() => navigate(`/view-candidates?job_id=${app.job_id}&job=${encodeURIComponent(app.job_title || "")}`)}>
+                        <Button size="sm" variant="outline" className="rounded-lg text-xs h-7 px-3" onClick={() => navigate(`/view-candidates?job_id=${app.job_id}&job=${encodeURIComponent(app.job_title || "")}&from=admin`)}>
                           View Job
                         </Button>
                       </td>

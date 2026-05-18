@@ -37,6 +37,8 @@ export default function ViewCandidates() {
   const jobId = urlParams.get("job_id");
   const jobTitle = urlParams.get("job") || "All Jobs";
   const jobStatus = urlParams.get("status") || "open";
+  const fromAdmin = urlParams.get("from") === "admin";
+  const backPath = fromAdmin ? "/admin-dashboard" : "/recruiter-dashboard";
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -229,7 +231,7 @@ export default function ViewCandidates() {
     <div className="min-h-screen bg-[#F8F7FF]">
       {/* Header */}
       <div className="bg-white border-b border-border px-6 md:px-10 py-4 sticky top-0 z-10">
-        <Link to="/recruiter-dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+        <Link to={backPath} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </Link>
