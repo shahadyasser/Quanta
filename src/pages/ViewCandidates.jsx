@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square, Zap, CalendarDays } from "lucide-react";
+import { ArrowLeft, Search, Loader2, Brain, TrendingUp, BookOpen, FileText, Mail, X, Trash2, CheckSquare, Square, Zap, CalendarDays, User } from "lucide-react";
 import ProposeInterviewModal from "@/components/recruiter/ProposeInterviewModal";
+import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ export default function ViewCandidates() {
   const [ragTriggered, setRagTriggered] = useState(false); // Default false — only show after RAG is triggered
   const [interviewModal, setInterviewModal] = useState(null); // application object
   const [confirmRag, setConfirmRag] = useState(false); // Confirmation dialog
+  const [profileModal, setProfileModal] = useState(null); // { email, name }
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -369,6 +371,9 @@ export default function ViewCandidates() {
                            </div>
                          ) : null}
                          <div className="flex gap-2 flex-wrap justify-end">
+                           <Button variant="outline" size="sm" className="rounded-xl gap-1.5 border-primary/30 text-primary hover:bg-accent" onClick={() => setProfileModal({ email: a.candidate_email, name: a.candidate_name })}>
+                             <User className="w-3.5 h-3.5" /> Profile
+                           </Button>
                            {a.cv_url && (
                              <a href={a.cv_url} target="_blank" rel="noopener noreferrer">
                                <Button variant="outline" size="sm" className="rounded-xl gap-1.5">
@@ -456,6 +461,15 @@ export default function ViewCandidates() {
              </div>
            )}
          </div>
+
+          {/* Candidate Profile Modal */}
+          {profileModal && (
+            <CandidateProfileModal
+              candidateEmail={profileModal.email}
+              candidateName={profileModal.name}
+              onClose={() => setProfileModal(null)}
+            />
+          )}
 
           {/* Propose Interview Modal */}
            {interviewModal && (
