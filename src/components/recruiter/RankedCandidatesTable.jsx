@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { ChevronDown, ChevronUp, FileText, Phone, Mail, RotateCw } from "lucide-react";
+import { ChevronDown, ChevronUp, FileText, Phone, Mail, RotateCw, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CandidateExpandedRow from "@/components/recruiter/CandidateExpandedRow";
 import RatingStars from "@/components/recruiter/RatingStars";
+import CandidateProfileModal from "@/components/recruiter/CandidateProfileModal";
 
 const SCORE_COLORS = {
   strong: "bg-green-50 text-green-700 border-green-200",
@@ -31,6 +32,7 @@ function getScoreLabel(score) {
 export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores, onStatusChange: onParentStatusChange }) {
   const [expanded, setExpanded] = useState(null);
   const [reprocessing, setReprocessing] = useState(null);
+  const [profileModal, setProfileModal] = useState(null);
 
   const handleReprocess = async (appId) => {
     setReprocessing(appId);
@@ -51,6 +53,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
   };
 
   return (
+    <>
     <div className="bg-white rounded-2xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -113,9 +116,19 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                         </Badge>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-muted-foreground hover:text-foreground">
-                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg gap-1.5 border-primary/30 text-primary hover:bg-accent text-xs h-8"
+                            onClick={(e) => { e.stopPropagation(); setProfileModal({ email: app.candidate_email, name: app.candidate_name }); }}
+                          >
+                            <User className="w-3.5 h-3.5" /> Profile
+                          </Button>
+                          <button className="text-muted-foreground hover:text-foreground">
+                            {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     {isExpanded && (
@@ -140,5 +153,13 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
         </table>
       </div>
     </div>
+    {profileModal && (
+      <CandidateProfileModal
+        candidateEmail={profileModal.email}
+        candidateName={profileModal.name}
+        onClose={() => setProfileModal(null)}
+      />
+    )}
+    </>
   );
 }
