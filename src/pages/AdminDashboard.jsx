@@ -49,13 +49,13 @@ export default function AdminDashboard() {
       setAdminEmail(me.email);
 
       // Fetch from RecruiterProfile, Jobs, and Applications
-      const [recruitersData, jobsData, appsData] = await Promise.all([
-        base44.asServiceRole.entities.RecruiterProfile.list(),
-        base44.asServiceRole.entities.Job.list(),
-        base44.asServiceRole.entities.Application.list(),
+      const [recruitersRes, jobsData, appsData] = await Promise.all([
+        base44.functions.invoke('getAllRecruiters', {}),
+        base44.entities.Job.list(),
+        base44.entities.Application.list(),
       ]);
 
-      setRecruiters(recruitersData || []);
+      setRecruiters(recruitersRes.data?.recruiters || []);
       setJobs(jobsData || []);
       setApplications(appsData || []);
       setLoading(false);
@@ -80,8 +80,8 @@ export default function AdminDashboard() {
   const handleApproveRecruiter = async (id) => {
     try {
       await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'approve' });
-      const updated = await base44.asServiceRole.entities.RecruiterProfile.list();
-      setRecruiters(updated || []);
+      const updated = await base44.functions.invoke('getAllRecruiters', {});
+      setRecruiters(updated.data?.recruiters || []);
       toast({ description: "Recruiter approved successfully" });
     } catch (err) {
       toast({ description: "Failed to approve recruiter" });
@@ -92,8 +92,8 @@ export default function AdminDashboard() {
   const handleBlockRecruiter = async (id) => {
     try {
       await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'block' });
-      const updated = await base44.asServiceRole.entities.RecruiterProfile.list();
-      setRecruiters(updated || []);
+      const updated = await base44.functions.invoke('getAllRecruiters', {});
+      setRecruiters(updated.data?.recruiters || []);
       toast({ description: "Recruiter blocked successfully" });
     } catch (err) {
       toast({ description: "Failed to block recruiter" });
