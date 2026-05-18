@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Copy, CheckCircle, Briefcase, MapPin, DollarSign, Users } from "lucide-react";
+import { ArrowLeft, Search, Copy, CheckCircle, Briefcase, MapPin, DollarSign, Users, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,7 @@ export default function JobsReference() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [approvedOnly, setApprovedOnly] = useState(false);
+  const [expandedJob, setExpandedJob] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -146,103 +147,170 @@ export default function JobsReference() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filtered.map((job) => (
-                    <tr key={job.id} className="hover:bg-muted/20 transition-colors align-top">
-                      {/* ID */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <CopyId id={job.id} />
-                      </td>
+                 {filtered.map((job) => (
+                   <React.Fragment key={job.id}>
+                   <tr className="hover:bg-muted/20 transition-colors align-top">
+                     {/* ID */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <CopyId id={job.id} />
+                     </td>
 
-                      {/* Title */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shrink-0">
-                            <Briefcase className="w-3.5 h-3.5 text-primary" />
-                          </div>
-                          <span className="font-semibold text-foreground">{job.title || "—"}</span>
-                        </div>
-                      </td>
+                     {/* Title */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <div className="flex items-center gap-2">
+                         <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                           <Briefcase className="w-3.5 h-3.5 text-primary" />
+                         </div>
+                         <span className="font-semibold text-foreground">{job.title || "—"}</span>
+                       </div>
+                     </td>
 
-                      {/* Company */}
-                      <td className="px-5 py-4 whitespace-nowrap text-muted-foreground font-medium">{job.company || "—"}</td>
+                     {/* Company */}
+                     <td className="px-5 py-4 whitespace-nowrap text-muted-foreground font-medium">{job.company || "—"}</td>
 
-                      {/* Location */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <MapPin className="w-3 h-3 shrink-0" />
-                          {job.location || "—"}
-                        </span>
-                      </td>
+                     {/* Location */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <span className="flex items-center gap-1 text-muted-foreground">
+                         <MapPin className="w-3 h-3 shrink-0" />
+                         {job.location || "—"}
+                       </span>
+                     </td>
 
-                      {/* Type */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <Badge className={`text-xs ${TYPE_STYLES[job.type] || "bg-muted text-muted-foreground"}`}>{job.type || "—"}</Badge>
-                      </td>
+                     {/* Type */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <Badge className={`text-xs ${TYPE_STYLES[job.type] || "bg-muted text-muted-foreground"}`}>{job.type || "—"}</Badge>
+                     </td>
 
-                      {/* Level */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <Badge className={`text-xs ${LEVEL_STYLES[job.level] || "bg-muted text-muted-foreground"}`}>{job.level || "—"}</Badge>
-                      </td>
+                     {/* Level */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <Badge className={`text-xs ${LEVEL_STYLES[job.level] || "bg-muted text-muted-foreground"}`}>{job.level || "—"}</Badge>
+                     </td>
 
-                      {/* Salary */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <span className="flex items-center gap-1 text-foreground font-medium">
-                          <DollarSign className="w-3 h-3 text-muted-foreground shrink-0" />
-                          {job.salary || "—"}
-                        </span>
-                      </td>
+                     {/* Salary */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <span className="flex items-center gap-1 text-foreground font-medium">
+                         <DollarSign className="w-3 h-3 text-muted-foreground shrink-0" />
+                         {job.salary || "—"}
+                       </span>
+                     </td>
 
-                      {/* Arrangement */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
-                          job.arrangement === "Remote" ? "bg-teal-50 text-teal-600 border-teal-200" :
-                          job.arrangement === "Hybrid" ? "bg-yellow-50 text-yellow-600 border-yellow-200" :
-                          "bg-blue-50 text-blue-600 border-blue-200"
-                        }`}>{job.arrangement || "—"}</span>
-                      </td>
+                     {/* Arrangement */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                         job.arrangement === "Remote" ? "bg-teal-50 text-teal-600 border-teal-200" :
+                         job.arrangement === "Hybrid" ? "bg-yellow-50 text-yellow-600 border-yellow-200" :
+                         "bg-blue-50 text-blue-600 border-blue-200"
+                       }`}>{job.arrangement || "—"}</span>
+                     </td>
 
-                      {/* Status */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <Badge className={`text-xs ${STATUS_STYLES[job.status] || "bg-muted text-muted-foreground"}`}>{job.status || "—"}</Badge>
-                      </td>
+                     {/* Status */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <Badge className={`text-xs ${STATUS_STYLES[job.status] || "bg-muted text-muted-foreground"}`}>{job.status || "—"}</Badge>
+                     </td>
 
-                      {/* Recruiter */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-1">
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Users className="w-3 h-3 shrink-0" />
-                            {job.recruiter_email || "—"}
-                          </span>
-                          {job.recruiter_email && recruiters[job.recruiter_email] ? (
-                            <span className="text-xs bg-green-50 text-green-600 border border-green-200 rounded-md px-1.5 py-0.5 w-fit">
-                              ✓ Approved · {recruiters[job.recruiter_email].full_name || ""}
-                            </span>
-                          ) : job.recruiter_email ? (
-                            <span className="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded-md px-1.5 py-0.5 w-fit">
-                              Not approved
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
+                     {/* Recruiter */}
+                     <td className="px-5 py-4 whitespace-nowrap">
+                       <div className="flex flex-col gap-1">
+                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                           <Users className="w-3 h-3 shrink-0" />
+                           {job.recruiter_email || "—"}
+                         </span>
+                         {job.recruiter_email && recruiters[job.recruiter_email] ? (
+                           <span className="text-xs bg-green-50 text-green-600 border border-green-200 rounded-md px-1.5 py-0.5 w-fit">
+                             ✓ Approved · {recruiters[job.recruiter_email].full_name || ""}
+                           </span>
+                         ) : job.recruiter_email ? (
+                           <span className="text-xs bg-yellow-50 text-yellow-600 border border-yellow-200 rounded-md px-1.5 py-0.5 w-fit">
+                             Not approved
+                           </span>
+                         ) : null}
+                       </div>
+                     </td>
 
-                      {/* Skills */}
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-1 max-w-[180px]">
-                          {(job.skills || []).slice(0, 4).map((s) => (
-                            <span key={s} className="text-xs bg-accent text-primary px-2 py-0.5 rounded-md">{s}</span>
-                          ))}
-                          {(job.skills || []).length > 4 && (
-                            <span className="text-xs text-muted-foreground">+{job.skills.length - 4}</span>
-                          )}
-                        </div>
-                      </td>
+                     {/* Skills */}
+                     <td className="px-5 py-4">
+                       <div className="flex flex-wrap gap-1 max-w-[180px]">
+                         {(job.skills || []).slice(0, 4).map((s) => (
+                           <span key={s} className="text-xs bg-accent text-primary px-2 py-0.5 rounded-md">{s}</span>
+                         ))}
+                         {(job.skills || []).length > 4 && (
+                           <span className="text-xs text-muted-foreground">+{job.skills.length - 4}</span>
+                         )}
+                       </div>
+                     </td>
 
-                      {/* Description */}
-                      <td className="px-5 py-4">
-                        <p className="text-xs text-muted-foreground max-w-[220px] leading-relaxed line-clamp-3">{job.description || "—"}</p>
-                      </td>
-                    </tr>
-                  ))}
+                     {/* Description + Expand */}
+                     <td className="px-5 py-4">
+                       <div className="max-w-[220px]">
+                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{job.description || "—"}</p>
+                         {(job.description || job.responsibilities?.length || job.benefits?.length) && (
+                           <button
+                             onClick={() => setExpandedJob(expandedJob === job.id ? null : job.id)}
+                             className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline font-medium"
+                           >
+                             {expandedJob === job.id ? <><ChevronUp className="w-3 h-3" />Less</> : <><ChevronDown className="w-3 h-3" />Full Details</>}
+                           </button>
+                         )}
+                       </div>
+                     </td>
+                   </tr>
+
+                   {/* Expanded Detail Row */}
+                   {expandedJob === job.id && (
+                     <tr className="bg-accent/30">
+                       <td colSpan={12} className="px-8 py-5">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                           {/* Full Description */}
+                           <div className="md:col-span-3">
+                             <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Full Description</p>
+                             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">{job.description || "No description provided."}</p>
+                           </div>
+
+                           {/* Responsibilities */}
+                           {job.responsibilities?.length > 0 && (
+                             <div>
+                               <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Responsibilities</p>
+                               <ul className="space-y-1">
+                                 {job.responsibilities.map((r, i) => (
+                                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                     <span className="text-primary mt-0.5">•</span>{r}
+                                   </li>
+                                 ))}
+                               </ul>
+                             </div>
+                           )}
+
+                           {/* All Skills */}
+                           {job.skills?.length > 0 && (
+                             <div>
+                               <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">All Required Skills</p>
+                               <div className="flex flex-wrap gap-1.5">
+                                 {job.skills.map((s) => (
+                                   <span key={s} className="text-xs bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-lg">{s}</span>
+                                 ))}
+                               </div>
+                             </div>
+                           )}
+
+                           {/* Benefits */}
+                           {job.benefits?.length > 0 && (
+                             <div>
+                               <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Benefits</p>
+                               <ul className="space-y-1">
+                                 {job.benefits.map((b, i) => (
+                                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                     <span className="text-green-500 mt-0.5">✓</span>{b}
+                                   </li>
+                                 ))}
+                               </ul>
+                             </div>
+                           )}
+                         </div>
+                       </td>
+                     </tr>
+                   )}
+                   </React.Fragment>
+                 ))}
                 </tbody>
               </table>
             </div>
