@@ -248,18 +248,20 @@ export default function ViewCandidates() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-6">
-         {/* RAG button - Always visible */}
-         <div className="flex justify-center">
-           <Button
-             size="lg"
-             className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8"
-             onClick={() => setConfirmRag(true)}
-             disabled={ragProcessing}
-           >
-             {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-             {ragProcessing ? "Analyzing All CVs..." : "Run RAG Analysis"}
-           </Button>
-         </div>
+         {/* RAG button - Only visible to recruiters, not admins */}
+         {!fromAdmin && (
+           <div className="flex justify-center">
+             <Button
+               size="lg"
+               className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-8"
+               onClick={() => setConfirmRag(true)}
+               disabled={ragProcessing}
+             >
+               {ragProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+               {ragProcessing ? "Analyzing All CVs..." : "Run RAG Analysis"}
+             </Button>
+           </div>
+         )}
 
          {/* Search */}
          <div className="relative">
