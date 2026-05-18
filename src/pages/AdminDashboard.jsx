@@ -203,7 +203,7 @@ export default function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                    {["Full Name", "Email", "Phone", "Company", "Status", "Registered On", "Actions"].map((h) => (
+                    {["Full Name", "Email", "Phone", "Company", "Certificate", "Status", "Registered On", "Actions"].map((h) => (
                       <th key={h} className="pb-3 pr-6 font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -215,6 +215,13 @@ export default function AdminDashboard() {
                       <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.email}</td>
                       <td className="py-4 pr-6 text-muted-foreground whitespace-nowrap">{r.phone || "—"}</td>
                       <td className="py-4 pr-6 text-foreground whitespace-nowrap">{r.company || "—"}</td>
+                      <td className="py-4 pr-6 whitespace-nowrap">
+                        {r.certificate_url ? (
+                          <a href={r.certificate_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
+                            <FileText className="w-3.5 h-3.5" /> View
+                          </a>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
                       <td className="py-4 pr-6 whitespace-nowrap">
                         <Badge className={
                           r.status === "approved" ? "bg-green-50 text-green-600 border-green-200" :
