@@ -50,9 +50,9 @@ export default function AdminDashboard() {
 
       // Fetch from RecruiterProfile, Jobs, and Applications
       const [recruitersData, jobsData, appsData] = await Promise.all([
-        base44.entities.RecruiterProfile.list(),
-        base44.entities.Job.list(),
-        base44.entities.Application.list(),
+        base44.asServiceRole.entities.RecruiterProfile.list(),
+        base44.asServiceRole.entities.Job.list(),
+        base44.asServiceRole.entities.Application.list(),
       ]);
 
       setRecruiters(recruitersData || []);
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
   const handleApproveRecruiter = async (id) => {
     try {
       await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'approve' });
-      const updated = await base44.entities.RecruiterProfile.list();
+      const updated = await base44.asServiceRole.entities.RecruiterProfile.list();
       setRecruiters(updated || []);
       toast({ description: "Recruiter approved successfully" });
     } catch (err) {
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
   const handleBlockRecruiter = async (id) => {
     try {
       await base44.functions.invoke('approveRecruiter', { recruiterId: id, action: 'block' });
-      const updated = await base44.entities.RecruiterProfile.list();
+      const updated = await base44.asServiceRole.entities.RecruiterProfile.list();
       setRecruiters(updated || []);
       toast({ description: "Recruiter blocked successfully" });
     } catch (err) {
