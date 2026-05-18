@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Briefcase, FileText, ChevronDown, ChevronUp, Search, MapPin, Users, ExternalLink } from "lucide-react";
+import { ArrowLeft, Briefcase, FileText, ChevronDown, ChevronUp, Search, MapPin, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
@@ -131,12 +131,7 @@ export default function AdminAllJobs() {
                     >
                       {isExpanded ? <><ChevronUp className="w-4 h-4" />Hide CVs</> : <><ChevronDown className="w-4 h-4" />View CVs</>}
                     </button>
-                    <button
-                      onClick={() => navigate(`/view-candidates?job_id=${job.id}&job=${encodeURIComponent(job.title || "")}&from=admin`)}
-                      className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />Manage
-                    </button>
+
                   </div>
                 </div>
 
