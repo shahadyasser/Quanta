@@ -45,7 +45,7 @@ export default function AdminDashboard() {
       const authed = await base44.auth.isAuthenticated();
       if (!authed) { navigate("/admin-auth"); setChecking(false); return; }
       const me = await base44.auth.me();
-      if (me?.role !== "admin") { navigate("/"); setChecking(false); return; }
+      if (me?.role !== "admin" || me?.email !== "shahadym0@gmail.com") { navigate("/"); setChecking(false); return; }
       setAdminEmail(me.email);
 
       // Fetch from RecruiterProfile, Jobs, and Applications
