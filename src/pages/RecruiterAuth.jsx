@@ -19,7 +19,6 @@ export default function RecruiterAuth() {
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [cvFile, setCvFile] = useState(null);
   const [certFile, setCertFile] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -29,13 +28,8 @@ export default function RecruiterAuth() {
     if (tab === "register") {
       if (password !== confirm) { setWarning("no_access"); setLoading(false); return; }
 
-      // Upload CV and certificate first
-      let cvUrl = null;
+      // Upload certificate
       let certUrl = null;
-      if (cvFile) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: cvFile });
-        cvUrl = file_url;
-      }
       if (certFile) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: certFile });
         certUrl = file_url;
@@ -47,7 +41,6 @@ export default function RecruiterAuth() {
         full_name: fullName,
         role: "recruiter",
         company,
-        cv_url: cvUrl,
         certificate_url: certUrl
       });
       setLoading(false);
@@ -225,19 +218,6 @@ export default function RecruiterAuth() {
                             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
                         </div>
-                      </div>
-
-                      {/* CV Upload */}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="cv">CV / Resume <span className="text-muted-foreground font-normal">(PDF or DOC)</span></Label>
-                        <label htmlFor="cv" className="flex items-center gap-3 h-12 rounded-xl border border-border bg-background px-3 cursor-pointer hover:bg-muted/40 transition-colors">
-                          <Upload className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm text-muted-foreground truncate flex-1">
-                            {cvFile ? cvFile.name : "Upload your CV"}
-                          </span>
-                          {cvFile && <FileText className="w-4 h-4 text-primary shrink-0" />}
-                        </label>
-                        <input id="cv" type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={(e) => setCvFile(e.target.files[0] || null)} />
                       </div>
 
                       {/* Certificate Upload */}

@@ -98,7 +98,7 @@ export default function RecruiterApprovalTable() {
                     <th className="pb-3 pr-6 font-medium">Company</th>
                     <th className="pb-3 pr-6 font-medium">Phone</th>
                     <th className="pb-3 pr-6 font-medium">Status</th>
-                    <th className="pb-3 pr-6 font-medium">Documents</th>
+                    <th className="pb-3 pr-6 font-medium">Certificate</th>
                     <th className="pb-3 pr-6 font-medium">Registration</th>
                     <th className="pb-3 font-medium">Action</th>
                   </tr>
@@ -120,22 +120,13 @@ export default function RecruiterApprovalTable() {
                         </Badge>
                       </td>
                       <td className="py-4 pr-6">
-                        <div className="flex flex-col gap-1.5">
-                          {r.cv_url ? (
-                            <a href={r.cv_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
-                              <FileText className="w-3.5 h-3.5" /> CV
-                            </a>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">No CV</span>
-                          )}
-                          {r.certificate_url ? (
-                            <a href={r.certificate_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
-                              <FileText className="w-3.5 h-3.5" /> Certificate
-                            </a>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">No Certificate</span>
-                          )}
-                        </div>
+                        {r.certificate_url ? (
+                          <a href={r.certificate_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
+                            <FileText className="w-3.5 h-3.5" /> View Certificate
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No Certificate</span>
+                        )}
                       </td>
                       <td className="py-4 pr-6 text-xs text-muted-foreground">
                         {r.created_date ? new Date(r.created_date).toLocaleDateString() : "—"}
