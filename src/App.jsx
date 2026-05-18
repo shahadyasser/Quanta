@@ -32,6 +32,7 @@ import RankCandidates from './pages/RankCandidates';
 import RecruiterProfilePage from './pages/RecruiterProfilePage';
 import CandidateProfilePage from './pages/CandidateProfilePage';
 import AdminProfile from './pages/AdminProfile';
+import AdminAllJobs from './pages/AdminAllJobs';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
       <Route path="/recruiter-profile" element={<RecruiterProfilePage />} />
       <Route path="/candidate-profile-page" element={<CandidateProfilePage />} />
       <Route path="/admin-profile" element={<AdminProfile />} />
+      <Route path="/admin-all-jobs" element={<AdminAllJobs />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

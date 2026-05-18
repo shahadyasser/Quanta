@@ -163,6 +163,10 @@ export default function AdminDashboard() {
           <Button variant="outline" className="rounded-xl gap-2 h-11 px-5" onClick={() => navigate("/jobs-reference")}>
             <Briefcase className="w-4 h-4" />Jobs Reference
           </Button>
+
+          <Button className="rounded-xl gap-2 h-11 px-5 bg-primary hover:bg-primary/90" onClick={() => navigate("/admin-all-jobs")}>
+            <Briefcase className="w-4 h-4" />All Jobs & CVs
+          </Button>
         </div>
 
         {/* All Recruiters Table */}
