@@ -31,6 +31,7 @@ import RAGAnalysisResults from './pages/RAGAnalysisResults';
 import RankCandidates from './pages/RankCandidates';
 import RecruiterProfilePage from './pages/RecruiterProfilePage';
 import CandidateProfilePage from './pages/CandidateProfilePage';
+import AdminProfile from './pages/AdminProfile';
 // Add page imports here
 
 const AuthenticatedApp = () => {
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
       <Route path="/rank-candidates" element={<RankCandidates />} />
       <Route path="/recruiter-profile" element={<RecruiterProfilePage />} />
       <Route path="/candidate-profile-page" element={<CandidateProfilePage />} />
+      <Route path="/admin-profile" element={<AdminProfile />} />
       {/* Add your page Route elements here */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>

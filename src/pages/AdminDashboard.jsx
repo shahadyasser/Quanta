@@ -123,15 +123,9 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border">
-            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-xs font-semibold text-foreground leading-none">Admin</p>
-              <p className="text-xs text-muted-foreground leading-none mt-0.5">{adminEmail}</p>
-            </div>
-          </div>
+          <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
+            <Link to="/admin-profile"><User className="w-4 h-4" />My Profile</Link>
+          </Button>
           <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground" asChild>
             <Link to="/"><LogOut className="w-4 h-4" />Logout</Link>
           </Button>
