@@ -13,7 +13,6 @@ import ViewCandidates from './pages/ViewCandidates';
 import CandidateProfile from './pages/CandidateProfile';
 import CandidateAuth from './pages/CandidateAuth';
 import CandidateDashboard from './pages/CandidateDashboard';
-import CVUpload from './pages/CVUpload';
 import Assessment from './pages/Assessment';
 import FeedbackReport from './pages/FeedbackReport';
 import AdminAuth from './pages/AdminAuth';
@@ -69,7 +68,6 @@ const AuthenticatedApp = () => {
       <Route path="/candidate-profile" element={<CandidateProfile />} />
       <Route path="/candidate-auth" element={<CandidateAuth />} />
       <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
-      <Route path="/cv-upload" element={<CVUpload />} />
       <Route path="/assessment" element={<Assessment />} />
       <Route path="/feedback-report" element={<FeedbackReport />} />
       <Route path="/admin-auth" element={<AdminAuth />} />
