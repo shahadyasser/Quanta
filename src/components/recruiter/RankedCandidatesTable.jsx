@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
 import { ChevronDown, ChevronUp, FileText, Phone, Mail, RotateCw, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,13 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
   const [expanded, setExpanded] = useState(null);
   const [reprocessing, setReprocessing] = useState(null);
   const [profileModal, setProfileModal] = useState(null);
+
+  const handleStatusUpdate = async (e, appId) => {
+    e.stopPropagation();
+    const newStatus = e.target.value;
+    await base44.entities.Application.update(appId, { status: newStatus });
+    if (onParentStatusChange) onParentStatusChange();
+  };
 
   const handleReprocess = async (appId) => {
     setReprocessing(appId);
@@ -102,18 +110,21 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                         </td>
                       )}
 
-                      <td className="px-6 py-4">
-                        <Badge
-                          className={`text-xs ${
-                            app.status === "processed"
-                              ? "bg-green-50 text-green-600 border-green-200"
-                              : app.status === "shortlisted"
-                              ? "bg-blue-50 text-blue-600 border-blue-200"
-                              : "bg-orange-50 text-orange-600 border-orange-200"
-                          }`}
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={app.status || "pending"}
+                          onChange={(e) => handleStatusUpdate(e, app.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-xs rounded-lg border border-input px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-ring"
                         >
-                          {app.status === "processed" ? "Analyzed" : app.status === "shortlisted" ? "Shortlisted" : "Pending"}
-                        </Badge>
+                          <option value="pending">Pending</option>
+                          <option value="processed">Analyzed</option>
+                          <option value="shortlisted">Shortlisted</option>
+                          <option value="accepted">Accepted</option>
+                          <option value="interview">Interview</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="waitlisted">Waitlisted</option>
+                        </select>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">

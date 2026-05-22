@@ -71,7 +71,8 @@
         "shortlisted",
         "accepted",
         "interview",
-        "rejected"
+        "rejected",
+        "waitlisted"
       ],
       "default": "pending",
       "description": "Application status"
@@ -83,11 +84,11 @@
     "is_viewed": {
       "type": "boolean",
       "default": false,
-      "description": "Whether the recruiter/admin has viewed this notification"
+      "description": "Whether viewed"
     },
     "rag_results": {
       "type": "object",
-      "description": "Full RAG pipeline results including construct scores, similarity, and LLM scoring details"
+      "description": "Full RAG pipeline results"
     },
     "interview_date": {
       "type": "string",
@@ -95,7 +96,7 @@
     },
     "interview_time": {
       "type": "string",
-      "description": "Scheduled interview time (HH:MM format)"
+      "description": "Scheduled interview time (HH:MM)"
     },
     "interview_type": {
       "type": "string",
@@ -112,7 +113,7 @@
     },
     "interview_duration": {
       "type": "string",
-      "description": "Interview duration (30 min, 45 min, 1 hour, 1.5 hours)"
+      "description": "Interview duration"
     },
     "interviewer_name": {
       "type": "string",

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Zap, Loader2, Search, Filter, Download, RotateCw, Sparkles } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, Search, Download, Sparkles, Bell, Mail } from "lucide-react";
+import NotifyModal from "@/components/recruiter/NotifyModal";
+import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,10 @@ export default function RankCandidates() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("score");
   const [rankingStarted, setRankingStarted] = useState(false);
+  const [topN, setTopN] = useState("");
+  const [notifyOpen, setNotifyOpen] = useState(false);
+  const [sendingFeedback, setSendingFeedback] = useState(false);
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -114,20 +120,56 @@ export default function RankCandidates() {
     }
   };
 
+  const handleTopN = async () => {
+    const n = parseInt(topN);
+    if (!n || n < 1) return;
+    const sorted = [...candidates]
+      .filter(c => c.match_score > 0)
+      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    const topCandidates = sorted.slice(0, n);
+    const restCandidates = sorted.slice(n);
+    setProcessing(true);
+    await Promise.all([
+      ...topCandidates.map(c => base44.entities.Application.update(c.id, { status: 'shortlisted' })),
+      ...restCandidates.map(c => base44.entities.Application.update(c.id, { status: 'rejected' })),
+    ]);
+    await fetchJobAndCandidates();
+    setProcessing(false);
+    toast({ description: `Top ${n} candidates set to Shortlisted, rest set to Rejected.` });
+  };
+
+  const sendFeedbackToAll = async () => {
+    const appsWithStatus = candidates.filter(c =>
+      ["accepted", "shortlisted", "interview", "rejected", "waitlisted"].includes(c.status)
+    );
+    if (appsWithStatus.length === 0) {
+      toast({ description: "No candidates with a final status. Assign statuses first." });
+      return;
+    }
+    setSendingFeedback(true);
+    const res = await base44.functions.invoke("sendCandidateEmails", {
+      applications: appsWithStatus,
+      job_title: job?.title || "",
+      company: job?.company || "",
+      custom_messages: {},
+    });
+    const succeeded = res.data?.succeeded || 0;
+    toast({ description: `📧 Sent feedback to ${succeeded} / ${appsWithStatus.length} candidates.` });
+    setSendingFeedback(false);
+  };
+
   const exportCSV = () => {
-    const headers = ["Rank", "Candidate", "Email", "Match Score", "Work Exp", "Skills", "Education", "Certs", "Status"];
-    const rows = filteredAndSorted.map((app, idx) => [
+    const sorted = [...candidates].sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    const headers = ["Rank", "Candidate Name", "Email", "Match Score", "Status", "Ranking Reason", "Round Number"];
+    const rows = sorted.map((app, idx) => [
       idx + 1,
       app.candidate_name || "Unknown",
       app.candidate_email || "",
-      app.match_score || "N/A",
-      app.rag_results?.construct_scores?.work_experience || "N/A",
-      app.rag_results?.construct_scores?.skills || "N/A",
-      app.rag_results?.construct_scores?.education || "N/A",
-      app.rag_results?.construct_scores?.certifications || "N/A",
+      app.match_score ? app.match_score.toFixed(1) : "N/A",
       app.status || "pending",
+      (app.rag_results?.feedback || app.rag_results?.ranking_reason || "").replace(/"/g, "'"),
+      1,
     ]);
-
     const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
@@ -138,7 +180,6 @@ export default function RankCandidates() {
   };
 
   const filteredAndSorted = candidates
-    .filter((a) => a.status !== "rejected" && a.status !== "accepted")
     .filter((a) => {
       const q = search.toLowerCase();
       return !q || (a.candidate_name || "").toLowerCase().includes(q) || (a.candidate_email || "").toLowerCase().includes(q);
@@ -189,20 +230,45 @@ export default function RankCandidates() {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 space-y-8">
         {/* Action Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <Button
-            size="lg"
-            className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-6"
-            onClick={rankAllCandidates}
-            disabled={processing}
-          >
-            {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            {processing ? "Processing..." : "Get All Candidates Match Score"}
-          </Button>
-          <Button variant="outline" className="rounded-xl gap-2" onClick={exportCSV} disabled={processing}>
-            <Download className="w-4 h-4" />
-            Export CSV
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+            <Button
+              size="lg"
+              className="bg-primary hover:bg-primary/90 rounded-xl gap-2 px-6"
+              onClick={rankAllCandidates}
+              disabled={processing}
+            >
+              {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              {processing ? "Processing..." : "Get All Candidates Match Score"}
+            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" className="rounded-xl gap-2" onClick={exportCSV} disabled={processing}>
+                <Download className="w-4 h-4" />📥 Export Results
+              </Button>
+              <Button variant="outline" className="rounded-xl gap-2" onClick={sendFeedbackToAll} disabled={sendingFeedback || processing}>
+                {sendingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                📧 Send Feedback to All
+              </Button>
+              <Button className="rounded-xl gap-2 bg-primary hover:bg-primary/90" onClick={() => setNotifyOpen(true)} disabled={processing}>
+                <Bell className="w-4 h-4" />Notify Candidates
+              </Button>
+            </div>
+          </div>
+          {/* Top N */}
+          <div className="flex items-center gap-2 bg-white border border-border rounded-xl p-3">
+            <span className="text-sm font-medium text-foreground">Top N Quick-Select:</span>
+            <input
+              type="number"
+              min="1"
+              value={topN}
+              onChange={e => setTopN(e.target.value)}
+              placeholder="e.g. 5"
+              className="w-20 h-8 rounded-lg border border-input px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <Button size="sm" variant="outline" className="rounded-lg h-8" onClick={handleTopN} disabled={!topN || processing}>
+              Apply — Top {topN || "N"} → Shortlisted, rest → Rejected
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -262,6 +328,16 @@ export default function RankCandidates() {
 
       {/* Progress Modal */}
       {processing && <RankProgressModal progress={progress} />}
+
+      {/* Notify Modal */}
+      {notifyOpen && (
+        <NotifyModal
+          candidates={candidates}
+          job={job}
+          onClose={() => setNotifyOpen(false)}
+          onSent={fetchJobAndCandidates}
+        />
+      )}
     </div>
   );
 }
