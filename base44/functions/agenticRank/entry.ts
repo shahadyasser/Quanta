@@ -12,7 +12,8 @@ Deno.serve(async (req) => {
 
     // Fetch all applications for this job that have been processed
     const applications = await base44.asServiceRole.entities.Application.filter({ job_id });
-    const processedApps = applications.filter(a => a.cv_url && (a.match_score > 0 || a.status === 'processed'));
+    // Include any candidate that has a CV uploaded, regardless of processing status
+    const processedApps = applications.filter(a => a.cv_url);
 
     if (processedApps.length === 0) {
       return Response.json({ error: 'No processed applications found. Run initial RAG first.' }, { status: 400 });

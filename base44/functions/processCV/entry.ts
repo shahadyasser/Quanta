@@ -387,42 +387,46 @@ Return only the JSON object with these fields.`,
     };
 
     if (application_id) {
-      // Write directly to Neon Postgres applications table
-      const client = await pool.connect();
+      // Try Postgres write; if it fails, continue to Base44 update
       try {
-        await client.query(
-          `UPDATE applications SET
-            match_score = $1,
-            strengths = $2,
-            improvements = $3,
-            rag_results = $4,
-            status = 'processed',
-            skills = $5,
-            years_of_experience = $6,
-            education_summary = $7,
-            work_experience_summary = $8,
-            candidate_name = $9,
-            candidate_email = $10
-          WHERE id = $11`,
-          [
-            finalScore,
-            JSON.stringify(strengths),
-            JSON.stringify(improvements),
-            JSON.stringify(ragResults),
-            JSON.stringify(cvData.skills || []),
-            cvData.years_of_experience || 0,
-            cvData.education_summary || "",
-            cvData.work_experience_summary || "",
-            cvData.full_name || "",
-            cvData.email || "",
-            application_id
-          ]
-        );
-      } finally {
-        client.release();
+        const client = await pool.connect();
+        try {
+          await client.query(
+            `UPDATE applications SET
+              match_score = $1,
+              strengths = $2,
+              improvements = $3,
+              rag_results = $4,
+              status = 'processed',
+              skills = $5,
+              years_of_experience = $6,
+              education_summary = $7,
+              work_experience_summary = $8,
+              candidate_name = $9,
+              candidate_email = $10
+            WHERE id = $11`,
+            [
+              finalScore,
+              JSON.stringify(strengths),
+              JSON.stringify(improvements),
+              JSON.stringify(ragResults),
+              JSON.stringify(cvData.skills || []),
+              cvData.years_of_experience || 0,
+              cvData.education_summary || "",
+              cvData.work_experience_summary || "",
+              cvData.full_name || "",
+              cvData.email || "",
+              application_id
+            ]
+          );
+        } finally {
+          client.release();
+        }
+      } catch (pgErr) {
+        console.error("Postgres update skipped (DB unavailable):", pgErr.message);
       }
 
-      // Also update Base44 entity for backward compatibility
+      // Always update Base44 entity regardless of Postgres availability
       await base44.asServiceRole.entities.Application.update(application_id, updateData);
     }
 

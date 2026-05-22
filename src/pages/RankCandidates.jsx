@@ -163,9 +163,9 @@ export default function RankCandidates() {
   };
 
   const runAgenticRank = async () => {
-    const processedApps = candidates.filter(c => c.match_score > 0 || c.status === 'processed');
-    if (processedApps.length === 0) {
-      toast({ description: "Run the initial ranking first before using Agentic RAG." });
+    const appsWithCV = candidates.filter(c => c.cv_url);
+    if (appsWithCV.length === 0) {
+      toast({ description: "No candidates with CVs found for this job." });
       return;
     }
     setAgenticRunning(true);
@@ -302,7 +302,7 @@ export default function RankCandidates() {
           </div>
 
           {/* Agentic Re-Ranking */}
-          {rankingStarted && (
+          {candidates.some(c => c.cv_url) && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -378,7 +378,7 @@ export default function RankCandidates() {
         </div>
 
         {/* Round Header */}
-        {(rankingStarted || agenticDone) && (
+        {(candidates.some(c => c.match_score > 0) || agenticDone) && (
           <div className={`rounded-xl px-5 py-3 flex items-center gap-3 ${agenticDone ? "bg-orange-500 text-white" : "bg-blue-500 text-white"}`}>
             <span className="font-bold text-sm">
               {agenticDone ? `Round ${roundNumber} — Agentic Re-Ranking` : "Round 1 — Initial AI Ranking"}
@@ -395,7 +395,7 @@ export default function RankCandidates() {
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={rankingStarted}
+          showScores={candidates.some(c => c.match_score > 0)}
           onStatusChange={async () => {
             await fetchJobAndCandidates();
           }}
