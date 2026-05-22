@@ -85,6 +85,15 @@ export default function CandidateExpandedRow({ app, jobId, job, onReprocess, isR
               <p className="text-sm font-medium text-foreground">{app.rag_results.verdict}</p>
             </div>
           )}
+          {app.rag_results.agentic_explanation && (
+            <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <p className="text-xs font-semibold text-orange-700 mb-1">🤖 Agentic AI Explanation — Why this ranking?</p>
+              <p className="text-sm text-orange-900 leading-relaxed">{app.rag_results.agentic_explanation}</p>
+              {app.rag_results.agentic_round && (
+                <p className="text-xs text-orange-500 mt-1">Round {app.rag_results.agentic_round} • Agentic Score: {app.rag_results.agentic_score?.toFixed(1)}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

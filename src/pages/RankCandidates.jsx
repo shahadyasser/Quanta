@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Zap, Loader2, Search, Download, Sparkles, Bell, Mail } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, Search, Download, Sparkles, Bell, Mail, Cpu } from "lucide-react";
 import NotifyModal from "@/components/recruiter/NotifyModal";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,10 @@ export default function RankCandidates() {
   const [topN, setTopN] = useState("");
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [sendingFeedback, setSendingFeedback] = useState(false);
+  const [agenticRunning, setAgenticRunning] = useState(false);
+  const [agenticDone, setAgenticDone] = useState(false);
+  const [recruiterQuery, setRecruiterQuery] = useState("");
+  const [roundNumber, setRoundNumber] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -158,6 +162,33 @@ export default function RankCandidates() {
     setSendingFeedback(false);
   };
 
+  const runAgenticRank = async () => {
+    const processedApps = candidates.filter(c => c.match_score > 0 || c.status === 'processed');
+    if (processedApps.length === 0) {
+      toast({ description: "Run the initial ranking first before using Agentic RAG." });
+      return;
+    }
+    setAgenticRunning(true);
+    const nextRound = roundNumber + 1;
+    const res = await base44.functions.invoke("agenticRank", {
+      job_id: jobId,
+      job_title: job?.title || "",
+      job_description: job?.description || "",
+      job_skills: job?.skills || [],
+      recruiter_query: recruiterQuery,
+      round: nextRound,
+    });
+    if (res.data?.success) {
+      setRoundNumber(nextRound);
+      setAgenticDone(true);
+      await fetchJobAndCandidates();
+      toast({ description: `✅ Agentic re-ranking complete! Round ${nextRound} — ${res.data.ranked} candidates ranked with detailed explanations.` });
+    } else {
+      toast({ description: `Failed: ${res.data?.error || 'Unknown error'}` });
+    }
+    setAgenticRunning(false);
+  };
+
   const exportCSV = () => {
     const sorted = [...candidates].sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
     const headers = ["Rank", "Candidate Name", "Email", "Match Score", "Status", "Ranking Reason", "Round Number"];
@@ -269,6 +300,39 @@ export default function RankCandidates() {
               Apply — Top {topN || "N"} → Shortlisted, rest → Rejected
             </Button>
           </div>
+
+          {/* Agentic Re-Ranking */}
+          {rankingStarted && (
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-orange-700 flex items-center gap-2">
+                    <Cpu className="w-4 h-4" />
+                    🤖 Agentic Re-Ranking {agenticDone ? `(Round ${roundNumber} active)` : ""}
+                  </p>
+                  <p className="text-xs text-orange-600 mt-0.5">Smarter holistic re-ranking — AI compares all candidates against each other and generates a detailed explanation per CV.</p>
+                  {agenticDone && <p className="text-xs text-orange-500 mt-1 italic">✓ Previous round applied. Modify the query below and run again to re-rank with new priorities.</p>}
+                </div>
+                <Button
+                  className="shrink-0 rounded-xl gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={runAgenticRank}
+                  disabled={agenticRunning || processing}
+                >
+                  {agenticRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
+                  {agenticRunning ? "Re-ranking..." : agenticDone ? "Re-rank Again" : "Run Agentic RAG"}
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-orange-700">Custom Query / Priorities (optional):</label>
+                <textarea
+                  value={recruiterQuery}
+                  onChange={e => setRecruiterQuery(e.target.value)}
+                  placeholder="e.g. 'Prioritize candidates with React and 3+ years fintech experience' or 'I need someone who can lead a team'"
+                  className="w-full text-sm border border-orange-200 rounded-xl p-2.5 bg-white min-h-[60px] resize-none focus:outline-none focus:ring-1 focus:ring-orange-400"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Summary Cards */}
@@ -312,6 +376,18 @@ export default function RankCandidates() {
             </select>
           </div>
         </div>
+
+        {/* Round Header */}
+        {(rankingStarted || agenticDone) && (
+          <div className={`rounded-xl px-5 py-3 flex items-center gap-3 ${agenticDone ? "bg-orange-500 text-white" : "bg-blue-500 text-white"}`}>
+            <span className="font-bold text-sm">
+              {agenticDone ? `Round ${roundNumber} — Agentic Re-Ranking` : "Round 1 — Initial AI Ranking"}
+            </span>
+            {agenticDone && recruiterQuery && (
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Custom Query Applied</span>
+            )}
+          </div>
+        )}
 
         {/* Ranked Table */}
         <RankedCandidatesTable
