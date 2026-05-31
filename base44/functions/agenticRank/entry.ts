@@ -18,6 +18,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No applications with CVs found. Upload CVs first.' }, { status: 400 });
     }
 
+    console.log(`agenticRank: processing ${processedApps.length} candidates for job ${job_id}`);
+
     const jobText = [
       job_title ? `Job Title: ${job_title}` : '',
       job_description || '',
@@ -25,72 +27,58 @@ Deno.serve(async (req) => {
     ].filter(Boolean).join('\n\n');
 
     const candidateList = processedApps.map((app, i) =>
-      `[Candidate ${i + 1}] ID: ${app.id}
+      `[Candidate ${i + 1}]
+ID: ${app.id}
 Name: ${app.candidate_name || 'Unknown'}
-Initial RAG Score: ${app.match_score || 'N/A'}/100
-Years of Experience: ${app.years_of_experience || 'Not specified'}
+Score: ${app.match_score || 'N/A'}/100
+Experience: ${app.years_of_experience || 'Not specified'} years
 Skills: ${(app.skills || []).join(', ') || 'Not specified'}
 Education: ${app.education_summary || 'Not specified'}
-Work Experience: ${app.work_experience_summary || 'Not specified'}
+Work: ${app.work_experience_summary || 'Not specified'}
 Strengths: ${(app.strengths || []).join('; ') || 'None'}
-Areas for Improvement: ${(app.improvements || []).join('; ') || 'None'}`
+Weaknesses: ${(app.improvements || []).join('; ') || 'None'}`
     ).join('\n\n---\n\n');
 
-    const prompt = `You are a senior AI recruiter performing a holistic agentic re-ranking of ${processedApps.length} job applicants. Compare ALL candidates against each other AND the job requirements to produce the most accurate relative ranking.
+    const prompt = `You are a senior AI recruiter re-ranking ${processedApps.length} job applicants.
 
-JOB REQUIREMENTS:
+JOB:
 ${jobText}
-${recruiter_query ? `\nRECRUITER'S SPECIFIC PRIORITIES (apply heavy weight to this):\n${recruiter_query}` : ''}
+${recruiter_query ? `\nRECRUITER PRIORITY (give this heavy weight): ${recruiter_query}` : ''}
 
-ALL CANDIDATES TO RANK:
+CANDIDATES:
 ${candidateList}
 
-INSTRUCTIONS:
-1. Compare all candidates holistically against each other
-2. ${recruiter_query ? "Give special weight to the recruiter's stated requirements above" : 'Weight candidates by overall fit, experience, and skill alignment'}
-3. For each candidate, write a detailed 2-4 sentence explanation explaining SPECIFICALLY why they are ranked at their position — reference their actual skills, experience, and how they compare to other candidates
-4. Be specific, honest, and professional
+Rank ALL ${processedApps.length} candidates. Return ONLY a JSON array (no other text), like this:
+[
+  {"candidate_id": "<exact ID>", "candidate_name": "<name>", "rank": 1, "agentic_score": 85, "explanation": "2-3 sentences why this rank, referencing their actual experience vs others."},
+  ...
+]
 
-Return a JSON object ranking ALL ${processedApps.length} candidates with this exact structure:
-{
-  "ranked_candidates": [
-    {
-      "candidate_id": "<exact ID from the list above>",
-      "candidate_name": "<name>",
-      "rank": <1 = best fit>,
-      "agentic_score": <score 0-100>,
-      "explanation": "<2-4 sentences explaining this rank>"
-    }
-  ]
-}`;
+Rules:
+- rank 1 = best fit
+- agentic_score 0-100
+- Include ALL ${processedApps.length} candidates
+- Use exact IDs from the list above
+- explanation must reference ${recruiter_query ? 'the recruiter priority and ' : ''}specific candidate details`;
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const rawResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt,
-      model: 'claude_sonnet_4_6',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          ranked_candidates: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                candidate_id:   { type: 'string' },
-                candidate_name: { type: 'string' },
-                rank:           { type: 'number' },
-                agentic_score:  { type: 'number' },
-                explanation:    { type: 'string' },
-              }
-            }
-          }
-        }
-      }
     });
 
-    const rankedCandidates = result?.ranked_candidates || [];
-    console.log(`agenticRank: LLM returned ${rankedCandidates.length} candidates, round=${round}, query="${recruiter_query}"`);
+    console.log(`agenticRank: LLM raw response type=${typeof rawResult}, preview=${String(rawResult).slice(0, 200)}`);
+
+    // Parse the JSON array from the response
+    let rankedCandidates = [];
+    const text = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+    const match = text.match(/\[[\s\S]*\]/);
+    if (match) {
+      rankedCandidates = JSON.parse(match[0]);
+    }
+
+    console.log(`agenticRank: parsed ${rankedCandidates.length} candidates`);
 
     if (rankedCandidates.length === 0) {
+      console.error('agenticRank: LLM returned no candidates. Raw:', text.slice(0, 500));
       return Response.json({ error: 'LLM returned no ranked candidates. Try again.' }, { status: 500 });
     }
 
