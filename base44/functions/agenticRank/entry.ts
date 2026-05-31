@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import OpenAI from 'npm:openai';
 
 Deno.serve(async (req) => {
   try {
@@ -10,13 +11,14 @@ Deno.serve(async (req) => {
 
     if (!job_id) return Response.json({ error: 'job_id is required' }, { status: 400 });
 
-    // Fetch all applications for this job that have been processed
+    const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
+
+    // Fetch all applications for this job that have a CV
     const applications = await base44.asServiceRole.entities.Application.filter({ job_id });
-    // Include any candidate that has a CV uploaded, regardless of processing status
     const processedApps = applications.filter(a => a.cv_url);
 
     if (processedApps.length === 0) {
-      return Response.json({ error: 'No processed applications found. Run initial RAG first.' }, { status: 400 });
+      return Response.json({ error: 'No applications with CVs found. Upload CVs first.' }, { status: 400 });
     }
 
     const jobText = [
@@ -37,53 +39,61 @@ Strengths: ${(app.strengths || []).join('; ') || 'None'}
 Areas for Improvement: ${(app.improvements || []).join('; ') || 'None'}`
     ).join('\n\n---\n\n');
 
-    const prompt = `You are a senior AI recruiter performing a holistic agentic re-ranking of ${processedApps.length} job applicants. Unlike standard screening, you compare ALL candidates against each other AND against the job requirements to produce the most accurate relative ranking.
+    const systemPrompt = `You are a senior AI recruiter performing holistic agentic re-ranking. Compare ALL candidates against each other AND against the job requirements. Return ONLY valid JSON, no extra text.`;
+
+    const userPrompt = `Re-rank ${processedApps.length} candidates for this job.
 
 JOB REQUIREMENTS:
 ${jobText}
-${recruiter_query ? `\nRECRUITER'S SPECIFIC REQUIREMENTS/PRIORITIES:\n${recruiter_query}` : ''}
+${recruiter_query ? `\nRECRUITER'S SPECIFIC PRIORITIES (apply heavy weight to this):\n${recruiter_query}` : ''}
 
-ALL CANDIDATES TO RANK:
+ALL CANDIDATES:
 ${candidateList}
 
-INSTRUCTIONS:
-1. Compare all candidates holistically against each other
-2. ${recruiter_query ? 'Give special weight to the recruiter\'s stated requirements' : 'Weight candidates by overall fit, experience, and skill alignment'}
-3. For each candidate, write a detailed 2-4 sentence explanation explaining SPECIFICALLY why they are ranked at their position — reference their actual skills, experience, and how they compare to other candidates
-4. Be specific, honest, and professional — mention what each candidate uniquely brings or lacks
+Return JSON in exactly this format:
+{
+  "ranked_candidates": [
+    {
+      "candidate_id": "<exact ID from above>",
+      "candidate_name": "<name>",
+      "rank": <1 = best>,
+      "agentic_score": <0-100>,
+      "explanation": "<2-4 sentences: why this rank, referencing their actual skills/experience vs others${recruiter_query ? ' and addressing the recruiter priorities' : ''}>"
+    }
+  ]
+}
 
-Return a JSON object ranking ALL ${processedApps.length} candidates:`;
+Include ALL ${processedApps.length} candidates. Rank 1 = best fit.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      model: 'claude_sonnet_4_6',
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          ranked_candidates: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                candidate_id:    { type: 'string' },
-                candidate_name:  { type: 'string' },
-                rank:            { type: 'number' },
-                agentic_score:   { type: 'number' },
-                explanation:     { type: 'string' },
-              }
-            }
-          }
-        }
-      }
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
     });
 
-    const rankedCandidates = result?.ranked_candidates || [];
+    const content = response.choices[0]?.message?.content || '{}';
+    const parsed = JSON.parse(content);
+    const rankedCandidates = parsed.ranked_candidates || [];
+
+    console.log(`agenticRank: ranked ${rankedCandidates.length} candidates, round=${round}, query="${recruiter_query}"`);
+
+    if (rankedCandidates.length === 0) {
+      return Response.json({ error: 'LLM returned no ranked candidates' }, { status: 500 });
+    }
+
     const roundNum = round || 2;
 
-    // Update each application with agentic scores and explanations
+    // Update each application with new agentic scores and explanations
     await Promise.all(rankedCandidates.map(async (rc) => {
       const app = processedApps.find(a => a.id === rc.candidate_id);
-      if (!app) return;
+      if (!app) {
+        console.warn(`agenticRank: no app found for candidate_id=${rc.candidate_id}`);
+        return;
+      }
 
       const updatedRagResults = {
         ...(app.rag_results || {}),
@@ -95,7 +105,7 @@ Return a JSON object ranking ALL ${processedApps.length} candidates:`;
         original_match_score: app.rag_results?.original_match_score ?? app.match_score,
       };
 
-      await base44.asServiceRole.entities.Application.update(rc.candidate_id, {
+      await base44.asServiceRole.entities.Application.update(app.id, {
         match_score: rc.agentic_score,
         rag_results: updatedRagResults,
       });
