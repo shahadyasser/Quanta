@@ -39,11 +39,19 @@ Weaknesses: ${(app.improvements || []).join('; ') || 'None'}`
     ).join('\n\n---\n\n');
 
     const feedbackSection = recruiter_query
-      ? `\nRECRUITER FEEDBACK (MUST influence your scoring): ${recruiter_query}
-You MUST adjust your ratings based on this feedback. Candidates who match the feedback criteria should score HIGHER. Candidates who lack what the recruiter asked for should score LOWER.`
+      ? `
+⚠️ MANDATORY RECRUITER OVERRIDE — READ THIS FIRST:
+The recruiter has specified: "${recruiter_query}"
+
+This is NOT optional context. You MUST:
+1. Re-score EVERY candidate based on how well they match this specific requirement.
+2. Candidates who clearly match this → boost score significantly (by 10-25 points).
+3. Candidates who clearly lack this → reduce score significantly (by 10-25 points).
+4. If the recruiter's requirement eliminates most candidates, let the scores reflect that — do not artificially cluster around 70.
+5. In ranking_reason, explicitly state whether this candidate meets or fails the recruiter's requirement and by how much.`
       : '';
 
-    const prompt = `You are a senior AI recruiter performing a holistic re-ranking of ${processedApps.length} job applicants. Compare ALL candidates against each other AND the job requirements to produce a globally consistent ranking.
+    const prompt = `You are a senior AI talent analyst performing a rigorous, data-driven ranking of ${processedApps.length} job applicants.
 
 JOB REQUIREMENTS:
 ${jobText}
@@ -52,18 +60,20 @@ ${feedbackSection}
 ALL CANDIDATES:
 ${candidateList}
 
-INSTRUCTIONS:
-1. Score and rank ALL ${processedApps.length} candidates relative to each other
-2. For each candidate, write a 2-3 sentence "ranking_reason" explaining:
-   - Which job requirements they match
-   - Which requirements they are missing
-   - How the recruiter's feedback (if any) affected their score
-3. agentic_score must reflect the recruiter's feedback if provided — do NOT give the same score as before if the feedback changes the priorities
-4. rank 1 = best fit, include ALL candidates
+SCORING RULES (follow strictly):
+1. Use the FULL 0-100 range — the best candidate may score 90+, the worst may score 20. Do NOT cluster everyone near 70.
+2. Score differences between adjacent candidates should be meaningful (at least 3-5 points apart if they genuinely differ).
+3. If recruiter feedback is provided above, it OVERRIDES general job fit — a candidate who perfectly matches the recruiter's stated priority should jump to the top regardless of general profile.
+4. If a candidate is missing a REQUIRED skill or qualification, cap their score at 60 max.
+5. Consider: skills match, years of experience relevance, education fit, and any recruiter-stated priorities.
 
-Return ONLY a JSON array (no other text):
+OUTPUT RULES:
+- rank 1 = best overall fit
+- ranking_reason: 2-3 sentences. Be specific — name the actual skills/experience matched or missing. If recruiter feedback exists, explicitly say how this candidate does or does not meet it.
+- Return ONLY a valid JSON array, no other text.
+
 [
-  {"candidate_id": "<exact ID from list>", "candidate_name": "<name>", "rank": 1, "agentic_score": 85, "ranking_reason": "Ranked #1 because..."},
+  {"candidate_id": "<exact ID from list>", "candidate_name": "<name>", "rank": 1, "agentic_score": 87, "ranking_reason": "Ranked #1 because..."},
   ...
 ]`;
 
