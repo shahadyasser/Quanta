@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import OpenAI from 'npm:openai';
 
 Deno.serve(async (req) => {
   try {
@@ -10,8 +9,6 @@ Deno.serve(async (req) => {
     const { job_id, job_title, job_description, job_skills, recruiter_query, round } = await req.json();
 
     if (!job_id) return Response.json({ error: 'job_id is required' }, { status: 400 });
-
-    const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY') });
 
     // Fetch all applications for this job that have a CV
     const applications = await base44.asServiceRole.entities.Application.filter({ job_id });
@@ -39,50 +36,62 @@ Strengths: ${(app.strengths || []).join('; ') || 'None'}
 Areas for Improvement: ${(app.improvements || []).join('; ') || 'None'}`
     ).join('\n\n---\n\n');
 
-    const systemPrompt = `You are a senior AI recruiter performing holistic agentic re-ranking. Compare ALL candidates against each other AND against the job requirements. Return ONLY valid JSON, no extra text.`;
-
-    const userPrompt = `Re-rank ${processedApps.length} candidates for this job.
+    const prompt = `You are a senior AI recruiter performing a holistic agentic re-ranking of ${processedApps.length} job applicants. Compare ALL candidates against each other AND the job requirements to produce the most accurate relative ranking.
 
 JOB REQUIREMENTS:
 ${jobText}
 ${recruiter_query ? `\nRECRUITER'S SPECIFIC PRIORITIES (apply heavy weight to this):\n${recruiter_query}` : ''}
 
-ALL CANDIDATES:
+ALL CANDIDATES TO RANK:
 ${candidateList}
 
-Return JSON in exactly this format:
+INSTRUCTIONS:
+1. Compare all candidates holistically against each other
+2. ${recruiter_query ? "Give special weight to the recruiter's stated requirements above" : 'Weight candidates by overall fit, experience, and skill alignment'}
+3. For each candidate, write a detailed 2-4 sentence explanation explaining SPECIFICALLY why they are ranked at their position — reference their actual skills, experience, and how they compare to other candidates
+4. Be specific, honest, and professional
+
+Return a JSON object ranking ALL ${processedApps.length} candidates with this exact structure:
 {
   "ranked_candidates": [
     {
-      "candidate_id": "<exact ID from above>",
+      "candidate_id": "<exact ID from the list above>",
       "candidate_name": "<name>",
-      "rank": <1 = best>,
-      "agentic_score": <0-100>,
-      "explanation": "<2-4 sentences: why this rank, referencing their actual skills/experience vs others${recruiter_query ? ' and addressing the recruiter priorities' : ''}>"
+      "rank": <1 = best fit>,
+      "agentic_score": <score 0-100>,
+      "explanation": "<2-4 sentences explaining this rank>"
     }
   ]
-}
+}`;
 
-Include ALL ${processedApps.length} candidates. Rank 1 = best fit.`;
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.3,
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt,
+      model: 'claude_sonnet_4_6',
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          ranked_candidates: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                candidate_id:   { type: 'string' },
+                candidate_name: { type: 'string' },
+                rank:           { type: 'number' },
+                agentic_score:  { type: 'number' },
+                explanation:    { type: 'string' },
+              }
+            }
+          }
+        }
+      }
     });
 
-    const content = response.choices[0]?.message?.content || '{}';
-    const parsed = JSON.parse(content);
-    const rankedCandidates = parsed.ranked_candidates || [];
-
-    console.log(`agenticRank: ranked ${rankedCandidates.length} candidates, round=${round}, query="${recruiter_query}"`);
+    const rankedCandidates = result?.ranked_candidates || [];
+    console.log(`agenticRank: LLM returned ${rankedCandidates.length} candidates, round=${round}, query="${recruiter_query}"`);
 
     if (rankedCandidates.length === 0) {
-      return Response.json({ error: 'LLM returned no ranked candidates' }, { status: 500 });
+      return Response.json({ error: 'LLM returned no ranked candidates. Try again.' }, { status: 500 });
     }
 
     const roundNum = round || 2;
