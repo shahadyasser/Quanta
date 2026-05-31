@@ -29,6 +29,8 @@ export default function RankCandidates() {
   const [agenticDone, setAgenticDone] = useState(false);
   const [recruiterQuery, setRecruiterQuery] = useState("");
   const [roundNumber, setRoundNumber] = useState(1);
+  const [cumulativeFeedback, setCumulativeFeedback] = useState("");
+  const [previousRanks, setPreviousRanks] = useState({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -50,6 +52,9 @@ export default function RankCandidates() {
 
       const apps = await base44.entities.Application.filter({ job_id: jobId });
       setCandidates(apps || []);
+      // Restore ranking state if scores already exist
+      if ((apps || []).some(a => a.match_score > 0)) setRankingStarted(true);
+      if ((apps || []).some(a => a.rag_results?.agentic_round)) setAgenticDone(true);
     } catch (error) {
       console.error("Failed to load job or candidates:", error);
     } finally {
@@ -168,6 +173,21 @@ export default function RankCandidates() {
       toast({ description: "No candidates with CVs found for this job." });
       return;
     }
+
+    // Accumulate feedback across rounds
+    const newCumulativeFeedback = cumulativeFeedback && recruiterQuery
+      ? `${cumulativeFeedback}. Additionally: ${recruiterQuery}`
+      : recruiterQuery || cumulativeFeedback || "";
+    setCumulativeFeedback(newCumulativeFeedback);
+
+    // Capture previous ranks before re-ranking
+    const sortedForRank = [...candidates]
+      .filter(c => c.match_score > 0)
+      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+    const prevRanks = {};
+    sortedForRank.forEach((c, i) => { prevRanks[c.id] = i + 1; });
+    setPreviousRanks(prevRanks);
+
     setAgenticRunning(true);
     const nextRound = roundNumber + 1;
     const res = await base44.functions.invoke("agenticRank", {
@@ -175,7 +195,7 @@ export default function RankCandidates() {
       job_title: job?.title || "",
       job_description: job?.description || "",
       job_skills: job?.skills || [],
-      recruiter_query: recruiterQuery,
+      recruiter_query: newCumulativeFeedback,
       round: nextRound,
     });
     if (res.data?.success) {
@@ -301,8 +321,8 @@ export default function RankCandidates() {
             </Button>
           </div>
 
-          {/* Agentic Re-Ranking */}
-          {candidates.some(c => c.cv_url) && (
+          {/* Agentic Re-Ranking — only after initial ranking */}
+          {rankingStarted && candidates.some(c => c.cv_url) && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -383,7 +403,7 @@ export default function RankCandidates() {
             <span className="font-bold text-sm">
               {agenticDone ? `Round ${roundNumber} — Agentic Re-Ranking` : "Round 1 — Initial AI Ranking"}
             </span>
-            {agenticDone && recruiterQuery && (
+            {agenticDone && cumulativeFeedback && (
               <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Custom Query Applied</span>
             )}
           </div>
@@ -396,6 +416,8 @@ export default function RankCandidates() {
           jobId={jobId}
           job={job}
           showScores={candidates.some(c => c.match_score > 0)}
+          previousRanks={previousRanks}
+          agenticDone={agenticDone}
           onStatusChange={async () => {
             await fetchJobAndCandidates();
           }}

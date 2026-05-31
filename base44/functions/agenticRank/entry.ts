@@ -10,15 +10,14 @@ Deno.serve(async (req) => {
 
     if (!job_id) return Response.json({ error: 'job_id is required' }, { status: 400 });
 
-    // Fetch all applications for this job that have a CV
     const applications = await base44.asServiceRole.entities.Application.filter({ job_id });
     const processedApps = applications.filter(a => a.cv_url);
 
     if (processedApps.length === 0) {
-      return Response.json({ error: 'No applications with CVs found. Upload CVs first.' }, { status: 400 });
+      return Response.json({ error: 'No applications with CVs found.' }, { status: 400 });
     }
 
-    console.log(`agenticRank: processing ${processedApps.length} candidates for job ${job_id}`);
+    console.log(`agenticRank: processing ${processedApps.length} candidates for job ${job_id}, round=${round}, query="${recruiter_query}"`);
 
     const jobText = [
       job_title ? `Job Title: ${job_title}` : '',
@@ -30,44 +29,48 @@ Deno.serve(async (req) => {
       `[Candidate ${i + 1}]
 ID: ${app.id}
 Name: ${app.candidate_name || 'Unknown'}
-Score: ${app.match_score || 'N/A'}/100
+Previous Score: ${app.match_score || 'N/A'}/100
 Experience: ${app.years_of_experience || 'Not specified'} years
 Skills: ${(app.skills || []).join(', ') || 'Not specified'}
 Education: ${app.education_summary || 'Not specified'}
-Work: ${app.work_experience_summary || 'Not specified'}
+Work History: ${app.work_experience_summary || 'Not specified'}
 Strengths: ${(app.strengths || []).join('; ') || 'None'}
 Weaknesses: ${(app.improvements || []).join('; ') || 'None'}`
     ).join('\n\n---\n\n');
 
-    const prompt = `You are a senior AI recruiter re-ranking ${processedApps.length} job applicants.
+    const feedbackSection = recruiter_query
+      ? `\nRECRUITER FEEDBACK (MUST influence your scoring): ${recruiter_query}
+You MUST adjust your ratings based on this feedback. Candidates who match the feedback criteria should score HIGHER. Candidates who lack what the recruiter asked for should score LOWER.`
+      : '';
 
-JOB:
+    const prompt = `You are a senior AI recruiter performing a holistic re-ranking of ${processedApps.length} job applicants. Compare ALL candidates against each other AND the job requirements to produce a globally consistent ranking.
+
+JOB REQUIREMENTS:
 ${jobText}
-${recruiter_query ? `\nRECRUITER PRIORITY (give this heavy weight): ${recruiter_query}` : ''}
+${feedbackSection}
 
-CANDIDATES:
+ALL CANDIDATES:
 ${candidateList}
 
-Rank ALL ${processedApps.length} candidates. Return ONLY a JSON array (no other text), like this:
+INSTRUCTIONS:
+1. Score and rank ALL ${processedApps.length} candidates relative to each other
+2. For each candidate, write a 2-3 sentence "ranking_reason" explaining:
+   - Which job requirements they match
+   - Which requirements they are missing
+   - How the recruiter's feedback (if any) affected their score
+3. agentic_score must reflect the recruiter's feedback if provided — do NOT give the same score as before if the feedback changes the priorities
+4. rank 1 = best fit, include ALL candidates
+
+Return ONLY a JSON array (no other text):
 [
-  {"candidate_id": "<exact ID>", "candidate_name": "<name>", "rank": 1, "agentic_score": 85, "explanation": "2-3 sentences why this rank, referencing their actual experience vs others."},
+  {"candidate_id": "<exact ID from list>", "candidate_name": "<name>", "rank": 1, "agentic_score": 85, "ranking_reason": "Ranked #1 because..."},
   ...
-]
+]`;
 
-Rules:
-- rank 1 = best fit
-- agentic_score 0-100
-- Include ALL ${processedApps.length} candidates
-- Use exact IDs from the list above
-- explanation must reference ${recruiter_query ? 'the recruiter priority and ' : ''}specific candidate details`;
+    const rawResult = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt });
 
-    const rawResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt,
-    });
+    console.log(`agenticRank: LLM raw type=${typeof rawResult}, preview=${String(rawResult).slice(0, 200)}`);
 
-    console.log(`agenticRank: LLM raw response type=${typeof rawResult}, preview=${String(rawResult).slice(0, 200)}`);
-
-    // Parse the JSON array from the response
     let rankedCandidates = [];
     const text = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
     const match = text.match(/\[[\s\S]*\]/);
@@ -84,7 +87,6 @@ Rules:
 
     const roundNum = round || 2;
 
-    // Update each application with new agentic scores and explanations
     await Promise.all(rankedCandidates.map(async (rc) => {
       const app = processedApps.find(a => a.id === rc.candidate_id);
       if (!app) {
@@ -96,7 +98,7 @@ Rules:
         ...(app.rag_results || {}),
         agentic_score: rc.agentic_score,
         agentic_rank: rc.rank,
-        agentic_explanation: rc.explanation,
+        agentic_explanation: rc.ranking_reason || rc.explanation,
         agentic_round: roundNum,
         recruiter_query: recruiter_query || null,
         original_match_score: app.rag_results?.original_match_score ?? app.match_score,

@@ -30,7 +30,13 @@ function getScoreLabel(score) {
   return "Poor Match";
 }
 
-export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores, onStatusChange: onParentStatusChange }) {
+function RankChangeBadge({ delta }) {
+  if (delta === 0 || delta == null) return <span className="text-gray-400 text-xs font-medium">—</span>;
+  if (delta > 0) return <span className="text-green-600 text-xs font-bold">↑{delta}</span>;
+  return <span className="text-red-500 text-xs font-bold">↓{Math.abs(delta)}</span>;
+}
+
+export default function RankedCandidatesTable({ candidates, onReprocess, jobId, job, showScores, previousRanks = {}, agenticDone = false, onStatusChange: onParentStatusChange }) {
   const [expanded, setExpanded] = useState(null);
   const [reprocessing, setReprocessing] = useState(null);
   const [profileModal, setProfileModal] = useState(null);
@@ -68,9 +74,10 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <th className="px-6 py-4 text-left font-semibold text-foreground w-16">Rank</th>
+              {agenticDone && <th className="px-4 py-4 text-center font-semibold text-foreground w-16">Change</th>}
               <th className="px-6 py-4 text-left font-semibold text-foreground">Candidate</th>
               {showScores && <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Score</th>}
-
+              {agenticDone && <th className="px-6 py-4 text-left font-semibold text-foreground">Ranking Reason</th>}
               <th className="px-6 py-4 text-left font-semibold text-foreground w-32">Status</th>
               <th className="px-6 py-4 text-right font-semibold text-foreground w-24">Actions</th>
             </tr>
@@ -78,7 +85,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
           <tbody>
             {candidates.length === 0 ? (
               <tr>
-                <td colSpan={showScores ? "9" : "4"} className="px-6 py-12 text-center text-muted-foreground">
+                <td colSpan={showScores ? (agenticDone ? "7" : "5") : (agenticDone ? "6" : "4")} className="px-6 py-12 text-center text-muted-foreground">
                   {showScores ? "No candidates with scores yet. Process all CVs first." : "Click 'Rank All Candidates' to start analyzing CVs."}
                 </td>
               </tr>
@@ -95,6 +102,11 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                         {idx < 3 && <span className="text-xl">{MEDAL_ICONS[idx]}</span>}
                         {idx < 3 ? "" : `#${idx + 1}`}
                       </td>
+                      {agenticDone && (
+                        <td className="px-4 py-4 text-center">
+                          <RankChangeBadge delta={previousRanks[app.id] != null ? previousRanks[app.id] - (idx + 1) : null} />
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-semibold text-foreground">{app.candidate_name || "Unknown"}</p>
@@ -109,7 +121,15 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                           </div>
                         </td>
                       )}
-
+                      {agenticDone && (
+                        <td className="px-6 py-4 max-w-xs">
+                          {app.rag_results?.agentic_explanation ? (
+                            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{app.rag_results.agentic_explanation}</p>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <select
                           value={app.status || "pending"}
@@ -144,7 +164,7 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                     </tr>
                     {isExpanded && (
                        <tr className="bg-muted/10">
-                         <td colSpan={showScores ? "9" : "4"} className="px-6 py-6">
+                         <td colSpan={showScores ? (agenticDone ? "7" : "5") : (agenticDone ? "6" : "4")} className="px-6 py-6">
                            <CandidateExpandedRow
                              app={app}
                              jobId={jobId}
