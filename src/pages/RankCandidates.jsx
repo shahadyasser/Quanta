@@ -52,9 +52,6 @@ export default function RankCandidates() {
 
       const apps = await base44.entities.Application.filter({ job_id: jobId });
       setCandidates(apps || []);
-      // Restore ranking state if scores already exist
-      if ((apps || []).some(a => a.match_score > 0)) setRankingStarted(true);
-      if ((apps || []).some(a => a.rag_results?.agentic_round)) setAgenticDone(true);
     } catch (error) {
       console.error("Failed to load job or candidates:", error);
     } finally {
@@ -398,7 +395,7 @@ export default function RankCandidates() {
         </div>
 
         {/* Round Header */}
-        {(candidates.some(c => c.match_score > 0) || agenticDone) && (
+        {rankingStarted && (
           <div className={`rounded-xl px-5 py-3 flex items-center gap-3 ${agenticDone ? "bg-orange-500 text-white" : "bg-blue-500 text-white"}`}>
             <span className="font-bold text-sm">
               {agenticDone ? `Round ${roundNumber} — Agentic Re-Ranking` : "Round 1 — Initial AI Ranking"}
@@ -415,7 +412,7 @@ export default function RankCandidates() {
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={candidates.some(c => c.match_score > 0)}
+          showScores={rankingStarted}
           previousRanks={previousRanks}
           agenticDone={agenticDone}
           onStatusChange={async () => {
