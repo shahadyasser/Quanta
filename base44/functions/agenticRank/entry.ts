@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; // v2
 
 // Cosine similarity between two vectors
 function cosineSimilarity(a, b) {
