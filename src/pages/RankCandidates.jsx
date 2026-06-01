@@ -319,8 +319,8 @@ export default function RankCandidates() {
             </Button>
           </div>
 
-          {/* Agentic Re-Ranking — only after initial ranking */}
-          {rankingStarted && candidates.some(c => c.cv_url) && (
+          {/* Agentic Re-Ranking — always visible */}
+          {candidates.some(c => c.cv_url) && (
             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div>
