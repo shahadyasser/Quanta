@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { MongoClient } from 'npm:mongodb@6.3.0';
 import pg from 'npm:pg@8.11.3';
 import bcrypt from 'npm:bcryptjs@2.4.3';
 
@@ -63,6 +64,29 @@ Deno.serve(async (req) => {
         cv_url: cv_url || null,
         certificate_url: certificate_url || null,
       });
+    }
+
+    // Sync to MongoDB
+    try {
+      const mongoClient = new MongoClient(Deno.env.get('MONGODB_URI'));
+      await mongoClient.connect();
+      const db = mongoClient.db();
+      const collection = role === 'candidate' ? 'candidates' : 'recruiters';
+      await db.collection(collection).insertOne({
+        user_id: newUser.id,
+        email: newUser.email,
+        full_name: full_name,
+        role,
+        company: company || null,
+        cv_url: cv_url || null,
+        certificate_url: certificate_url || null,
+        is_active,
+        created_at: new Date(),
+      });
+      await mongoClient.close();
+      console.log(`authRegister: synced new ${role} to MongoDB`);
+    } catch (mongoErr) {
+      console.warn('authRegister: MongoDB sync failed (non-fatal):', mongoErr.message);
     }
 
     return Response.json({ success: true, user: newUser });
