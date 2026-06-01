@@ -227,7 +227,18 @@ export default function RankCandidates() {
     a.click();
   };
 
-  const filteredAndSorted = candidates
+  // Deduplicate by candidate_email — keep highest match_score per candidate
+  const deduped = Object.values(
+    candidates.reduce((acc, a) => {
+      const key = a.candidate_email || a.id;
+      if (!acc[key] || (a.match_score || 0) > (acc[key].match_score || 0)) {
+        acc[key] = a;
+      }
+      return acc;
+    }, {})
+  );
+
+  const filteredAndSorted = deduped
     .filter((a) => {
       const q = search.toLowerCase();
       return !q || (a.candidate_name || "").toLowerCase().includes(q) || (a.candidate_email || "").toLowerCase().includes(q);
