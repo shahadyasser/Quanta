@@ -367,7 +367,7 @@ export default function RankCandidates() {
                   disabled={agenticRunning || processing}
                 >
                   {agenticRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
-                  {agenticRunning ? "Re-ranking..." : agenticDone ? "Re-rank Again" : "Run Agentic RAG"}
+                  {agenticRunning ? `Analyzing ${candidates.filter(c=>c.cv_url).length} candidates…` : agenticDone ? "Re-rank Again" : "Run Agentic RAG"}
                 </Button>
               </div>
               <div className="space-y-1">
