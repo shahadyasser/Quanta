@@ -332,7 +332,29 @@ export default function RankCandidates() {
                   {agenticDone && <p className="text-xs text-orange-500 mt-1 italic">✓ Previous round applied. Modify the query below and run again to re-rank with new priorities.</p>}
                   {cumulativeFeedback && (
                     <button
-                      onClick={() => { setCumulativeFeedback(""); setRecruiterQuery(""); setRoundNumber(1); setAgenticDone(false); setPreviousRanks({}); }}
+                      onClick={async () => {
+                        // Restore original scores for all agentic-ranked candidates
+                        const agenticCandidates = candidates.filter(c => c.rag_results?.agentic_rank);
+                        await Promise.all(agenticCandidates.map(c => {
+                          const originalScore = c.rag_results?.original_match_score ?? c.match_score;
+                          const restoredRagResults = { ...c.rag_results };
+                          delete restoredRagResults.agentic_rank;
+                          delete restoredRagResults.agentic_score;
+                          delete restoredRagResults.agentic_explanation;
+                          delete restoredRagResults.agentic_round;
+                          delete restoredRagResults.recruiter_query;
+                          delete restoredRagResults.cumulative_feedback;
+                          delete restoredRagResults.rewritten_query;
+                          delete restoredRagResults.previous_rank;
+                          delete restoredRagResults.previous_score;
+                          delete restoredRagResults.rank_change;
+                          delete restoredRagResults.llm_rank_suggestion;
+                          return base44.entities.Application.update(c.id, { match_score: originalScore, rag_results: restoredRagResults });
+                        }));
+                        await fetchJobAndCandidates();
+                        setCumulativeFeedback(""); setRecruiterQuery(""); setRoundNumber(1); setAgenticDone(false); setPreviousRanks({});
+                        toast({ description: "✅ Restored original scores for all candidates." });
+                      }}
                       className="text-xs text-red-500 hover:text-red-700 underline mt-1"
                     >
                       🗑 Clear query history
