@@ -57,22 +57,29 @@ Deno.serve(async (req) => {
       (job_skills || []).join(', '),
     ].filter(Boolean).join('\n');
 
-    // 3. Get embedding for the combined query
-    const queryEmbedding = await getEmbedding(searchQuery);
-    console.log('agenticRank: query embedded successfully');
+    // 3. Try to get embedding for the combined query (graceful fallback if key is invalid)
+    let queryEmbedding = null;
+    try {
+      queryEmbedding = await getEmbedding(searchQuery);
+      console.log('agenticRank: query embedded successfully');
+    } catch (embErr) {
+      console.warn('agenticRank: embedding failed, falling back to LLM-only ranking:', embErr.message);
+    }
 
-    // 4. Fetch all CV embeddings for this job
-    const allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ job_id });
+    // 4. Fetch all CV embeddings for this job (only if embedding succeeded)
+    const allEmbeddings = queryEmbedding
+      ? await base44.asServiceRole.entities.CVEmbedding.filter({ job_id })
+      : [];
     console.log(`agenticRank: fetched ${allEmbeddings.length} CV embedding chunks`);
 
     // 5. For each candidate, find their most relevant CV chunks via cosine similarity
     const candidateContexts = {};
 
     for (const app of appsWithCV) {
-      const appEmbeddings = allEmbeddings.filter(e => e.application_id === app.id);
+      const appEmbeddings = queryEmbedding ? allEmbeddings.filter(e => e.application_id === app.id) : [];
 
       if (appEmbeddings.length === 0) {
-        // No embeddings stored — fall back to pre-extracted data
+        // No embeddings or embedding disabled — fall back to pre-extracted data
         candidateContexts[app.id] = {
           topChunks: [],
           ragScore: 0,
