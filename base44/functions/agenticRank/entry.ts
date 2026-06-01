@@ -212,11 +212,17 @@ SCORING RULES:
       const previousRank = app.rag_results?.agentic_rank || null;
       const previousScore = app.rag_results?.agentic_score || app.match_score || null;
 
+      // Use deterministic RAG cosine score when available, otherwise keep LLM score
+      const finalScore = ctx?.hasEmbeddings && ctx.ragScore > 0
+        ? parseFloat((ctx.ragScore * 100).toFixed(1))
+        : rc.agentic_score;
+
       await base44.asServiceRole.entities.Application.update(app.id, {
-        match_score: rc.agentic_score,
+        match_score: finalScore,
         rag_results: {
           ...(app.rag_results || {}),
-          agentic_score: rc.agentic_score,
+          agentic_score: finalScore,
+          llm_rank_suggestion: rc.agentic_score,
           agentic_rank: rc.rank,
           agentic_explanation: rc.ranking_reason,
           agentic_round: roundNum,
