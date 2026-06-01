@@ -329,6 +329,14 @@ export default function RankCandidates() {
                   </p>
                   <p className="text-xs text-orange-600 mt-0.5">Smarter holistic re-ranking — AI compares all candidates against each other and generates a detailed explanation per CV.</p>
                   {agenticDone && <p className="text-xs text-orange-500 mt-1 italic">✓ Previous round applied. Modify the query below and run again to re-rank with new priorities.</p>}
+                  {cumulativeFeedback && (
+                    <button
+                      onClick={() => { setCumulativeFeedback(""); setRecruiterQuery(""); setRoundNumber(1); setAgenticDone(false); setPreviousRanks({}); }}
+                      className="text-xs text-red-500 hover:text-red-700 underline mt-1"
+                    >
+                      🗑 Clear query history
+                    </button>
+                  )}
                 </div>
                 <Button
                   className="shrink-0 rounded-xl gap-2 bg-orange-500 hover:bg-orange-600 text-white"
