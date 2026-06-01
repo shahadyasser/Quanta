@@ -22,6 +22,10 @@ async function getEmbedding(text) {
     body: JSON.stringify({ model: 'text-embedding-ada-002', input: text.slice(0, 8000) }),
   });
   const data = await response.json();
+  if (!data.data || !data.data[0]) {
+    console.error('OpenAI embedding error:', JSON.stringify(data));
+    throw new Error(`OpenAI embedding failed: ${data.error?.message || 'Unknown error'}`);
+  }
   return data.data[0].embedding;
 }
 
