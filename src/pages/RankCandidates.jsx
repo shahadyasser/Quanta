@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
-import { pgQuery } from "@/lib/neonDb";
 import RankSummaryCards from "@/components/recruiter/RankSummaryCards";
 import RankedCandidatesTable from "@/components/recruiter/RankedCandidatesTable";
 import RankProgressModal from "@/components/recruiter/RankProgressModal";
@@ -49,7 +48,6 @@ export default function RankCandidates() {
     try {
       const jobData = await base44.entities.Job.get(jobId);
       setJob(jobData);
-
       const apps = await base44.entities.Application.filter({ job_id: jobId });
       setCandidates(apps || []);
     } catch (error) {
@@ -61,7 +59,7 @@ export default function RankCandidates() {
 
   const rankAllCandidates = async () => {
     const appsWithCV = candidates.filter((a) => a.cv_url && a.cv_url.trim());
-    
+
     if (appsWithCV.length === 0) {
       alert("No applications with CVs to process.");
       return;
@@ -74,12 +72,6 @@ export default function RankCandidates() {
     for (let i = 0; i < appsWithCV.length; i++) {
       const app = appsWithCV[i];
       setProgress({ current: i + 1, total: appsWithCV.length, currentName: app.candidate_name || "Unknown" });
-
-      // Skip if already processed
-      if (app.status === "processed" && app.match_score > 0) {
-        console.log("Skipping already processed:", app.candidate_name);
-        continue;
-      }
 
       try {
         await base44.functions.invoke("processCV", {
@@ -96,7 +88,6 @@ export default function RankCandidates() {
       }
     }
 
-    // Refresh candidates
     await fetchJobAndCandidates();
     setProcessing(false);
   };
@@ -171,13 +162,11 @@ export default function RankCandidates() {
       return;
     }
 
-    // Accumulate feedback across rounds
     const newCumulativeFeedback = cumulativeFeedback && recruiterQuery
       ? `${cumulativeFeedback}. Additionally: ${recruiterQuery}`
       : recruiterQuery || cumulativeFeedback || "";
     setCumulativeFeedback(newCumulativeFeedback);
 
-    // Capture previous ranks before re-ranking
     const sortedForRank = [...candidates]
       .filter(c => c.match_score > 0)
       .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
@@ -313,6 +302,7 @@ export default function RankCandidates() {
               </Button>
             </div>
           </div>
+
           {/* Top N */}
           <div className="flex items-center gap-2 bg-white border border-border rounded-xl p-3">
             <span className="text-sm font-medium text-foreground">Top N Quick-Select:</span>
@@ -372,11 +362,11 @@ export default function RankCandidates() {
         </div>
 
         {/* Summary Cards */}
-         <RankSummaryCards
-           total={candidates.length}
-           processed={processedCount}
-           strongMatches={strongMatches}
-         />
+        <RankSummaryCards
+          total={candidates.length}
+          processed={processedCount}
+          strongMatches={strongMatches}
+        />
 
         {/* Filters and Search */}
         <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
