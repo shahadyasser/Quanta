@@ -1,6 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25'; // v2
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Cosine similarity between two vectors
 function cosineSimilarity(a, b) {
   let dot = 0, normA = 0, normB = 0;
   for (let i = 0; i < a.length; i++) {
@@ -11,7 +10,6 @@ function cosineSimilarity(a, b) {
   return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-10);
 }
 
-// Get OpenAI embedding for a text
 async function getEmbedding(text) {
   const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
@@ -23,10 +21,36 @@ async function getEmbedding(text) {
   });
   const data = await response.json();
   if (!data.data || !data.data[0]) {
-    console.error('OpenAI embedding error:', JSON.stringify(data));
     throw new Error(`OpenAI embedding failed: ${data.error?.message || 'Unknown error'}`);
   }
   return data.data[0].embedding;
+}
+
+// ═══ AGENTIC STEP 1: Rewrite the query using LLM ═══
+async function rewriteQuery(base44, jobText, recruiterFeedback, previousFeedbacks) {
+  const historySection = previousFeedbacks.length > 0
+    ? `\nPREVIOUS FEEDBACK HISTORY:\n${previousFeedbacks.map((f, i) => `  Round ${i + 2}: "${f}"`).join('\n')}`
+    : '';
+
+  const prompt = `You are an expert HR recruiter. The current search query did not satisfy the recruiter.
+
+ORIGINAL JOB DESCRIPTION:
+${jobText.slice(0, 1500)}
+
+CURRENT RECRUITER FEEDBACK:
+"${recruiterFeedback}"
+${historySection}
+
+Based on ALL the feedback (current and previous), write a NEW focused search query that:
+1. Keeps the core job requirements
+2. Strongly emphasizes what the recruiter asked for
+3. De-emphasizes aspects the recruiter didn't mention
+
+Output ONLY the rewritten search query (3-5 sentences), nothing else.`;
+
+  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt });
+  const text = typeof result === 'string' ? result : result?.text || result?.content || JSON.stringify(result);
+  return text.trim();
 }
 
 Deno.serve(async (req) => {
@@ -35,11 +59,16 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { job_id, job_title, job_description, job_skills, recruiter_query, round } = await req.json();
+    const {
+      job_id, job_title, job_description, job_skills,
+      recruiter_query, round, previous_feedbacks
+    } = await req.json();
 
     if (!job_id) return Response.json({ error: 'job_id is required' }, { status: 400 });
+    if (!recruiter_query && round > 1) {
+      return Response.json({ error: 'Recruiter feedback is required for re-ranking' }, { status: 400 });
+    }
 
-    // 1. Fetch all applications with CVs for this job
     const applications = await base44.asServiceRole.entities.Application.filter({ job_id });
     const appsWithCV = applications.filter(a => a.cv_url);
 
@@ -47,55 +76,56 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No applications with CVs found.' }, { status: 400 });
     }
 
-    console.log(`agenticRank RAG: ${appsWithCV.length} candidates, query="${recruiter_query}"`);
+    const roundNum = round || 1;
+    const allPreviousFeedbacks = previous_feedbacks || [];
+    const cumulativeFeedback = [...allPreviousFeedbacks, recruiter_query].filter(Boolean).join('. Additionally: ');
 
-    // 2. Build the semantic search query — combine job requirements + recruiter NLP query
-    const searchQuery = [
-      recruiter_query || '',
-      job_title || '',
+    console.log(`agenticRankV2: ${appsWithCV.length} candidates, round=${roundNum}`);
+
+    // ═══ AGENTIC STEP 1: Rewrite the search query ═══
+    const jobText = [
+      job_title ? `Job Title: ${job_title}` : '',
       job_description || '',
-      (job_skills || []).join(', '),
-    ].filter(Boolean).join('\n');
+      (job_skills || []).length ? `Required Skills: ${job_skills.join(', ')}` : '',
+    ].filter(Boolean).join('\n\n');
 
-    // 3. Try to get embedding for the combined query (graceful fallback if key is invalid)
+    let searchQuery;
+    if (roundNum === 1 || !recruiter_query) {
+      searchQuery = jobText;
+      console.log('agenticRankV2: Round 1 — using original JD as query');
+    } else {
+      searchQuery = await rewriteQuery(base44, jobText, recruiter_query, allPreviousFeedbacks);
+      console.log(`agenticRankV2: Rewritten query: "${searchQuery.slice(0, 200)}"`);
+    }
+
+    // ═══ AGENTIC STEP 2: Embed the REWRITTEN query ═══
     let queryEmbedding = null;
     try {
       queryEmbedding = await getEmbedding(searchQuery);
-      console.log('agenticRank: query embedded successfully');
     } catch (embErr) {
-      console.warn('agenticRank: embedding failed, falling back to LLM-only ranking:', embErr.message);
+      console.warn('agenticRankV2: embedding failed, LLM-only mode:', embErr.message);
     }
 
-    // 4. Fetch all CV embeddings for this job (only if embedding succeeded)
+    // ═══ AGENTIC STEP 3: Retrieve relevant chunks using NEW embedding ═══
     const allEmbeddings = queryEmbedding
       ? await base44.asServiceRole.entities.CVEmbedding.filter({ job_id })
       : [];
-    console.log(`agenticRank: fetched ${allEmbeddings.length} CV embedding chunks`);
 
-    // 5. For each candidate, find their most relevant CV chunks via cosine similarity
     const candidateContexts = {};
-
     for (const app of appsWithCV) {
       const appEmbeddings = queryEmbedding ? allEmbeddings.filter(e => e.application_id === app.id) : [];
 
       if (appEmbeddings.length === 0) {
-        // No embeddings or embedding disabled — fall back to pre-extracted data
-        candidateContexts[app.id] = {
-          topChunks: [],
-          ragScore: 0,
-          hasEmbeddings: false,
-        };
+        candidateContexts[app.id] = { topChunks: [], ragScore: 0, hasEmbeddings: false };
         continue;
       }
 
-      // Score each chunk
       const scored = appEmbeddings.map(chunk => ({
         text: chunk.cv_text_chunk,
         similarity: cosineSimilarity(queryEmbedding, chunk.embedding),
       })).sort((a, b) => b.similarity - a.similarity);
 
-      // Take top 3 most relevant chunks
-      const topChunks = scored.slice(0, 3);
+      const topChunks = scored.slice(0, 5);
       const avgRagScore = topChunks.reduce((s, c) => s + c.similarity, 0) / topChunks.length;
 
       candidateContexts[app.id] = {
@@ -105,79 +135,82 @@ Deno.serve(async (req) => {
       };
     }
 
-    // 6. Build candidate list for LLM with RAG-retrieved context
+    // ═══ AGENTIC STEP 4: Score ALL candidates with feedback-aware prompt ═══
     const candidateList = appsWithCV.map((app, i) => {
       const ctx = candidateContexts[app.id];
       const ragSnippet = ctx.hasEmbeddings && ctx.topChunks.length > 0
-        ? `\nMost Relevant CV Sections (RAG-retrieved):\n${ctx.topChunks.map((t, j) => `  [${j+1}] ${t.slice(0, 400)}`).join('\n')}`
+        ? `\nMost Relevant CV Sections (retrieved by RAG for this specific query):\n${ctx.topChunks.map((t, j) => `  [${j+1}] ${t.slice(0, 500)}`).join('\n')}`
         : '';
 
       return `[Candidate ${i + 1}]
 ID: ${app.id}
 Name: ${app.candidate_name || 'Unknown'}
-RAG Semantic Similarity Score: ${ctx.hasEmbeddings ? (ctx.ragScore * 100).toFixed(1) : 'N/A'}%
+RAG Similarity to REWRITTEN Query: ${ctx.hasEmbeddings ? (ctx.ragScore * 100).toFixed(1) : 'N/A'}%
 Experience: ${app.years_of_experience || 'Not specified'} years
 Skills: ${(app.skills || []).join(', ') || 'Not specified'}
 Education: ${app.education_summary || 'Not specified'}
 Work History: ${app.work_experience_summary || 'Not specified'}
 Strengths: ${(app.strengths || []).join('; ') || 'None'}
-Weaknesses: ${(app.improvements || []).join('; ') || 'None'}${ragSnippet}`;
+Areas for Improvement: ${(app.improvements || []).join('; ') || 'None'}${ragSnippet}`;
     }).join('\n\n---\n\n');
 
-    const jobText = [
-      job_title ? `Job Title: ${job_title}` : '',
-      job_description || '',
-      (job_skills || []).length ? `Required Skills: ${job_skills.join(', ')}` : '',
-    ].filter(Boolean).join('\n\n');
+    let feedbackSection = '';
+    if (cumulativeFeedback) {
+      feedbackSection = `
 
-    const recruiterSection = recruiter_query
-      ? `\n⚠️ RECRUITER'S NATURAL LANGUAGE REQUIREMENT (HIGHEST PRIORITY):
-"${recruiter_query}"
+⚠️ RECRUITER FEEDBACK (THIS IS YOUR #1 PRIORITY — MUST CHANGE THE RANKING):
+"${cumulativeFeedback}"
 
-You MUST treat this as the primary filter. Candidates who match this requirement should be ranked higher, candidates who don't should be ranked lower. Be explicit in the ranking_reason about whether they satisfy this requirement.`
-      : '';
+CRITICAL INSTRUCTIONS FOR AGENTIC RE-RANKING:
+- You MUST re-order candidates based on this feedback. If the ranking doesn't change from the previous round, you have FAILED.
+- Candidates who MATCH the feedback criteria MUST move UP in rank and receive HIGHER scores.
+- Candidates who LACK what the recruiter asked for MUST move DOWN and receive LOWER scores.
+- In ranking_reason, you MUST explicitly state whether each candidate satisfies the recruiter's feedback and WHY.
+- Use the RAG-retrieved CV sections as evidence — cite specific skills, projects, or experience found in them.
+- Do NOT just repeat the previous ranking. The recruiter gave feedback because they wanted CHANGES.`;
+    }
 
-    const prompt = `You are an expert AI recruiter performing RAG-powered candidate ranking.
+    const prompt = `You are an expert AI recruiter performing Agentic RAG-powered candidate ranking (Round ${roundNum}).
 
 JOB REQUIREMENTS:
 ${jobText}
-${recruiterSection}
+${feedbackSection}
 
-CANDIDATES (with semantic RAG similarity scores and retrieved CV context):
+ALL CANDIDATES (${appsWithCV.length} total — you MUST rank every single one):
 ${candidateList}
 
-INSTRUCTIONS:
-1. Use the RAG Semantic Similarity Score as a strong signal — it measures how well the CV content matches the query.
-2. Also consider extracted skills, experience, and education.
-3. Use the FULL 0-100 score range. Best candidate may score 90+, weakest may score 20. DO NOT cluster around 70.
-4. If a recruiter requirement is given, it's the #1 priority — candidates who match it should be at the top.
-5. In ranking_reason (2-3 sentences): cite specific evidence from their CV/retrieved sections. If recruiter query given, explicitly say if they match it.
-6. Return ONLY valid JSON array, no other text.
+SCORING RULES:
+1. The RAG Similarity score shows how well each CV matches the CURRENT query (which includes recruiter feedback). Use it as a strong signal.
+2. Use the FULL 0-100 range. Best = 85-95, good = 70-84, average = 50-69, weak = 30-49, poor = 10-29.
+3. NO tied scores. Every candidate must have a unique score.
+4. ranking_reason MUST be 2-3 sentences citing SPECIFIC evidence from their CV sections. If recruiter feedback exists, explicitly say "Matches recruiter requirement because..." or "Does NOT match recruiter requirement because..."
+5. Return ONLY a valid JSON array, no other text.
 
 [
   {"candidate_id": "<exact ID>", "candidate_name": "<name>", "rank": 1, "agentic_score": 88, "ranking_reason": "Ranked #1 because..."},
-  ...
+  ...all ${appsWithCV.length} candidates...
 ]`;
 
     const rawResult = await base44.asServiceRole.integrations.Core.InvokeLLM({ prompt });
-
     const text = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
     const match = text.match(/\[[\s\S]*\]/);
+
     if (!match) {
-      console.error('agenticRank: no JSON array in LLM response:', text.slice(0, 500));
+      console.error('agenticRankV2: no JSON in LLM response:', text.slice(0, 500));
       return Response.json({ error: 'LLM returned no ranked candidates. Try again.' }, { status: 500 });
     }
 
     const rankedCandidates = JSON.parse(match[0]);
-    console.log(`agenticRank: ranked ${rankedCandidates.length} candidates`);
+    console.log(`agenticRankV2: ranked ${rankedCandidates.length} candidates in round ${roundNum}`);
 
-    const roundNum = round || 2;
-
+    // ═══ AGENTIC STEP 5: Save results with full history ═══
     await Promise.all(rankedCandidates.map(async (rc) => {
       const app = appsWithCV.find(a => a.id === rc.candidate_id);
       if (!app) return;
 
       const ctx = candidateContexts[app.id];
+      const previousRank = app.rag_results?.agentic_rank || null;
+      const previousScore = app.rag_results?.agentic_score || app.match_score || null;
 
       await base44.asServiceRole.entities.Application.update(app.id, {
         match_score: rc.agentic_score,
@@ -188,9 +221,14 @@ INSTRUCTIONS:
           agentic_explanation: rc.ranking_reason,
           agentic_round: roundNum,
           recruiter_query: recruiter_query || null,
+          cumulative_feedback: cumulativeFeedback || null,
+          rewritten_query: roundNum > 1 ? searchQuery : null,
           rag_semantic_score: ctx?.ragScore ? parseFloat((ctx.ragScore * 100).toFixed(1)) : null,
           retrieved_chunks: ctx?.topChunks?.length || 0,
           original_match_score: app.rag_results?.original_match_score ?? app.match_score,
+          previous_rank: previousRank,
+          previous_score: previousScore,
+          rank_change: previousRank ? previousRank - rc.rank : null,
         },
       });
     }));
@@ -199,11 +237,13 @@ INSTRUCTIONS:
       success: true,
       ranked: rankedCandidates.length,
       round: roundNum,
+      rewritten_query: roundNum > 1 ? searchQuery : null,
+      cumulative_feedback: cumulativeFeedback,
       results: rankedCandidates,
     });
 
   } catch (error) {
-    console.error('agenticRank error:', error.message);
+    console.error('agenticRankV2 error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
