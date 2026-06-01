@@ -186,7 +186,7 @@ export default function RankCandidates() {
     setPreviousRanks(prevRanks);
 
     setAgenticRunning(true);
-    const nextRound = roundNumber + 1;
+    const nextRound = agenticDone ? roundNumber + 1 : 1;
     const res = await base44.functions.invoke("agenticRank", {
       job_id: jobId,
       job_title: job?.title || "",
