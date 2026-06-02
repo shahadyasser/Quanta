@@ -1,0 +1,57 @@
+{
+  "name": "SkillGraph",
+  "type": "object",
+  "properties": {
+    "job_id": {
+      "type": "string",
+      "description": "Reference to Job entity"
+    },
+    "skill_name": {
+      "type": "string",
+      "description": "Primary skill (e.g., React, Python, Leadership)"
+    },
+    "related_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string"
+          },
+          "relationship": {
+            "type": "string",
+            "enum": [
+              "prerequisite",
+              "synergy",
+              "related",
+              "advanced"
+            ]
+          },
+          "strength": {
+            "type": "number",
+            "description": "Strength 0-1"
+          }
+        }
+      },
+      "description": "Related skills with relationship type and strength"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "technical",
+        "soft",
+        "domain",
+        "tool"
+      ],
+      "description": "Skill category"
+    },
+    "importance": {
+      "type": "number",
+      "description": "Importance for the job 0-1"
+    }
+  },
+  "required": [
+    "job_id",
+    "skill_name"
+  ]
+}
