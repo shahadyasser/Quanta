@@ -183,8 +183,12 @@ SCORING RULES:
 1. The RAG Similarity score shows how well each CV matches the CURRENT query (which includes recruiter feedback). Use it as a strong signal.
 2. Use the FULL 0-100 range. Best = 85-95, good = 70-84, average = 50-69, weak = 30-49, poor = 10-29.
 3. NO tied scores. Every candidate must have a unique score.
-4. ranking_reason MUST be 2-3 sentences citing SPECIFIC evidence from their CV sections. If recruiter feedback exists, explicitly say "Matches recruiter requirement because..." or "Does NOT match recruiter requirement because..."
-5. Return ONLY a valid JSON array, no other text.
+4. CRITICAL: In ranking_reason, ALWAYS state "MATCHES query: [YES/NO]".
+   - If NO → score must be 50 or less.
+   - If YES → score should be 70+.
+   - Provide specific CV evidence for the match/mismatch.
+5. Only raise scores for candidates with explicit evidence of satisfying the recruiter feedback. Non-matching candidates should stay low.
+6. Return ONLY a valid JSON array, no other text.
 
 [
   {"candidate_id": "<exact ID>", "candidate_name": "<name>", "rank": 1, "agentic_score": 88, "ranking_reason": "Ranked #1 because..."},
@@ -203,8 +207,23 @@ SCORING RULES:
     const rankedCandidates = JSON.parse(match[0]);
     console.log(`agenticRankV2: ranked ${rankedCandidates.length} candidates in round ${roundNum}`);
 
+    // ═══ VALIDATION: Cap scores for non-matching candidates ═══
+    const validatedCandidates = rankedCandidates.map(rc => {
+      const isMatching = rc.ranking_reason?.includes('MATCHES query: YES') || rc.ranking_reason?.includes('MATCHES query: Yes');
+      // If candidate doesn't match the query and score is too high, cap it at 50
+      if (cumulativeFeedback && !isMatching && rc.agentic_score > 50) {
+        console.log(`agenticRankV2: Capping ${rc.candidate_name} score from ${rc.agentic_score} to 50 (non-matching candidate)`);
+        return { ...rc, agentic_score: 50 };
+      }
+      return rc;
+    });
+
+    // Re-sort by score after validation
+    const resortedCandidates = validatedCandidates.sort((a, b) => b.agentic_score - a.agentic_score);
+    resortedCandidates.forEach((rc, i) => { rc.rank = i + 1; });
+
     // ═══ AGENTIC STEP 5: Save results with full history ═══
-    await Promise.all(rankedCandidates.map(async (rc) => {
+    await Promise.all(resortedCandidates.map(async (rc) => {
       const app = appsWithCV.find(a => a.id === rc.candidate_id);
       if (!app) return;
 
