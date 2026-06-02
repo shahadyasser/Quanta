@@ -26,6 +26,7 @@ export default function RankCandidates() {
   const [notifyOpen, setNotifyOpen] = useState(false);
   const [sendingFeedback, setSendingFeedback] = useState(false);
   const [agenticRunning, setAgenticRunning] = useState(false);
+  const [agenticProgress, setAgenticProgress] = useState(0);
   const [agenticDone, setAgenticDone] = useState(false);
   const [recruiterQuery, setRecruiterQuery] = useState("");
   const [roundNumber, setRoundNumber] = useState(1);
@@ -175,7 +176,16 @@ export default function RankCandidates() {
     sortedForRank.forEach((c, i) => { prevRanks[c.id] = i + 1; });
     setPreviousRanks(prevRanks);
 
+    setAgenticProgress(0);
     setAgenticRunning(true);
+    // Simulate progress — increment toward 95% while waiting for the API
+    const interval = setInterval(() => {
+      setAgenticProgress(prev => {
+        if (prev >= 94) { clearInterval(interval); return prev; }
+        const step = prev < 40 ? 3 : prev < 70 ? 1.5 : 0.5;
+        return Math.min(prev + step, 94);
+      });
+    }, 600);
     const nextRound = agenticDone ? roundNumber + 1 : 1;
     const res = await base44.functions.invoke("agenticRank", {
       job_id: jobId,
@@ -185,6 +195,8 @@ export default function RankCandidates() {
       recruiter_query: newCumulativeFeedback,
       round: nextRound,
     });
+    clearInterval(interval);
+    setAgenticProgress(100);
     if (res.data?.success) {
       setRoundNumber(nextRound);
       setAgenticDone(true);
@@ -193,7 +205,7 @@ export default function RankCandidates() {
     } else {
       toast({ description: `Failed: ${res.data?.error || 'Unknown error'}` });
     }
-    setAgenticRunning(false);
+    setTimeout(() => { setAgenticRunning(false); setAgenticProgress(0); }, 400);
   };
 
   const exportCSV = () => {
@@ -463,6 +475,7 @@ export default function RankCandidates() {
         <AgenticProgressModal
           candidateCount={candidates.filter(c => c.cv_url).length}
           round={agenticDone ? roundNumber + 1 : 1}
+          progress={agenticProgress}
         />
       )}
 
