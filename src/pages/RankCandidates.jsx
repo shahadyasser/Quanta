@@ -10,6 +10,7 @@ import { base44 } from "@/api/base44Client";
 import RankSummaryCards from "@/components/recruiter/RankSummaryCards";
 import RankedCandidatesTable from "@/components/recruiter/RankedCandidatesTable";
 import RankProgressModal from "@/components/recruiter/RankProgressModal";
+import AgenticProgressModal from "@/components/recruiter/AgenticProgressModal";
 
 export default function RankCandidates() {
   const [job, setJob] = useState(null);
@@ -458,6 +459,12 @@ export default function RankCandidates() {
 
       {/* Progress Modal */}
       {processing && <RankProgressModal progress={progress} />}
+      {agenticRunning && (
+        <AgenticProgressModal
+          candidateCount={candidates.filter(c => c.cv_url).length}
+          round={agenticDone ? roundNumber + 1 : 1}
+        />
+      )}
 
       {/* Notify Modal */}
       {notifyOpen && (
