@@ -57,11 +57,10 @@ function chunkText(text, maxChunkSize = 1500) {
   return chunks;
 }
 
-async function retrieveTopChunks(base44, jobEmbedding, jobId, applicationId, topK = 10) {
-  let allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ job_id: jobId });
-  if (!allEmbeddings || allEmbeddings.length === 0) {
-    allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id: applicationId });
-  }
+async function retrieveTopChunks(base44, jobEmbedding, applicationId, topK = 10) {
+  // Only retrieve chunks for THIS specific application — never mix with other candidates
+  const allEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id: applicationId });
+  if (!allEmbeddings || allEmbeddings.length === 0) return [];
   const scored = allEmbeddings.map(emb => ({
     ...emb,
     similarity: cosineSimilarity(jobEmbedding, emb.embedding)
@@ -197,9 +196,19 @@ Return only the JSON object with these fields.`,
       console.error("Embedding similarity failed, using fallback:", err.message);
     }
 
-    // Step 3: Store CV chunks — try Postgres first, fallback to Base44 only
+    // Step 3: Clear old embeddings for this application, then store fresh chunks
+    // This ensures scores are never influenced by previous runs
     const cvChunks = chunkText(cvText, 1500);
     console.log("CV text chunked:", cvChunks.length, "chunks created");
+    try {
+      const oldEmbeddings = await base44.asServiceRole.entities.CVEmbedding.filter({ application_id });
+      if (oldEmbeddings && oldEmbeddings.length > 0) {
+        await Promise.all(oldEmbeddings.map(e => base44.asServiceRole.entities.CVEmbedding.delete(e.id)));
+        console.log("Cleared", oldEmbeddings.length, "old embeddings for fresh run");
+      }
+    } catch (clearErr) {
+      console.warn("Could not clear old embeddings:", clearErr.message);
+    }
 
     const storeChunkInBase44 = async (chunk, idx) => {
       const embedding = await getEmbedding(chunk);
@@ -259,7 +268,7 @@ Return only the JSON object with these fields.`,
     try {
       const jobEmbedding = await getEmbedding(jobText);
       if (jobEmbedding) {
-        retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, job_id || "", application_id, 10);
+        retrievedChunks = await retrieveTopChunks(base44, jobEmbedding, application_id, 10);
         console.log("Retrieved", retrievedChunks.length, "relevant chunks for RAG");
       }
     } catch (err) {
