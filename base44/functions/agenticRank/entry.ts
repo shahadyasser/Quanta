@@ -207,8 +207,23 @@ SCORING RULES:
     const rankedCandidates = JSON.parse(match[0]);
     console.log(`agenticRankV2: ranked ${rankedCandidates.length} candidates in round ${roundNum}`);
 
+    // ═══ VALIDATION: Penalize non-matching candidates ═══
+    const validatedCandidates = rankedCandidates.map(rc => {
+      const isMatching = rc.ranking_reason?.toLowerCase().includes('matches query: yes');
+      // Non-matching candidates cannot score above 50
+      if (cumulativeFeedback && !isMatching && rc.agentic_score > 50) {
+        console.log(`agenticRankV2: Capping ${rc.candidate_name} from ${rc.agentic_score} → 50 (doesn't match query)`);
+        return { ...rc, agentic_score: 50 };
+      }
+      return rc;
+    });
+
+    // Re-sort by validated scores
+    const resortedCandidates = validatedCandidates.sort((a, b) => b.agentic_score - a.agentic_score);
+    resortedCandidates.forEach((rc, i) => { rc.rank = i + 1; });
+
     // ═══ AGENTIC STEP 5: Save results with full history ═══
-    await Promise.all(rankedCandidates.map(async (rc) => {
+    await Promise.all(resortedCandidates.map(async (rc) => {
       const app = appsWithCV.find(a => a.id === rc.candidate_id);
       if (!app) return;
 
