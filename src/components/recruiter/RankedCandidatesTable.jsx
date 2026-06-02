@@ -117,19 +117,20 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                       </td>
                       {showScores && (
                         <td className="px-6 py-4">
-                          <div className={`inline-flex flex-col items-center px-3 py-2 rounded-xl border ${getScoreColor(score)}`}>
-                            <p className="text-lg font-bold">{score.toFixed(1)}</p>
-                            <p className="text-xs">{getScoreLabel(score)}</p>
-                          </div>
-                          {/* Round history */}
-                          {app.rag_results?.round_history?.length > 0 && (
-                            <div className="mt-1.5 space-y-0.5">
-                              <p className="text-xs text-muted-foreground">Initial: <span className="font-medium">{(app.rag_results.original_match_score ?? app.match_score ?? 0).toFixed(1)}</span></p>
-                              {app.rag_results.round_history.map((r) => (
-                                <p key={r.round} className="text-xs text-orange-600">R{r.round}: <span className="font-medium">{r.score.toFixed(1)}</span></p>
-                              ))}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Initial / current base score */}
+                            <div className={`inline-flex flex-col items-center px-3 py-2 rounded-xl border ${getScoreColor(score)}`}>
+                              <p className="text-lg font-bold">{score.toFixed(1)}</p>
+                              <p className="text-xs">{getScoreLabel(score)}</p>
                             </div>
-                          )}
+                            {/* Per-round agentic scores */}
+                            {app.rag_results?.round_history?.map((r) => (
+                              <div key={r.round} className="inline-flex flex-col items-center px-2.5 py-1.5 rounded-xl border border-orange-200 bg-orange-50">
+                                <p className="text-sm font-bold text-orange-700">{r.score.toFixed(1)}</p>
+                                <p className="text-xs text-orange-500">R{r.round}</p>
+                              </div>
+                            ))}
+                          </div>
                         </td>
                       )}
                       {agenticDone && (

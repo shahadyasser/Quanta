@@ -447,7 +447,7 @@ export default function RankCandidates() {
           onReprocess={reprocessCandidate}
           jobId={jobId}
           job={job}
-          showScores={rankingStarted}
+          showScores={rankingStarted || candidates.some(c => c.match_score > 0)}
           previousRanks={previousRanks}
           agenticDone={agenticDone}
           onStatusChange={async () => {
