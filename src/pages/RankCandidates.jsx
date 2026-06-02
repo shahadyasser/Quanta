@@ -266,7 +266,10 @@ export default function RankCandidates() {
     });
 
   const processedCount = candidates.filter((a) => a.status === "processed" && a.match_score).length;
-  const strongMatches = candidates.filter((a) => (a.match_score || 0) >= 80).length;
+  const strongMatches = candidates.filter((a) => {
+    const score = agenticDone && a.rag_results?.agentic_score != null ? a.rag_results.agentic_score : (a.match_score || 0);
+    return score >= 80;
+  }).length;
 
   if (loading) {
     return (
