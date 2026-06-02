@@ -92,7 +92,9 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
             ) : (
               candidates.map((app, idx) => {
                 const isExpanded = expanded === app.id;
-                const score = app.match_score || 0;
+                const score = agenticDone && app.rag_results?.agentic_score != null
+                  ? app.rag_results.agentic_score
+                  : (app.match_score || 0);
                 const constructs = app.rag_results?.construct_scores || {};
 
                 return (

@@ -218,7 +218,6 @@ SCORING RULES:
         : rc.agentic_score;
 
       await base44.asServiceRole.entities.Application.update(app.id, {
-        match_score: finalScore,
         rag_results: {
           ...(app.rag_results || {}),
           agentic_score: finalScore,

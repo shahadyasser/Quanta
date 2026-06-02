@@ -122,7 +122,7 @@ export default function RankCandidates() {
     if (!n || n < 1) return;
     const sorted = [...candidates]
       .filter(c => c.match_score > 0)
-      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0));
+      .sort((a, b) => (b.match_score || 0) - (a.match_score || 0)); // always use initial score for top-N
     const topCandidates = sorted.slice(0, n);
     const restCandidates = sorted.slice(n);
     setProcessing(true);
@@ -242,14 +242,18 @@ export default function RankCandidates() {
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === "score") return (b.match_score || 0) - (a.match_score || 0);
+      if (sortBy === "score") {
+        const scoreA = agenticDone && a.rag_results?.agentic_score != null ? a.rag_results.agentic_score : (a.match_score || 0);
+        const scoreB = agenticDone && b.rag_results?.agentic_score != null ? b.rag_results.agentic_score : (b.match_score || 0);
+        return scoreB - scoreA;
+      }
       if (sortBy === "name") return (a.candidate_name || "").localeCompare(b.candidate_name || "");
       if (sortBy === "date") return new Date(b.created_date) - new Date(a.created_date);
       return 0;
     });
 
   const processedCount = candidates.filter((a) => a.status === "processed" && a.match_score).length;
-  const strongMatches = candidates.filter((a) => a.match_score >= 80).length;
+  const strongMatches = candidates.filter((a) => (a.match_score || 0) >= 80).length;
 
   if (loading) {
     return (
