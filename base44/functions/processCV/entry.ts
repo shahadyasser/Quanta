@@ -267,11 +267,22 @@ Return only the JSON object with these fields.`,
     }
     const retrievedText = retrievedChunks.map(c => c.cv_text_chunk).join("\n---\n");
 
-    // Step 5: LLM scoring with RAG-augmented context
+    // Step 5: LLM scoring with RAG-augmented context (temperature=0 for deterministic scores)
     console.log("Starting LLM scoring");
-    const scoringResp = await base44.integrations.Core.InvokeLLM({
-      prompt: `${SCORE_SYSTEM}\n\nJob description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}`
+    const scoringRaw = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        temperature: 0,
+        messages: [
+          { role: 'system', content: SCORE_SYSTEM },
+          { role: 'user', content: `Job description:\n${jobText.slice(0, 2000)}\n\nResume:\n${cvText.slice(0, 3000)}\n\nMost relevant retrieved context:\n${retrievedText.slice(0, 3000)}` }
+        ]
+      })
     });
+    const scoringJson = await scoringRaw.json();
+    const scoringResp = scoringJson.choices?.[0]?.message?.content || '';
     console.log("LLM scoring completed");
 
     let scores, reasons, llmTotal;
