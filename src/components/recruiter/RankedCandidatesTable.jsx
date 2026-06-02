@@ -121,6 +121,15 @@ export default function RankedCandidatesTable({ candidates, onReprocess, jobId, 
                             <p className="text-lg font-bold">{score.toFixed(1)}</p>
                             <p className="text-xs">{getScoreLabel(score)}</p>
                           </div>
+                          {/* Round history */}
+                          {app.rag_results?.round_history?.length > 0 && (
+                            <div className="mt-1.5 space-y-0.5">
+                              <p className="text-xs text-muted-foreground">Initial: <span className="font-medium">{(app.rag_results.original_match_score ?? app.match_score ?? 0).toFixed(1)}</span></p>
+                              {app.rag_results.round_history.map((r) => (
+                                <p key={r.round} className="text-xs text-orange-600">R{r.round}: <span className="font-medium">{r.score.toFixed(1)}</span></p>
+                              ))}
+                            </div>
+                          )}
                         </td>
                       )}
                       {agenticDone && (

@@ -212,10 +212,9 @@ SCORING RULES:
       const previousRank = app.rag_results?.agentic_rank || null;
       const previousScore = app.rag_results?.agentic_score || app.match_score || null;
 
-      // Use deterministic RAG cosine score when available, otherwise keep LLM score
-      const finalScore = ctx?.hasEmbeddings && ctx.ragScore > 0
-        ? parseFloat((ctx.ragScore * 100).toFixed(1))
-        : rc.agentic_score;
+      // Accumulate round history
+      const roundHistory = [...(app.rag_results?.round_history || [])];
+      roundHistory.push({ round: roundNum, score: finalScore, llm_score: rc.agentic_score, rank: rc.rank });
 
       await base44.asServiceRole.entities.Application.update(app.id, {
         rag_results: {
@@ -230,6 +229,7 @@ SCORING RULES:
           rewritten_query: roundNum > 1 ? searchQuery : null,
           rag_semantic_score: ctx?.ragScore ? parseFloat((ctx.ragScore * 100).toFixed(1)) : null,
           retrieved_chunks: ctx?.topChunks?.length || 0,
+          round_history: roundHistory,
           original_match_score: app.rag_results?.original_match_score ?? app.match_score,
           previous_rank: previousRank,
           previous_score: previousScore,
