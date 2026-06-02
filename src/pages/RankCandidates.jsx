@@ -369,6 +369,7 @@ export default function RankCandidates() {
                           delete restoredRagResults.previous_score;
                           delete restoredRagResults.rank_change;
                           delete restoredRagResults.llm_rank_suggestion;
+                          delete restoredRagResults.round_history;
                           return base44.entities.Application.update(c.id, { match_score: originalScore, rag_results: restoredRagResults });
                         }));
                         await fetchJobAndCandidates();
