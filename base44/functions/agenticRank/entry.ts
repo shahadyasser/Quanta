@@ -214,7 +214,7 @@ SCORING RULES:
 
       // Accumulate round history
       const roundHistory = [...(app.rag_results?.round_history || [])];
-      roundHistory.push({ round: roundNum, score: finalScore, llm_score: rc.agentic_score, rank: rc.rank });
+      roundHistory.push({ round: roundNum, score: rc.agentic_score, rank: rc.rank });
 
       await base44.asServiceRole.entities.Application.update(app.id, {
         rag_results: {
